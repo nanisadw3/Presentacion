@@ -61,7 +61,7 @@ class ExcelViewerApp(ctk.CTk):
         self.lbl_proceso.pack(pady=15, padx=(20, 5), side="left")
         
         self.cb_proceso = ctk.CTkComboBox(self.top_frame, 
-                                          values=["Crudo", "Gasolinas", "Diesel", "Turbosina"],
+                                          values=["Crudo", "Gasolinas", "Diesel", "Turbosina", "Asfalto", "Combustoleo"],
                                           font=("Roboto", 14),
                                           command=self.on_proceso_changed,
                                           state="readonly",
@@ -142,38 +142,76 @@ class ExcelViewerApp(ctk.CTk):
 
         if db_path:
             import sqlite3
+            import math
             try:
                 conn = sqlite3.connect(db_path)
-                
+
+                # Redondear todos los valores numéricos a enteros para la BD
+                # (la pantalla conserva los decimales de MCP y Producción).
+                def to_int_val(v):
+                    try:
+                        if v == "" or v is None:
+                            return v
+                        if isinstance(v, str):
+                            return v
+                        f = float(v)
+                        if math.isinf(f) or math.isnan(f):
+                            return ""
+                        return int(round(f))
+                    except (ValueError, TypeError):
+                        return v
+
+                def redondear_df(df):
+                    out = df.copy()
+                    for c in out.columns:
+                        out[c] = out[c].map(to_int_val)
+                    return out
+
                 # Guardar datos de Crudo
-                self.df_data.to_sql('crudo_tabla_principal', conn, if_exists='replace', index=False)
-                self.df_snr.to_sql('crudo_programa_snr', conn, if_exists='replace', index=False)
-                self.df_prod.to_sql('crudo_produccion', conn, if_exists='replace', index=False)
-                self.df_sim.to_sql('crudo_simulacion_anual', conn, if_exists='replace', index=False)
-                
+                redondear_df(self.df_data).to_sql('crudo_tabla_principal', conn, if_exists='replace', index=False)
+                redondear_df(self.df_snr).to_sql('crudo_programa_snr', conn, if_exists='replace', index=False)
+                redondear_df(self.df_prod).to_sql('crudo_produccion', conn, if_exists='replace', index=False)
+                redondear_df(self.df_sim).to_sql('crudo_simulacion_anual', conn, if_exists='replace', index=False)
+
                  # Guardar datos de Gasolinas
                 if self.df_data_gasolinas is not None:
-                    self.df_data_gasolinas.to_sql('gasolinas_tabla_principal', conn, if_exists='replace', index=False)
-                    self.df_snr_gasolinas.to_sql('gasolinas_programa_snr', conn, if_exists='replace', index=False)
-                    self.df_prod_gasolinas.to_sql('gasolinas_produccion', conn, if_exists='replace', index=False)
+                    redondear_df(self.df_data_gasolinas).to_sql('gasolinas_tabla_principal', conn, if_exists='replace', index=False)
+                    redondear_df(self.df_snr_gasolinas).to_sql('gasolinas_programa_snr', conn, if_exists='replace', index=False)
+                    redondear_df(self.df_prod_gasolinas).to_sql('gasolinas_produccion', conn, if_exists='replace', index=False)
                     if hasattr(self, 'df_sim_gasolinas') and self.df_sim_gasolinas is not None:
-                        self.df_sim_gasolinas.to_sql('gasolinas_simulacion_anual', conn, if_exists='replace', index=False)
-                
+                        redondear_df(self.df_sim_gasolinas).to_sql('gasolinas_simulacion_anual', conn, if_exists='replace', index=False)
+
                 # Guardar datos de Diesel
                 if self.df_data_diesel is not None:
-                    self.df_data_diesel.to_sql('diesel_tabla_principal', conn, if_exists='replace', index=False)
-                    self.df_snr_diesel.to_sql('diesel_programa_snr', conn, if_exists='replace', index=False)
-                    self.df_prod_diesel.to_sql('diesel_produccion', conn, if_exists='replace', index=False)
+                    redondear_df(self.df_data_diesel).to_sql('diesel_tabla_principal', conn, if_exists='replace', index=False)
+                    redondear_df(self.df_snr_diesel).to_sql('diesel_programa_snr', conn, if_exists='replace', index=False)
+                    redondear_df(self.df_prod_diesel).to_sql('diesel_produccion', conn, if_exists='replace', index=False)
                     if hasattr(self, 'df_sim_diesel') and self.df_sim_diesel is not None:
-                        self.df_sim_diesel.to_sql('diesel_simulacion_anual', conn, if_exists='replace', index=False)
+                        redondear_df(self.df_sim_diesel).to_sql('diesel_simulacion_anual', conn, if_exists='replace', index=False)
 
                 # Guardar datos de Turbosina
                 if self.df_data_turbosina is not None:
-                    self.df_data_turbosina.to_sql('turbosina_tabla_principal', conn, if_exists='replace', index=False)
-                    self.df_snr_turbosina.to_sql('turbosina_programa_snr', conn, if_exists='replace', index=False)
-                    self.df_prod_turbosina.to_sql('turbosina_produccion', conn, if_exists='replace', index=False)
+                    redondear_df(self.df_data_turbosina).to_sql('turbosina_tabla_principal', conn, if_exists='replace', index=False)
+                    redondear_df(self.df_snr_turbosina).to_sql('turbosina_programa_snr', conn, if_exists='replace', index=False)
+                    redondear_df(self.df_prod_turbosina).to_sql('turbosina_produccion', conn, if_exists='replace', index=False)
                     if hasattr(self, 'df_sim_turbosina') and self.df_sim_turbosina is not None:
-                        self.df_sim_turbosina.to_sql('turbosina_simulacion_anual', conn, if_exists='replace', index=False)
+                        redondear_df(self.df_sim_turbosina).to_sql('turbosina_simulacion_anual', conn, if_exists='replace', index=False)
+
+                # Guardar datos de Asfalto
+                if hasattr(self, 'df_data_asfalto') and self.df_data_asfalto is not None:
+                    redondear_df(self.df_data_asfalto).to_sql('asfalto_tabla_principal', conn, if_exists='replace', index=False)
+                    redondear_df(self.df_snr_asfalto).to_sql('asfalto_programa_snr', conn, if_exists='replace', index=False)
+                    redondear_df(self.df_prod_asfalto).to_sql('asfalto_produccion', conn, if_exists='replace', index=False)
+                    if hasattr(self, 'df_sim_asfalto') and self.df_sim_asfalto is not None:
+                        redondear_df(self.df_sim_asfalto).to_sql('asfalto_simulacion_anual', conn, if_exists='replace', index=False)
+
+                # Guardar datos de Combustoleo
+                if hasattr(self, 'df_data_combustoleo') and self.df_data_combustoleo is not None:
+                    redondear_df(self.df_data_combustoleo).to_sql('combustoleo_tabla_principal', conn, if_exists='replace', index=False)
+                    redondear_df(self.df_snr_combustoleo).to_sql('combustoleo_programa_snr', conn, if_exists='replace', index=False)
+                    redondear_df(self.df_prod_combustoleo).to_sql('combustoleo_produccion', conn, if_exists='replace', index=False)
+                    if hasattr(self, 'df_sim_combustoleo') and self.df_sim_combustoleo is not None:
+                        redondear_df(self.df_sim_combustoleo).to_sql('combustoleo_simulacion_anual', conn, if_exists='replace', index=False)
 
                 conn.close()
                 messagebox.showinfo("Éxito", f"¡Los datos de todos los procesos han sido guardados en la base de datos!\n\nRuta:\n{db_path}")
@@ -198,7 +236,7 @@ class ExcelViewerApp(ctk.CTk):
             warnings.filterwarnings('ignore', category=UserWarning, module='openpyxl')
 
             # Función segura para quitar decimales sin causar errores de tipo
-            def remove_decimals(df_to_clean):
+            def remove_decimals(df_to_clean, skip_first=False, skip_last=False):
                 def safe_round(val):
                     try:
                         if pd.isna(val):
@@ -213,6 +251,39 @@ class ExcelViewerApp(ctk.CTk):
                         return int(round(f_val))
                     except:
                         return str(val).strip()
+
+                def keep_raw(val):
+                    try:
+                        if pd.isna(val):
+                            return ""
+                    except ValueError:
+                        return ""
+                    try:
+                        f_val = float(val)
+                        import math
+                        if math.isinf(f_val) or math.isnan(f_val):
+                            return ""
+                        return val
+                    except:
+                        return str(val).strip()
+
+                if skip_first and df_to_clean.shape[1] > 1:
+                    first_col = df_to_clean.iloc[:, 0].map(keep_raw)
+                    rest = df_to_clean.iloc[:, 1:]
+                    if hasattr(rest, 'map'):
+                        rest = rest.map(safe_round)
+                    else:
+                        rest = rest.applymap(safe_round)
+                    return pd.concat([first_col, rest], axis=1)
+
+                if skip_last and df_to_clean.shape[1] > 1:
+                    rest = df_to_clean.iloc[:, :-1]
+                    last_col = df_to_clean.iloc[:, -1].map(keep_raw)
+                    if hasattr(rest, 'map'):
+                        rest = rest.map(safe_round)
+                    else:
+                        rest = rest.applymap(safe_round)
+                    return pd.concat([rest, last_col], axis=1)
 
                 if hasattr(df_to_clean, 'map'):
                     return df_to_clean.map(safe_round)
@@ -238,6 +309,7 @@ class ExcelViewerApp(ctk.CTk):
 
             # --- LEER LA HOJA COMPLETA UNA SOLA VEZ ---
             df_sheet = pd.read_excel(file_path, sheet_name=sheet_to_use, header=None)
+            self.after(0, self.update_progress, 0.1, "Leyendo hoja de cálculo...")
 
             # Helper para formatear encabezados
             def get_clean_headers(row_idx, start_col, end_col):
@@ -253,6 +325,7 @@ class ExcelViewerApp(ctk.CTk):
                 return headers
 
             # --- 1. PROCESAR CRUDO ---
+            self.after(0, self.update_progress, 0.2, "Procesando Crudo...")
             # Leer fila 1 (index 0) para encabezados, Cols A:H (0:8)
             clean_headers = get_clean_headers(0, 0, 8)
             # Leer Tabla 1 (Rows 21-51 -> index 20:51), Cols A:H (0:8)
@@ -265,7 +338,7 @@ class ExcelViewerApp(ctk.CTk):
             # Leer Tabla 2 (Programa, Rows 74-104 -> index 73:104), Cols AE:AF (30:32)
             df_snr = df_sheet.iloc[73:104, 30:32].copy()
             df_snr = df_snr.dropna(how='all').dropna(axis=1, how='all')
-            df_snr = remove_decimals(df_snr)
+            df_snr = remove_decimals(df_snr, skip_first=True)
             df_snr_copy = df_snr.copy()
 
             # --- Recortar filas de fin de mes si el mes tiene menos de 31 días ---
@@ -310,11 +383,12 @@ class ExcelViewerApp(ctk.CTk):
                 df_prod = df_prod_raw.iloc[:20]
                 
             df_prod = df_prod.dropna(axis=1, how='all')
-            df_prod = remove_decimals(df_prod)
+            df_prod = remove_decimals(df_prod, skip_last=True)
             df_prod_copy = df_prod.copy()
 
 
             # --- 2. PROCESAR GASOLINAS ---
+            self.after(0, self.update_progress, 0.35, "Procesando Gasolinas...")
             # Leer fila 1 (index 0) para encabezados, Cols L:S (11:19)
             clean_headers_gas = get_clean_headers(0, 11, 19)
             # Leer Tabla 1 (Rows 21-51 -> index 20:51), Cols L:S (11:19)
@@ -327,7 +401,7 @@ class ExcelViewerApp(ctk.CTk):
             # Leer Tabla 2 (Programa, Rows 74-104 -> index 73:104), Cols AK:AL (36:38)
             df_snr_gas = df_sheet.iloc[73:104, 36:38].copy()
             df_snr_gas = df_snr_gas.dropna(how='all').dropna(axis=1, how='all')
-            df_snr_gas = remove_decimals(df_snr_gas)
+            df_snr_gas = remove_decimals(df_snr_gas, skip_first=True)
             df_snr_gas_copy = df_snr_gas.copy()
 
             # Recortar filas de fin de mes
@@ -351,11 +425,12 @@ class ExcelViewerApp(ctk.CTk):
                 df_prod_gas = df_prod_gas_raw.iloc[:20]
                 
             df_prod_gas = df_prod_gas.dropna(axis=1, how='all')
-            df_prod_gas = remove_decimals(df_prod_gas)
+            df_prod_gas = remove_decimals(df_prod_gas, skip_last=True)
             df_prod_gasolinas_copy = df_prod_gas.copy()
 
 
             # --- 3. PROCESAR DIESEL ---
+            self.after(0, self.update_progress, 0.5, "Procesando Diesel...")
             # Leer fila 54 (index 53) para encabezados, Cols A:H (0:8)
             clean_headers_die = get_clean_headers(53, 0, 8)
             # Leer Tabla 1 (Rows 74-104 -> index 73:104), Cols A:H (0:8)
@@ -368,7 +443,7 @@ class ExcelViewerApp(ctk.CTk):
             # Leer Tabla 2 (Programa, Rows 74-104 -> index 73:104), Cols AQ:AR (42:44)
             df_snr_die = df_sheet.iloc[73:104, 42:44].copy()
             df_snr_die = df_snr_die.dropna(how='all').dropna(axis=1, how='all')
-            df_snr_die = remove_decimals(df_snr_die)
+            df_snr_die = remove_decimals(df_snr_die, skip_first=True)
             df_snr_die_copy = df_snr_die.copy()
 
             # Recortar filas de fin de mes
@@ -392,11 +467,12 @@ class ExcelViewerApp(ctk.CTk):
                 df_prod_die = df_prod_die_raw.iloc[:20]
                 
             df_prod_die = df_prod_die.dropna(axis=1, how='all')
-            df_prod_die = remove_decimals(df_prod_die)
+            df_prod_die = remove_decimals(df_prod_die, skip_last=True)
             df_prod_diesel_copy = df_prod_die.copy()
 
 
             # --- 4. PROCESAR TURBOSINA ---
+            self.after(0, self.update_progress, 0.62, "Procesando Turbosina...")
             # Leer fila 54 (index 53) para encabezados, Cols L:Q (11:17)
             clean_headers_turb = get_clean_headers(53, 11, 17)
             # Leer Tabla 1 (Rows 74-104 -> index 73:104), Cols L:Q (11:17)
@@ -409,7 +485,7 @@ class ExcelViewerApp(ctk.CTk):
             # Leer Tabla 2 (Programa, Rows 74-104 -> index 73:104), Cols AW:AX (48:50)
             df_snr_turb = df_sheet.iloc[73:104, 48:50].copy()
             df_snr_turb = df_snr_turb.dropna(how='all').dropna(axis=1, how='all')
-            df_snr_turb = remove_decimals(df_snr_turb)
+            df_snr_turb = remove_decimals(df_snr_turb, skip_first=True)
             df_snr_turb_copy = df_snr_turb.copy()
 
             # Recortar filas de fin de mes
@@ -433,8 +509,88 @@ class ExcelViewerApp(ctk.CTk):
                 df_prod_turb = df_prod_turb_raw.iloc[:20]
                 
             df_prod_turb = df_prod_turb.dropna(axis=1, how='all')
-            df_prod_turb = remove_decimals(df_prod_turb)
+            df_prod_turb = remove_decimals(df_prod_turb, skip_last=True)
             df_prod_turbosina_copy = df_prod_turb.copy()
+
+
+            # --- 5. PROCESAR ASFALTO ---
+            self.after(0, self.update_progress, 0.74, "Procesando Asfalto...")
+            # Leer Tabla 1 (Rows 122-152 -> index 121:152), Cols AM:AN (38:40)
+            df_asf = df_sheet.iloc[121:152, 38:40].copy()
+            df_asf.columns = ["Asfalto", "real"]
+            df_asf = df_asf.dropna(how='all').dropna(axis=1, how='all')
+            df_asf = remove_decimals(df_asf)
+            df_data_asfalto = df_asf.copy()
+
+            # Leer Tabla 2 (Programa, Rows 122-152 -> index 121:152), Cols AK:AL (36:38)
+            df_snr_asf = df_sheet.iloc[121:152, 36:38].copy()
+            df_snr_asf = df_snr_asf.dropna(how='all').dropna(axis=1, how='all')
+            df_snr_asf = remove_decimals(df_snr_asf, skip_first=True)
+            df_snr_asf_copy = df_snr_asf.copy()
+
+            # Recortar filas de fin de mes
+            df_data_asfalto = df_data_asfalto.iloc[:num_dias_reales]
+            df_snr_asf_copy = df_snr_asf_copy.iloc[:num_dias_reales]
+
+            # Leer Tabla 3 (Años, Rows 121-140 -> index 120:140), Cols AQ:AR (42:44)
+            df_prod_asf_raw = df_sheet.iloc[120:140, 42:44].copy()
+            df_prod_asf_raw = df_prod_asf_raw.dropna(how='all')
+
+            dic_idx_asf = -1
+            for idx, row in df_prod_asf_raw.iterrows():
+                val = str(row.iloc[0]).strip().lower()
+                if "dic" in val or "diciembre" in val:
+                    dic_idx_asf = idx - 120
+                    break
+
+            if dic_idx_asf != -1:
+                df_prod_asf = df_prod_asf_raw.iloc[:dic_idx_asf + 1]
+            else:
+                df_prod_asf = df_prod_asf_raw.iloc[:20]
+
+            df_prod_asf = df_prod_asf.dropna(axis=1, how='all')
+            df_prod_asf = remove_decimals(df_prod_asf, skip_last=True)
+            df_prod_asfalto_copy = df_prod_asf.copy()
+
+
+            # --- 6. PROCESAR COMBUSTOLEO ---
+            self.after(0, self.update_progress, 0.85, "Procesando Combustoleo...")
+            # Leer Tabla 1 (Rows 74-104 -> index 73:104), Cols U:V (20:22)
+            df_comb = df_sheet.iloc[73:104, 20:22].copy()
+            df_comb.columns = ["SNR", "Combustoleo"]
+            df_comb = df_comb.dropna(how='all').dropna(axis=1, how='all')
+            df_comb = remove_decimals(df_comb)
+            df_data_combustoleo = df_comb.copy()
+
+            # Leer Tabla 2 (Programa, Rows 74-104 -> index 73:104), Cols BC:BD (54:56)
+            df_snr_comb = df_sheet.iloc[73:104, 54:56].copy()
+            df_snr_comb = df_snr_comb.dropna(how='all').dropna(axis=1, how='all')
+            df_snr_comb = remove_decimals(df_snr_comb, skip_first=True)
+            df_snr_comb_copy = df_snr_comb.copy()
+
+            # Recortar filas de fin de mes
+            df_data_combustoleo = df_data_combustoleo.iloc[:num_dias_reales]
+            df_snr_comb_copy = df_snr_comb_copy.iloc[:num_dias_reales]
+
+            # Leer Tabla 3 (Años, Rows 21-40 -> index 20:40), Cols AQ:AR (42:44)
+            df_prod_comb_raw = df_sheet.iloc[20:40, 42:44].copy()
+            df_prod_comb_raw = df_prod_comb_raw.dropna(how='all')
+
+            dic_idx_comb = -1
+            for idx, row in df_prod_comb_raw.iterrows():
+                val = str(row.iloc[0]).strip().lower()
+                if "dic" in val or "diciembre" in val:
+                    dic_idx_comb = idx - 20
+                    break
+
+            if dic_idx_comb != -1:
+                df_prod_comb = df_prod_comb_raw.iloc[:dic_idx_comb + 1]
+            else:
+                df_prod_comb = df_prod_comb_raw.iloc[:20]
+
+            df_prod_comb = df_prod_comb.dropna(axis=1, how='all')
+            df_prod_comb = remove_decimals(df_prod_comb, skip_last=True)
+            df_prod_combustoleo_copy = df_prod_comb.copy()
 
 
             # Crear Tabla 4 (Simulación 12 meses)
@@ -560,11 +716,70 @@ class ExcelViewerApp(ctk.CTk):
             sim_data_turb.append(["TOTALES", "---", f"Días pasados: {days_passed}", f"Suma: {int(suma_total_turb)} | Prom: {promedio_turb:.2f}"])
             df_sim_turbosina = pd.DataFrame(sim_data_turb, columns=["Mes", "Producción", "Días", "Total (Prod x Días)"])
 
+            # 5. Simulación Asfalto
+            prod_dict_asf = {m: 0.0 for m in meses_nombres}
+            for idx, row_data in df_prod_asf.iterrows():
+                val_anio = str(row_data.iloc[0]).strip().lower()
+                val_prod = row_data.iloc[1]
+                try:
+                    p = float(val_prod)
+                except:
+                    p = 0.0
+
+                for i, (m_largo, m_corto) in enumerate(zip(meses_nombres, meses_cortos)):
+                    if m_largo.lower() in val_anio or m_corto.lower() in val_anio:
+                        prod_dict_asf[meses_nombres[i]] += p
+                        break
+
+            sim_data_asf = []
+            suma_total_asf = 0.0
+            for i, mes in enumerate(meses_nombres):
+                dias = dias_por_mes[i]
+                prod = prod_dict_asf[mes]
+                total = prod * dias
+                suma_total_asf += total
+                sim_data_asf.append([mes, int(prod), dias, int(total)])
+
+            promedio_asf = suma_total_asf / days_passed if days_passed > 0 else 0
+            sim_data_asf.append(["TOTALES", "---", f"Días pasados: {days_passed}", f"Suma: {int(suma_total_asf)} | Prom: {promedio_asf:.2f}"])
+            df_sim_asfalto = pd.DataFrame(sim_data_asf, columns=["Mes", "Producción", "Días", "Total (Prod x Días)"])
+
+            # 6. Simulación Combustoleo
+            prod_dict_comb = {m: 0.0 for m in meses_nombres}
+            for idx, row_data in df_prod_comb.iterrows():
+                val_anio = str(row_data.iloc[0]).strip().lower()
+                val_prod = row_data.iloc[1]
+                try:
+                    p = float(val_prod)
+                except:
+                    p = 0.0
+
+                for i, (m_largo, m_corto) in enumerate(zip(meses_nombres, meses_cortos)):
+                    if m_largo.lower() in val_anio or m_corto.lower() in val_anio:
+                        prod_dict_comb[meses_nombres[i]] += p
+                        break
+
+            sim_data_comb = []
+            suma_total_comb = 0.0
+            for i, mes in enumerate(meses_nombres):
+                dias = dias_por_mes[i]
+                prod = prod_dict_comb[mes]
+                total = prod * dias
+                suma_total_comb += total
+                sim_data_comb.append([mes, int(prod), dias, int(total)])
+
+            promedio_comb = suma_total_comb / days_passed if days_passed > 0 else 0
+            sim_data_comb.append(["TOTALES", "---", f"Días pasados: {days_passed}", f"Suma: {int(suma_total_comb)} | Prom: {promedio_comb:.2f}"])
+            df_sim_combustoleo = pd.DataFrame(sim_data_comb, columns=["Mes", "Producción", "Días", "Total (Prod x Días)"])
+
+            self.after(0, self.update_progress, 0.97, "Finalizando...")
             # Pasar datos a la interfaz (main thread)
             self.after(0, self.on_load_success, file_path, df_data, df_snr_copy, df_prod_copy, df_sim,
                        df_data_gasolinas, df_snr_gas_copy, df_prod_gasolinas_copy, df_sim_gasolinas,
                        df_data_diesel, df_snr_die_copy, df_prod_diesel_copy, df_sim_diesel,
-                       df_data_turbosina, df_snr_turb_copy, df_prod_turbosina_copy, df_sim_turbosina)
+                       df_data_turbosina, df_snr_turb_copy, df_prod_turbosina_copy, df_sim_turbosina,
+                       df_data_asfalto, df_snr_asf_copy, df_prod_asfalto_copy, df_sim_asfalto,
+                       df_data_combustoleo, df_snr_comb_copy, df_prod_combustoleo_copy, df_sim_combustoleo)
 
         except Exception as e:
             err_details = traceback.format_exc()
@@ -573,7 +788,9 @@ class ExcelViewerApp(ctk.CTk):
     def on_load_success(self, file_path, df_data, df_snr, df_prod, df_sim,
                         df_data_gasolinas=None, df_snr_gasolinas=None, df_prod_gasolinas=None, df_sim_gasolinas=None,
                         df_data_diesel=None, df_snr_diesel=None, df_prod_diesel=None, df_sim_diesel=None,
-                        df_data_turbosina=None, df_snr_turbosina=None, df_prod_turbosina=None, df_sim_turbosina=None):
+                        df_data_turbosina=None, df_snr_turbosina=None, df_prod_turbosina=None, df_sim_turbosina=None,
+                        df_data_asfalto=None, df_snr_asfalto=None, df_prod_asfalto=None, df_sim_asfalto=None,
+                        df_data_combustoleo=None, df_snr_combustoleo=None, df_prod_combustoleo=None, df_sim_combustoleo=None):
         self.df_data = df_data
         self.df_snr = df_snr
         self.df_prod = df_prod
@@ -593,6 +810,16 @@ class ExcelViewerApp(ctk.CTk):
         self.df_snr_turbosina = df_snr_turbosina
         self.df_prod_turbosina = df_prod_turbosina
         self.df_sim_turbosina = df_sim_turbosina
+
+        self.df_data_asfalto = df_data_asfalto
+        self.df_snr_asfalto = df_snr_asfalto
+        self.df_prod_asfalto = df_prod_asfalto
+        self.df_sim_asfalto = df_sim_asfalto
+
+        self.df_data_combustoleo = df_data_combustoleo
+        self.df_snr_combustoleo = df_snr_combustoleo
+        self.df_prod_combustoleo = df_prod_combustoleo
+        self.df_sim_combustoleo = df_sim_combustoleo
 
         # Mostrar las tablas correspondientes a la selección actual del ComboBox
         self.show_proceso_tables(self.cb_proceso.get())
@@ -647,20 +874,58 @@ class ExcelViewerApp(ctk.CTk):
             df_sim = self.df_sim_diesel
             lbl2_txt = "Programa de Diesel (AQ-AR, Filas 74-104)"
             lbl3_txt = "Fecha y Producción de Diesel (AK-AL, Filas 21-40)"
-        else: # Turbosina
+        elif selection == "Turbosina":
             df_data = self.df_data_turbosina
             df_snr = self.df_snr_turbosina
             df_prod = self.df_prod_turbosina
             df_sim = self.df_sim_turbosina
             lbl2_txt = "Programa de Turbosina (AW-AX, Filas 74-104)"
             lbl3_txt = "Fecha y Producción de Turbosina (AM-AN, Filas 21-40)"
+        elif selection == "Asfalto":
+            df_data = self.df_data_asfalto
+            df_snr = self.df_snr_asfalto
+            df_prod = self.df_prod_asfalto
+            df_sim = self.df_sim_asfalto
+            lbl2_txt = "Programa de Asfalto (AK-AL, Filas 122-152)"
+            lbl3_txt = "Fecha y Producción de Asfalto (AQ-AR, Filas 121-140)"
+        elif selection == "Combustoleo":
+            df_data = self.df_data_combustoleo
+            df_snr = self.df_snr_combustoleo
+            df_prod = self.df_prod_combustoleo
+            df_sim = self.df_sim_combustoleo
+            lbl2_txt = "Programa de Combustoleo (BC-BD, Filas 74-104)"
+            lbl3_txt = "Fecha y Producción de Combustoleo (AQ-AR, Filas 21-40)"
 
         if df_data is None or df_snr is None or df_prod is None or df_sim is None:
             return
 
+        # Mostrar valores redondeados a enteros en la vista previa.
+        # (los cálculos de simulación siguen usando los datos originales sin redondear)
+        def _red(val):
+            if val == "" or val is None:
+                return val
+            try:
+                f = float(val)
+                import math
+                if math.isinf(f) or math.isnan(f):
+                    return ""
+                return int(round(f))
+            except (ValueError, TypeError):
+                return val
+
+        def _red_df(d):
+            out = d.copy()
+            for c in out.columns:
+                out[c] = out[c].map(_red)
+            return out
+
+        df_data_v = _red_df(df_data)
+        df_snr_v = _red_df(df_snr)
+        df_prod_v = _red_df(df_prod)
+
         # Dibujar Tabla 1
-        headers = list(df_data.columns)
-        rows = df_data.to_numpy().tolist()
+        headers = list(df_data_v.columns)
+        rows = df_data_v.to_numpy().tolist()
         if len(rows) > 200: rows = rows[:200]
         table_values = [headers] + rows
         self.table = CTkTable(
@@ -677,8 +942,8 @@ class ExcelViewerApp(ctk.CTk):
         # Dibujar Tabla 2
         self.lbl_table2 = ctk.CTkLabel(self.scroll_frame, text=lbl2_txt, font=("Roboto", 16, "bold"), text_color="#3484F0")
         self.lbl_table2.pack(pady=(20, 5))
-        headers2 = ["Columna 1", "Columna 2"]
-        rows2 = df_snr.to_numpy().tolist()
+        headers2 = ["MCP", "PODIM"]
+        rows2 = df_snr_v.to_numpy().tolist()
         if len(rows2) > 200: rows2 = rows2[:200]
         table_values2 = [headers2] + rows2
         self.table2 = CTkTable(
@@ -696,7 +961,7 @@ class ExcelViewerApp(ctk.CTk):
         self.lbl_table3 = ctk.CTkLabel(self.scroll_frame, text=lbl3_txt, font=("Roboto", 16, "bold"), text_color="#3484F0")
         self.lbl_table3.pack(pady=(20, 5))
         headers3 = ["Año / Mes", "Producción"]
-        rows3 = df_prod.to_numpy().tolist()
+        rows3 = df_prod_v.to_numpy().tolist()
         if len(rows3) > 200: rows3 = rows3[:200]
         table_values3 = [headers3] + rows3
         self.table3 = CTkTable(
@@ -766,12 +1031,27 @@ class ExcelViewerApp(ctk.CTk):
         from pptx.chart.data import CategoryChartData
         from pptx.util import Pt
 
+        # Enviar a la gráfica valores ya redondeados a enteros.
+        # (los cálculos internos más abajo siguen usando los datos originales)
+        def _round(v):
+            if v is None:
+                return None
+            try:
+                return int(round(float(v)))
+            except:
+                return v
+
+        proceso_r = [_round(v) for v in proceso_vals]
+        diario_r = [_round(v) for v in diario_vals]
+        programa_r = [_round(v) for v in programa_vals]
+        columna1_r = [_round(v) for v in columna1_vals]
+
         chart_data = CategoryChartData()
         chart_data.categories = categories
-        chart_data.add_series('PROCESO', tuple(proceso_vals))
-        chart_data.add_series('Diario', tuple(diario_vals))
-        chart_data.add_series('Programa', tuple(programa_vals))
-        chart_data.add_series('Columna1', tuple(columna1_vals))
+        chart_data.add_series('PROCESO', tuple(proceso_r))
+        chart_data.add_series('Diario', tuple(diario_r))
+        chart_data.add_series('Programa', tuple(programa_r))
+        chart_data.add_series('Columna1', tuple(columna1_r))
 
         # Reemplazar los datos de la gráfica
         chart.replace_data(chart_data)
@@ -850,8 +1130,8 @@ class ExcelViewerApp(ctk.CTk):
             from pptx.dml.color import RGBColor
 
             prs = Presentation(file_path)
-            if len(prs.slides) < 5:
-                raise ValueError("La presentación debe tener al menos 5 diapositivas (Crudo, Gasolinas, Diesel y Turbosina).")
+            if len(prs.slides) < 7:
+                raise ValueError("La presentación debe tener al menos 7 diapositivas (Crudo, Gasolinas, Diesel, Turbosina, Asfalto y Combustoleo).")
 
             # --- 1. PROCESAR DIAPOSITIVA DE CRUDO (DIAPOSITIVA 2) ---
             slide = prs.slides[1]
@@ -1350,6 +1630,251 @@ class ExcelViewerApp(ctk.CTk):
 
             # Actualizar la gráfica de Turbosina (Diapositiva 5)
             self.update_slide_chart(chart_turb, categories_turb, proceso_vals_turb, diario_vals_turb, programa_vals_turb, columna1_vals_turb, wine_color, green_color)
+
+
+            # --- 5. PROCESAR DIAPOSITIVA DE ASFALTO (DIAPOSITIVA 6) ---
+            if self.df_data_asfalto is not None and self.df_snr_asfalto is not None and self.df_prod_asfalto is not None:
+                slide_asf = prs.slides[5]
+                chart_asf = None
+                for shape in slide_asf.shapes:
+                    if shape.has_chart:
+                        chart_asf = shape.chart
+                        break
+
+                if not chart_asf:
+                    raise ValueError("No se encontró ninguna gráfica en la sexta diapositiva (Asfalto).")
+
+                snr_col_asf = None
+                for col in self.df_data_asfalto.columns:
+                    if "SNR" in str(col).upper() or "REAL" in str(col).upper():
+                        snr_col_asf = col
+                        break
+                if not snr_col_asf and len(self.df_data_asfalto.columns) > 1:
+                    snr_col_asf = self.df_data_asfalto.columns[1]
+
+                if not snr_col_asf:
+                    raise ValueError("No se encontró la columna de producción diaria ('REAL') en la tabla de Asfalto.")
+
+                categories_asf = []
+                proceso_vals_asf = []
+                diario_vals_asf = []
+                programa_vals_asf = []
+                columna1_vals_asf = []
+
+                # Filtrar df_prod_asfalto para quedarnos con los años y meses activos
+                prod_rows_asf = []
+                for idx, row in self.df_prod_asfalto.iterrows():
+                    cat = str(row.iloc[0]).strip()
+                    val = row.iloc[1]
+
+                    if not cat:
+                        continue
+
+                    if not any(c.isalpha() for c in cat):
+                        prod_rows_asf.append((cat, val))
+                    else:
+                        try:
+                            p_val = float(val)
+                        except:
+                            p_val = 0
+                        if p_val != 0:
+                            prod_rows_asf.append((cat, val))
+
+                # Ajustar al límite de 17 categorías
+                if len(prod_rows_asf) > 17:
+                    prod_rows_asf = prod_rows_asf[-17:]
+
+                # Llenar filas de años y meses (sin celdas vacías al final)
+                for i in range(len(prod_rows_asf)):
+                    cat_val = prod_rows_asf[i][0]
+                    try:
+                        proc_val = float(prod_rows_asf[i][1])
+                    except:
+                        proc_val = None
+
+                    categories_asf.append(cat_val)
+                    proceso_vals_asf.append(proc_val)
+                    diario_vals_asf.append(None)
+                    programa_vals_asf.append(None)
+                    columna1_vals_asf.append(None)
+
+                # Llenar filas diarias
+                num_dias_reales_asf = 31
+                for i in range(30, -1, -1):
+                    val_snr = 0
+                    if i < len(self.df_data_asfalto):
+                        try:
+                            raw_val = self.df_data_asfalto[snr_col_asf].iloc[i]
+                            if raw_val != "":
+                                val_snr = float(raw_val)
+                            else:
+                                val_snr = 0
+                        except:
+                            val_snr = 0
+                    if val_snr != 0:
+                        num_dias_reales_asf = i + 1
+                        break
+
+                for i in range(31):
+                    categories_asf.append(str(i + 1))
+                    proceso_vals_asf.append(None)
+
+                    if i >= num_dias_reales_asf:
+                        diario_vals_asf.append(None)
+                        programa_vals_asf.append(None)
+                        columna1_vals_asf.append(None)
+                        continue
+
+                    d_val = None
+                    if i < len(self.df_data_asfalto):
+                        try:
+                            d_val = float(self.df_data_asfalto[snr_col_asf].iloc[i])
+                        except:
+                            d_val = None
+                    diario_vals_asf.append(d_val)
+
+                    p_val = None
+                    if i < len(self.df_snr_asfalto):
+                        try:
+                            p_val = float(self.df_snr_asfalto.iloc[i, 0])
+                        except:
+                            p_val = None
+                    programa_vals_asf.append(p_val)
+
+                    c_val = None
+                    if i < len(self.df_snr_asfalto):
+                        try:
+                            c_val = float(self.df_snr_asfalto.iloc[i, 1])
+                        except:
+                            c_val = None
+                    columna1_vals_asf.append(c_val)
+
+                # Actualizar la gráfica de Asfalto (Diapositiva 6)
+                self.update_slide_chart(chart_asf, categories_asf, proceso_vals_asf, diario_vals_asf, programa_vals_asf, columna1_vals_asf, wine_color, green_color)
+
+
+            # --- 6. PROCESAR DIAPOSITIVA DE COMBUSTOLEO (DIAPOSITIVA 7) ---
+            if self.df_data_combustoleo is not None and self.df_snr_combustoleo is not None and self.df_prod_combustoleo is not None:
+                slide_comb = prs.slides[6]
+                chart_comb = None
+                for shape in slide_comb.shapes:
+                    if shape.has_chart:
+                        chart_comb = shape.chart
+                        break
+
+                if not chart_comb:
+                    raise ValueError("No se encontró ninguna gráfica en la séptima diapositiva (Combustoleo).")
+
+                # La columna de producción diaria real es "Combustoleo" (no la de SNR)
+                diario_col_comb = None
+                for col in self.df_data_combustoleo.columns:
+                    if "SNR" not in str(col).upper() and "REAL" not in str(col).upper():
+                        diario_col_comb = col
+                        break
+                if not diario_col_comb and len(self.df_data_combustoleo.columns) > 1:
+                    diario_col_comb = self.df_data_combustoleo.columns[1]
+                elif not diario_col_comb:
+                    diario_col_comb = self.df_data_combustoleo.columns[0]
+
+                if not diario_col_comb:
+                    raise ValueError("No se encontró la columna de producción diaria ('Combustoleo') en la tabla de Combustoleo.")
+
+                categories_comb = []
+                proceso_vals_comb = []
+                diario_vals_comb = []
+                programa_vals_comb = []
+                columna1_vals_comb = []
+
+                # Filtrar df_prod_combustoleo para quedarnos con los años y meses activos
+                prod_rows_comb = []
+                for idx, row in self.df_prod_combustoleo.iterrows():
+                    cat = str(row.iloc[0]).strip()
+                    val = row.iloc[1]
+
+                    if not cat:
+                        continue
+
+                    if not any(c.isalpha() for c in cat):
+                        prod_rows_comb.append((cat, val))
+                    else:
+                        try:
+                            p_val = float(val)
+                        except:
+                            p_val = 0
+                        if p_val != 0:
+                            prod_rows_comb.append((cat, val))
+
+                # Ajustar al límite de 17 categorías
+                if len(prod_rows_comb) > 17:
+                    prod_rows_comb = prod_rows_comb[-17:]
+
+                # Llenar filas de años y meses (sin celdas vacías al final)
+                for i in range(len(prod_rows_comb)):
+                    cat_val = prod_rows_comb[i][0]
+                    try:
+                        proc_val = float(prod_rows_comb[i][1])
+                    except:
+                        proc_val = None
+
+                    categories_comb.append(cat_val)
+                    proceso_vals_comb.append(proc_val)
+                    diario_vals_comb.append(None)
+                    programa_vals_comb.append(None)
+                    columna1_vals_comb.append(None)
+
+                # Llenar filas diarias
+                num_dias_reales_comb = 31
+                for i in range(30, -1, -1):
+                    val_snr = 0
+                    if i < len(self.df_data_combustoleo):
+                        try:
+                            raw_val = self.df_data_combustoleo[diario_col_comb].iloc[i]
+                            if raw_val != "":
+                                val_snr = float(raw_val)
+                            else:
+                                val_snr = 0
+                        except:
+                            val_snr = 0
+                    if val_snr != 0:
+                        num_dias_reales_comb = i + 1
+                        break
+
+                for i in range(31):
+                    categories_comb.append(str(i + 1))
+                    proceso_vals_comb.append(None)
+
+                    if i >= num_dias_reales_comb:
+                        diario_vals_comb.append(None)
+                        programa_vals_comb.append(None)
+                        columna1_vals_comb.append(None)
+                        continue
+
+                    d_val = None
+                    if i < len(self.df_data_combustoleo):
+                        try:
+                            d_val = float(self.df_data_combustoleo[diario_col_comb].iloc[i])
+                        except:
+                            d_val = None
+                    diario_vals_comb.append(d_val)
+
+                    p_val = None
+                    if i < len(self.df_snr_combustoleo):
+                        try:
+                            p_val = float(self.df_snr_combustoleo.iloc[i, 0])
+                        except:
+                            p_val = None
+                    programa_vals_comb.append(p_val)
+
+                    c_val = None
+                    if i < len(self.df_snr_combustoleo):
+                        try:
+                            c_val = float(self.df_snr_combustoleo.iloc[i, 1])
+                        except:
+                            c_val = None
+                    columna1_vals_comb.append(c_val)
+
+                # Actualizar la gráfica de Combustoleo (Diapositiva 7)
+                self.update_slide_chart(chart_comb, categories_comb, proceso_vals_comb, diario_vals_comb, programa_vals_comb, columna1_vals_comb, wine_color, green_color)
 
 
             prs.save(save_path)
