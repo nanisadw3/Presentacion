@@ -61,13 +61,14 @@ class ExcelViewerApp(ctk.CTk):
         self.lbl_proceso.pack(pady=15, padx=(20, 5), side="left")
         
         self.cb_proceso = ctk.CTkComboBox(self.top_frame, 
-                                          values=["Crudo", "Gasolinas", "Diesel", "Turbosina", "Asfalto", "Combustoleo"],
-                                          font=("Roboto", 14),
-                                          command=self.on_proceso_changed,
-                                          state="readonly",
-                                          width=150)
+                                            values=["Gasolinas", "Diesel", "Turbosina", "Asfalto", "Combustoleo", "Cadereyta -Crudo", "Cadereyta -Gasolinas", "Cadereyta -Diesel"],
+                                            font=("Roboto", 14),
+                                            command=self.on_proceso_changed,
+                                            state="readonly",
+                                            width=150)
         self.cb_proceso.pack(pady=15, padx=5, side="left")
-        self.cb_proceso.set("Crudo")
+        self.cb_proceso.set("Gasolinas")
+
 
         # Scrollable Frame para contener la tabla
         self.scroll_frame = ctk.CTkScrollableFrame(self.main_frame, corner_radius=10)
@@ -90,9 +91,22 @@ class ExcelViewerApp(ctk.CTk):
         self.df_snr_diesel = None
         self.df_prod_diesel = None
         self.df_sim_diesel = None
+ 
+        # Datos de Cadereyta -Gasolinas
+        self.df_data_cad_gas = None
+        self.df_snr_cad_gas = None
+        self.df_prod_cad_gas = None
+        self.df_sim_cad_gas = None
 
+        # Datos de Cadereyta -Diesel
+        self.df_data_cad_die = None
+        self.df_snr_cad_die = None
+        self.df_prod_cad_die = None
+        self.df_sim_cad_die = None
+ 
         # Datos de Turbosina
         self.df_data_turbosina = None
+
         self.df_snr_turbosina = None
         self.df_prod_turbosina = None
         self.df_sim_turbosina = None
@@ -235,6 +249,18 @@ class ExcelViewerApp(ctk.CTk):
             import warnings
             warnings.filterwarnings('ignore', category=UserWarning, module='openpyxl')
 
+            # Función para eliminar filas donde la producción (última columna) sea 0 o vacía
+            def filter_zero_rows(df):
+                if df.empty: return df
+                def is_not_zero(row):
+                    try:
+                        val = row.iloc[-1]
+                        if val == "" or val is None: return False
+                        return float(val) != 0
+                    except:
+                        return True
+                return df[df.apply(is_not_zero, axis=1)]
+
             # Función segura para quitar decimales sin causar errores de tipo
             def remove_decimals(df_to_clean, skip_first=False, skip_last=False):
                 def safe_round(val):
@@ -324,30 +350,32 @@ class ExcelViewerApp(ctk.CTk):
                             headers.append(str(val))
                 return headers
 
-            # --- 1. PROCESAR CRUDO ---
-            self.after(0, self.update_progress, 0.2, "Procesando Crudo...")
-            # Leer fila 1 (index 0) para encabezados, Cols A:H (0:8)
-            clean_headers = get_clean_headers(0, 0, 8)
-            # Leer Tabla 1 (Rows 21-51 -> index 20:51), Cols A:H (0:8)
-            df = df_sheet.iloc[20:51, 0:8].copy()
-            df.columns = clean_headers
-            df = df.dropna(how='all').dropna(axis=1, how='all')
+            # --- 1. PROCESAR CRUDO (Cadereyta) ---
+            self.after(0, self.update_progress, 0.2, "Procesando Crudo Cadereyta...")
+            # Encabezados fijos para mayor claridad
+            headers_cad = ["Cadereyta - Día", "Cadereyta - Producción"]
+            
+            # Leer Tabla 1 (Rows 21-51 -> index 20:51), Cols A y C
+            df = df_sheet.iloc[20:51, [0, 2]].copy()
+            df.columns = headers_cad
+            df = df.dropna(how='all')
             df = remove_decimals(df)
+            df = filter_zero_rows(df)
             df_data = df.copy()
-
-            # Leer Tabla 2 (Programa, Rows 74-104 -> index 73:104), Cols AE:AF (30:32)
-            df_snr = df_sheet.iloc[73:104, 30:32].copy()
+ 
+            # Leer Tabla 2 (Programa, Rows 74-104 -> index 73:104), Col BI repetida (60, 60)
+            df_snr = df_sheet.iloc[73:104, [60, 60]].copy()
             df_snr = df_snr.dropna(how='all').dropna(axis=1, how='all')
             df_snr = remove_decimals(df_snr, skip_first=True)
             df_snr_copy = df_snr.copy()
-
-            # --- Recortar filas de fin de mes si el mes tiene menos de 31 días ---
+ 
+            # --- Recortar filas de fin de mes ---
             snr_col = None
             for col in df_data.columns:
                 if "SNR" in str(col).upper():
                     snr_col = col
                     break
-
+ 
             num_dias_reales = 31
             if snr_col:
                 for i in range(30, -1, -1):
@@ -362,19 +390,19 @@ class ExcelViewerApp(ctk.CTk):
                     if val_snr != 0:
                         num_dias_reales = i + 1
                         break
-
+ 
             df_data = df_data.iloc[:num_dias_reales]
             df_snr_copy = df_snr_copy.iloc[:num_dias_reales]
-
-            # Leer Tabla 3 (Años y Producción, Rows 21-120 -> index 20:120), Cols AE:AF (30:32)
-            df_prod_raw = df_sheet.iloc[20:120, 30:32].copy()
+ 
+            # Leer Tabla 3 (Fecha y Producción, Rows 21-40 -> index 20:40), Cols AW:AX (48:50)
+            df_prod_raw = df_sheet.iloc[20:40, 48:50].copy()
             df_prod_raw = df_prod_raw.dropna(how='all')
             
             dic_idx = -1
             for idx, row in df_prod_raw.iterrows():
                 val = str(row.iloc[0]).strip().lower()
                 if "dic" in val or "diciembre" in val:
-                    dic_idx = idx - 20 # Ajustar al índice relativo de df_prod_raw
+                    dic_idx = idx - 20 
                     break
             
             if dic_idx != -1:
@@ -386,6 +414,87 @@ class ExcelViewerApp(ctk.CTk):
             df_prod = remove_decimals(df_prod, skip_last=True)
             df_prod_copy = df_prod.copy()
 
+            # --- 1.1 PROCESAR GASOLINAS (Cadereyta) ---
+            self.after(0, self.update_progress, 0.25, "Procesando Gasolinas Cadereyta...")
+            headers_cad_gas = ["Cadereyta Gas - Día", "Cadereyta Gas - Producción"]
+            # Leer Tabla 1 (Rows 22-51 -> index 21:51), Cols L y M (11, 12)
+            df_gas_cad = df_sheet.iloc[21:51, [11, 12]].copy()
+            df_gas_cad.columns = headers_cad_gas
+            df_gas_cad = df_gas_cad.dropna(how='all')
+            df_gas_cad = remove_decimals(df_gas_cad)
+            df_gas_cad = filter_zero_rows(df_gas_cad)
+            df_data_cad_gas = df_gas_cad.copy()
+
+            # Leer Tabla 2 (Programa, Rows 74-104 -> index 73:104), Col BS repetida (70, 70)
+            df_snr_cad_gas = df_sheet.iloc[73:104, [70, 70]].copy()
+            df_snr_cad_gas = df_snr_cad_gas.dropna(how='all').dropna(axis=1, how='all')
+            df_snr_cad_gas = remove_decimals(df_snr_cad_gas, skip_first=True)
+            df_snr_cad_gas_copy = df_snr_cad_gas.copy()
+            # Aplicar recorte de días reales basado en Crudo
+            df_data_cad_gas = df_data_cad_gas.iloc[:num_dias_reales]
+            df_snr_cad_gas_copy = df_snr_cad_gas_copy.iloc[:num_dias_reales]
+
+            # Leer Tabla 3 (Fecha y Producción Cadereyta Gas, Rows 21-40 -> index 20:40), Cols BO:BP (66:68)
+            df_prod_cad_gas_raw = df_sheet.iloc[20:40, 66:68].copy()
+            df_prod_cad_gas_raw = df_prod_cad_gas_raw.dropna(how='all')
+            
+            dic_idx_cad_gas = -1
+            for idx, row in df_prod_cad_gas_raw.iterrows():
+                val = str(row.iloc[0]).strip().lower()
+                if "dic" in val or "diciembre" in val:
+                    dic_idx_cad_gas = idx - 20 
+                    break
+            
+            if dic_idx_cad_gas != -1:
+                df_prod_cad_gas = df_prod_cad_gas_raw.iloc[:dic_idx_cad_gas + 1]
+            else:
+                df_prod_cad_gas = df_prod_cad_gas_raw.iloc[:20]
+                
+            df_prod_cad_gas = df_prod_cad_gas.dropna(axis=1, how='all')
+            df_prod_cad_gas = remove_decimals(df_prod_cad_gas, skip_last=True)
+            df_prod_cad_gas_copy = df_prod_cad_gas.copy()
+
+            # --- 1.2 PROCESAR DIESEL (Cadereyta) ---
+            self.after(0, self.update_progress, 0.3, "Procesando Diesel Cadereyta...")
+            headers_cad_die = ["Cadereyta Die - Día", "Cadereyta Die - Producción"]
+            # Leer Tabla 1 (Rows 74-104 -> index 73:104), Cols A y B (0, 1)
+            df_die_cad = df_sheet.iloc[73:104, [0, 1]].copy()
+            df_die_cad.columns = headers_cad_die
+            df_die_cad = df_die_cad.dropna(how='all')
+            df_die_cad = remove_decimals(df_die_cad)
+            df_die_cad = filter_zero_rows(df_die_cad)
+            df_data_cad_die = df_die_cad.copy()
+
+            # Leer Tabla 2 (Programa, Rows 74-104 -> index 73:104), Col CC repetida (80, 80)
+            df_snr_cad_die = df_sheet.iloc[73:104, [80, 80]].copy()
+            df_snr_cad_die = df_snr_cad_die.dropna(how='all').dropna(axis=1, how='all')
+            df_snr_cad_die = remove_decimals(df_snr_cad_die, skip_first=True)
+            df_snr_cad_die_copy = df_snr_cad_die.copy()
+            # Aplicar recorte de días reales basado en Crudo
+            df_data_cad_die = df_data_cad_die.iloc[:num_dias_reales]
+            df_snr_cad_die_copy = df_snr_cad_die_copy.iloc[:num_dias_reales]
+
+            # Leer Tabla 3 (Fecha y Producción Cadereyta Die, Rows 21-40 -> index 20:40), Cols CG:CH (84:86)
+            df_prod_cad_die_raw = df_sheet.iloc[20:40, 84:86].copy()
+            df_prod_cad_die_raw = df_prod_cad_die_raw.dropna(how='all')
+            
+            dic_idx_cad_die = -1
+            for idx, row in df_prod_cad_die_raw.iterrows():
+                val = str(row.iloc[0]).strip().lower()
+                if "dic" in val or "diciembre" in val:
+                    dic_idx_cad_die = idx - 20 
+                    break
+            
+            if dic_idx_cad_die != -1:
+                df_prod_cad_die = df_prod_cad_die_raw.iloc[:dic_idx_cad_die + 1]
+            else:
+                df_prod_cad_die = df_prod_cad_die_raw.iloc[:20]
+                
+            df_prod_cad_die = df_prod_cad_die.dropna(axis=1, how='all')
+            df_prod_cad_die = remove_decimals(df_prod_cad_die, skip_last=True)
+            df_prod_cad_die_copy = df_prod_cad_die.copy()
+
+
 
             # --- 2. PROCESAR GASOLINAS ---
             self.after(0, self.update_progress, 0.35, "Procesando Gasolinas...")
@@ -396,7 +505,7 @@ class ExcelViewerApp(ctk.CTk):
             df_gas.columns = clean_headers_gas
             df_gas = df_gas.dropna(how='all').dropna(axis=1, how='all')
             df_gas = remove_decimals(df_gas)
-            df_data_gasolinas = df_gas.copy()
+            df_data_gasolinas = filter_zero_rows(df_gas).copy()
 
             # Leer Tabla 2 (Programa, Rows 74-104 -> index 73:104), Cols AK:AL (36:38)
             df_snr_gas = df_sheet.iloc[73:104, 36:38].copy()
@@ -438,7 +547,7 @@ class ExcelViewerApp(ctk.CTk):
             df_die.columns = clean_headers_die
             df_die = df_die.dropna(how='all').dropna(axis=1, how='all')
             df_die = remove_decimals(df_die)
-            df_data_diesel = df_die.copy()
+            df_data_diesel = filter_zero_rows(df_die).copy()
 
             # Leer Tabla 2 (Programa, Rows 74-104 -> index 73:104), Cols AQ:AR (42:44)
             df_snr_die = df_sheet.iloc[73:104, 42:44].copy()
@@ -480,7 +589,7 @@ class ExcelViewerApp(ctk.CTk):
             df_turb.columns = clean_headers_turb
             df_turb = df_turb.dropna(how='all').dropna(axis=1, how='all')
             df_turb = remove_decimals(df_turb)
-            df_data_turbosina = df_turb.copy()
+            df_data_turbosina = filter_zero_rows(df_turb).copy()
 
             # Leer Tabla 2 (Programa, Rows 74-104 -> index 73:104), Cols AW:AX (48:50)
             df_snr_turb = df_sheet.iloc[73:104, 48:50].copy()
@@ -520,7 +629,7 @@ class ExcelViewerApp(ctk.CTk):
             df_asf.columns = ["Asfalto", "real"]
             df_asf = df_asf.dropna(how='all').dropna(axis=1, how='all')
             df_asf = remove_decimals(df_asf)
-            df_data_asfalto = df_asf.copy()
+            df_data_asfalto = filter_zero_rows(df_asf).copy()
 
             # Leer Tabla 2 (Programa, Rows 122-152 -> index 121:152), Cols AK:AL (36:38)
             df_snr_asf = df_sheet.iloc[121:152, 36:38].copy()
@@ -560,7 +669,7 @@ class ExcelViewerApp(ctk.CTk):
             df_comb.columns = ["SNR", "Combustoleo"]
             df_comb = df_comb.dropna(how='all').dropna(axis=1, how='all')
             df_comb = remove_decimals(df_comb)
-            df_data_combustoleo = df_comb.copy()
+            df_data_combustoleo = filter_zero_rows(df_comb).copy()
 
             # Leer Tabla 2 (Programa, Rows 74-104 -> index 73:104), Cols BC:BD (54:56)
             df_snr_comb = df_sheet.iloc[73:104, 54:56].copy()
@@ -771,27 +880,91 @@ class ExcelViewerApp(ctk.CTk):
             promedio_comb = suma_total_comb / days_passed if days_passed > 0 else 0
             sim_data_comb.append(["TOTALES", "---", f"Días pasados: {days_passed}", f"Suma: {int(suma_total_comb)} | Prom: {promedio_comb:.2f}"])
             df_sim_combustoleo = pd.DataFrame(sim_data_comb, columns=["Mes", "Producción", "Días", "Total (Prod x Días)"])
-
+ 
+            # 7. Simulación Cadereyta Gasolinas
+            prod_dict_cad_gas = {m: 0.0 for m in meses_nombres}
+            if df_prod_cad_gas is not None:
+                for idx, row_data in df_prod_cad_gas.iterrows():
+                    val_anio = str(row_data.iloc[0]).strip().lower()
+                    val_prod = row_data.iloc[1]
+                    try:
+                        p = float(val_prod)
+                    except:
+                        p = 0.0
+                    
+                    for i, (m_largo, m_corto) in enumerate(zip(meses_nombres, meses_cortos)):
+                        if m_largo.lower() in val_anio or m_corto.lower() in val_anio:
+                            prod_dict_cad_gas[meses_nombres[i]] += p
+                            break
+ 
+            sim_data_cad_gas = []
+            suma_total_cad_gas = 0.0
+            for i, mes in enumerate(meses_nombres):
+                dias = dias_por_mes[i]
+                prod = prod_dict_cad_gas[mes]
+                total = prod * dias
+                suma_total_cad_gas += total
+                sim_data_cad_gas.append([mes, int(prod), dias, int(total)])
+                
+            promedio_cad_gas = suma_total_cad_gas / days_passed if days_passed > 0 else 0
+            sim_data_cad_gas.append(["TOTALES", "---", f"Días pasados: {days_passed}", f"Suma: {int(suma_total_cad_gas)} | Prom: {promedio_cad_gas:.2f}"])
+            df_sim_cad_gas = pd.DataFrame(sim_data_cad_gas, columns=["Mes", "Producción", "Días", "Total (Prod x Días)"])
+ 
+            # 8. Simulación Cadereyta Diesel
+            prod_dict_cad_die = {m: 0.0 for m in meses_nombres}
+            if df_prod_cad_die is not None:
+                for idx, row_data in df_prod_cad_die.iterrows():
+                    val_anio = str(row_data.iloc[0]).strip().lower()
+                    val_prod = row_data.iloc[1]
+                    try:
+                        p = float(val_prod)
+                    except:
+                        p = 0.0
+                    
+                    for i, (m_largo, m_corto) in enumerate(zip(meses_nombres, meses_cortos)):
+                        if m_largo.lower() in val_anio or m_corto.lower() in val_anio:
+                            prod_dict_cad_die[meses_nombres[i]] += p
+                            break
+ 
+            sim_data_cad_die = []
+            suma_total_cad_die = 0.0
+            for i, mes in enumerate(meses_nombres):
+                dias = dias_por_mes[i]
+                prod = prod_dict_cad_die[mes]
+                total = prod * dias
+                suma_total_cad_die += total
+                sim_data_cad_die.append([mes, int(prod), dias, int(total)])
+                
+            promedio_cad_die = suma_total_cad_die / days_passed if days_passed > 0 else 0
+            sim_data_cad_die.append(["TOTALES", "---", f"Días pasados: {days_passed}", f"Suma: {int(suma_total_cad_die)} | Prom: {promedio_cad_die:.2f}"])
+            df_sim_cad_die = pd.DataFrame(sim_data_cad_die, columns=["Mes", "Producción", "Días", "Total (Prod x Días)"])
+ 
             self.after(0, self.update_progress, 0.97, "Finalizando...")
+
             # Pasar datos a la interfaz (main thread)
             self.after(0, self.on_load_success, file_path, df_data, df_snr_copy, df_prod_copy, df_sim,
                        df_data_gasolinas, df_snr_gas_copy, df_prod_gasolinas_copy, df_sim_gasolinas,
                        df_data_diesel, df_snr_die_copy, df_prod_diesel_copy, df_sim_diesel,
                        df_data_turbosina, df_snr_turb_copy, df_prod_turbosina_copy, df_sim_turbosina,
                        df_data_asfalto, df_snr_asf_copy, df_prod_asfalto_copy, df_sim_asfalto,
-                       df_data_combustoleo, df_snr_comb_copy, df_prod_combustoleo_copy, df_sim_combustoleo)
+                       df_data_combustoleo, df_snr_comb_copy, df_prod_combustoleo_copy, df_sim_combustoleo,
+                       df_data_cad_gas, df_snr_cad_gas_copy, df_prod_cad_gas_copy, df_sim_cad_gas,
+                       df_data_cad_die, df_snr_cad_die_copy, df_prod_cad_die_copy, df_sim_cad_die)
 
         except Exception as e:
             err_details = traceback.format_exc()
             self.after(0, self.on_load_error, str(e), err_details)
 
     def on_load_success(self, file_path, df_data, df_snr, df_prod, df_sim,
-                        df_data_gasolinas=None, df_snr_gasolinas=None, df_prod_gasolinas=None, df_sim_gasolinas=None,
-                        df_data_diesel=None, df_snr_diesel=None, df_prod_diesel=None, df_sim_diesel=None,
-                        df_data_turbosina=None, df_snr_turbosina=None, df_prod_turbosina=None, df_sim_turbosina=None,
-                        df_data_asfalto=None, df_snr_asfalto=None, df_prod_asfalto=None, df_sim_asfalto=None,
-                        df_data_combustoleo=None, df_snr_combustoleo=None, df_prod_combustoleo=None, df_sim_combustoleo=None):
+                            df_data_gasolinas=None, df_snr_gasolinas=None, df_prod_gasolinas=None, df_sim_gasolinas=None,
+                            df_data_diesel=None, df_snr_diesel=None, df_prod_diesel=None, df_sim_diesel=None,
+                            df_data_turbosina=None, df_snr_turbosina=None, df_prod_turbosina=None, df_sim_turbosina=None,
+                            df_data_asfalto=None, df_snr_asfalto=None, df_prod_asfalto=None, df_sim_asfalto=None,
+                            df_data_combustoleo=None, df_snr_combustoleo=None, df_prod_combustoleo=None, df_sim_combustoleo=None,
+                            df_data_cad_gas=None, df_snr_cad_gas=None, df_prod_cad_gas=None, df_sim_cad_gas=None,
+                            df_data_cad_die=None, df_snr_cad_die=None, df_prod_cad_die=None, df_sim_cad_die=None):
         self.df_data = df_data
+
         self.df_snr = df_snr
         self.df_prod = df_prod
         self.df_sim = df_sim
@@ -805,8 +978,19 @@ class ExcelViewerApp(ctk.CTk):
         self.df_snr_diesel = df_snr_diesel
         self.df_prod_diesel = df_prod_diesel
         self.df_sim_diesel = df_sim_diesel
+ 
+        self.df_data_cad_gas = df_data_cad_gas
+        self.df_snr_cad_gas = df_snr_cad_gas
+        self.df_prod_cad_gas = df_prod_cad_gas
+        self.df_sim_cad_gas = df_sim_cad_gas
 
+        self.df_data_cad_die = df_data_cad_die
+        self.df_snr_cad_die = df_snr_cad_die
+        self.df_prod_cad_die = df_prod_cad_die
+        self.df_sim_cad_die = df_sim_cad_die
+ 
         self.df_data_turbosina = df_data_turbosina
+
         self.df_snr_turbosina = df_snr_turbosina
         self.df_prod_turbosina = df_prod_turbosina
         self.df_sim_turbosina = df_sim_turbosina
@@ -837,6 +1021,8 @@ class ExcelViewerApp(ctk.CTk):
         if self.table is not None:
             self.table.destroy()
             self.table = None
+        if hasattr(self, 'lbl_table1') and self.lbl_table1 is not None:
+            self.lbl_table1.destroy()
         if hasattr(self, 'table2') and self.table2 is not None:
             self.table2.destroy()
             self.table2 = None
@@ -853,13 +1039,27 @@ class ExcelViewerApp(ctk.CTk):
         if hasattr(self, 'lbl_table4') and self.lbl_table4 is not None:
             self.lbl_table4.destroy()
 
-        if selection == "Crudo":
+        if selection == "Cadereyta -Crudo":
             df_data = self.df_data
             df_snr = self.df_snr
             df_prod = self.df_prod
             df_sim = self.df_sim
-            lbl2_txt = "Programa del SNR (AE-AF, Filas 74-104)"
-            lbl3_txt = "Fecha y Producción (AE-AF, Filas 21-40)"
+            lbl2_txt = "Programa del SNR (Col BI x2, Filas 74-104)"
+            lbl3_txt = "Fecha y Producción (AW-AX, Filas 21-40)"
+        elif selection == "Cadereyta -Gasolinas":
+            df_data = self.df_data_cad_gas
+            df_snr = self.df_snr_cad_gas
+            df_prod = self.df_prod_cad_gas
+            df_sim = self.df_sim_cad_gas
+            lbl2_txt = "Programa de Gasolinas (Col BS x2, Filas 74-104)"
+            lbl3_txt = "Fecha y Producción de Gasolinas (BO-BP, Filas 21-40)"
+        elif selection == "Cadereyta -Diesel":
+            df_data = self.df_data_cad_die
+            df_snr = self.df_snr_cad_die
+            df_prod = self.df_prod_cad_die
+            df_sim = self.df_sim_cad_die
+            lbl2_txt = "Programa de Diesel (Col CC x2, Filas 74-104)"
+            lbl3_txt = "Fecha y Producción de Diesel (CG-CH, Filas 21-40)"
         elif selection == "Gasolinas":
             df_data = self.df_data_gasolinas
             df_snr = self.df_snr_gasolinas
@@ -896,7 +1096,7 @@ class ExcelViewerApp(ctk.CTk):
             lbl2_txt = "Programa de Combustoleo (BC-BD, Filas 74-104)"
             lbl3_txt = "Fecha y Producción de Combustoleo (AQ-AR, Filas 21-40)"
 
-        if df_data is None or df_snr is None or df_prod is None or df_sim is None:
+        if df_data is None or df_snr is None or df_prod is None:
             return
 
         # Mostrar valores redondeados a enteros en la vista previa.
@@ -924,6 +1124,8 @@ class ExcelViewerApp(ctk.CTk):
         df_prod_v = _red_df(df_prod)
 
         # Dibujar Tabla 1
+        self.lbl_table1 = ctk.CTkLabel(self.scroll_frame, text=selection, font=("Roboto", 16, "bold"), text_color="#3484F0")
+        self.lbl_table1.pack(pady=(20, 5))
         headers = list(df_data_v.columns)
         rows = df_data_v.to_numpy().tolist()
         if len(rows) > 200: rows = rows[:200]
@@ -940,7 +1142,7 @@ class ExcelViewerApp(ctk.CTk):
         self.table.pack(expand=True, fill="both", padx=10, pady=10)
 
         # Dibujar Tabla 2
-        self.lbl_table2 = ctk.CTkLabel(self.scroll_frame, text=lbl2_txt, font=("Roboto", 16, "bold"), text_color="#3484F0")
+        self.lbl_table2 = ctk.CTkLabel(self.scroll_frame, text=f"Programa de {selection}", font=("Roboto", 16, "bold"), text_color="#3484F0")
         self.lbl_table2.pack(pady=(20, 5))
         headers2 = ["MCP", "PODIM"]
         rows2 = df_snr_v.to_numpy().tolist()
@@ -976,21 +1178,22 @@ class ExcelViewerApp(ctk.CTk):
         self.table3.pack(expand=True, fill="both", padx=10, pady=10)
 
         # Dibujar Tabla 4
-        self.lbl_table4 = ctk.CTkLabel(self.scroll_frame, text="Simulación de Producción Anual", font=("Roboto", 16, "bold"), text_color="#3484F0")
-        self.lbl_table4.pack(pady=(30, 5))
-        headers4 = list(df_sim.columns)
-        rows4 = df_sim.to_numpy().tolist()
-        table_values4 = [headers4] + rows4
-        self.table4 = CTkTable(
-            master=self.scroll_frame, 
-            row=len(table_values4), 
-            column=len(table_values4[0]), 
-            values=table_values4,
-            header_color="#1f538d",
-            colors=["#2a2a2a", "#242424"],
-            hover_color="#3a3a3a",
-        )
-        self.table4.pack(expand=True, fill="both", padx=10, pady=20)
+        if df_sim is not None:
+            self.lbl_table4 = ctk.CTkLabel(self.scroll_frame, text="Simulación de Producción Anual", font=("Roboto", 16, "bold"), text_color="#3484F0")
+            self.lbl_table4.pack(pady=(30, 5))
+            headers4 = list(df_sim.columns)
+            rows4 = df_sim.to_numpy().tolist()
+            table_values4 = [headers4] + rows4
+            self.table4 = CTkTable(
+                master=self.scroll_frame, 
+                row=len(table_values4), 
+                column=len(table_values4[0]), 
+                values=table_values4,
+                header_color="#1f538d",
+                colors=["#2a2a2a", "#242424"],
+                hover_color="#3a3a3a",
+            )
+            self.table4.pack(expand=True, fill="both", padx=10, pady=20)
 
     def on_load_error(self, err_msg, error_details):
         self.set_loading_state(False)
@@ -1071,36 +1274,33 @@ class ExcelViewerApp(ctk.CTk):
                         if val is not None and val != 0:
                             last_month_idx = i
 
-            # Eliminar cualquier formato específico (<c:dPt>) para los índices de años
-            # Esto obliga a PowerPoint a usar el estilo/color por defecto de la serie (gris de la plantilla)
+            # Eliminar TODOS los formatos específicos de puntos (<c:dPt>)
+            # Esto obliga a que todas las barras hereden el color gris por defecto de la serie
             try:
                 ser_el = series._element
                 ns = {'c': 'http://schemas.openxmlformats.org/drawingml/2006/chart'}
-                dpts = ser_el.findall('c:dPt', ns)
                 
-                year_indices = set()
-                for i, cat in enumerate(categories):
-                    if not any(c.isalpha() for c in str(cat)):
-                        year_indices.add(i)
-                        
-                for dpt in dpts:
-                    idx_el = dpt.find('c:idx', ns)
-                    if idx_el is not None:
-                        idx = int(idx_el.attrib['val'])
-                        if idx in year_indices:
-                            ser_el.remove(dpt)
+                for _ in range(2):
+                    dpts = ser_el.findall('c:dPt', ns)
+                    for dpt in dpts:
+                        ser_el.remove(dpt)
             except Exception:
                 pass
 
-            # Pintar únicamente las barras correspondientes a los meses
+            # Definir color gris para los años
+            from pptx.dml.color import RGBColor
+            gray_color = RGBColor(192, 192, 192)
+
+            # Pintar todas las barras
             for p_idx in range(min(17, len(series.points))):
                 try:
                     cat = categories[p_idx]
-                    # Si es un mes, aplicamos el color correspondiente (vino o verde)
+                    point = series.points[p_idx]
+                    fill = point.format.fill
+                    fill.solid()
+                    
+                    # Si es un mes, aplicamos vino o verde
                     if any(c.isalpha() for c in cat):
-                        point = series.points[p_idx]
-                        fill = point.format.fill
-                        fill.solid()
                         if p_idx == last_month_idx:
                             fill.fore_color.rgb = wine_color
                             try:
@@ -1111,7 +1311,7 @@ class ExcelViewerApp(ctk.CTk):
                         else:
                             fill.fore_color.rgb = green_color
                             
-                        # Limpiar modificadores de color (lumMod/lumOff) heredados del punto original en la plantilla
+                        # Limpiar modificadores de color
                         try:
                             ns_a = {'a': 'http://schemas.openxmlformats.org/drawingml/2006/main'}
                             srgb_clr = point._element.find('.//a:srgbClr', ns_a)
@@ -1121,6 +1321,10 @@ class ExcelViewerApp(ctk.CTk):
                                         srgb_clr.remove(child)
                         except Exception:
                             pass
+                    else:
+                        # Si es un año, aplicamos el gris explícitamente
+                        fill.fore_color.rgb = gray_color
+                        
                 except Exception:
                     pass
 
@@ -1130,28 +1334,33 @@ class ExcelViewerApp(ctk.CTk):
             from pptx.dml.color import RGBColor
 
             prs = Presentation(file_path)
-            if len(prs.slides) < 7:
-                raise ValueError("La presentación debe tener al menos 7 diapositivas (Crudo, Gasolinas, Diesel, Turbosina, Asfalto y Combustoleo).")
-
-            # --- 1. PROCESAR DIAPOSITIVA DE CRUDO (DIAPOSITIVA 2) ---
-            slide = prs.slides[1]
+            if len(prs.slides) < 12:
+                raise ValueError("La presentación debe tener al menos 12 diapositivas (incluyendo las de Cadereyta -Crudo, Gasolinas y Diesel).")
+ 
+            # --- 1. PROCESAR DIAPOSITIVA DE CRUDO CADEREYTA (DIAPOSITIVA 10) ---
+            slide = prs.slides[9]
             chart = None
+
             for shape in slide.shapes:
                 if shape.has_chart:
                     chart = shape.chart
                     break
 
             if not chart:
-                raise ValueError("No se encontró ninguna gráfica en la segunda diapositiva (Crudo).")
+                raise ValueError("No se encontró ninguna gráfica en la décima diapositiva (Cadereyta -Crudo).")
 
             snr_col = None
             for col in self.df_data.columns:
                 if "SNR" in str(col).upper():
                     snr_col = col
                     break
-
+ 
             if not snr_col:
-                raise ValueError("No se encontró la columna 'SNR' en la primera tabla.")
+                if len(self.df_data.columns) >= 2:
+                    snr_col = self.df_data.columns[1] # Usar la segunda columna por defecto
+                else:
+                    raise ValueError("No se encontró la columna 'SNR' y la tabla no tiene suficientes columnas.")
+
 
             categories = []
             proceso_vals = []
@@ -1875,9 +2084,171 @@ class ExcelViewerApp(ctk.CTk):
 
                 # Actualizar la gráfica de Combustoleo (Diapositiva 7)
                 self.update_slide_chart(chart_comb, categories_comb, proceso_vals_comb, diario_vals_comb, programa_vals_comb, columna1_vals_comb, wine_color, green_color)
+ 
+                # --- 7. PROCESAR DIAPOSITIVA DE GASOLINAS CADEREYTA (DIAPOSITIVA 11) ---
+                if self.df_data_cad_gas is not None and self.df_snr_cad_gas is not None and self.df_prod_cad_gas is not None:
+                    slide_cad_gas = prs.slides[10]
+                    chart_cad_gas = None
+                    for shape in slide_cad_gas.shapes:
+                        if shape.has_chart:
+                            chart_cad_gas = shape.chart
+                            break
+                    
+                    if chart_cad_gas:
+                        # Buscar columna SNR o usar la segunda por defecto
+                        snr_col_cad_gas = None
+                        for col in self.df_data_cad_gas.columns:
+                            if "SNR" in str(col).upper():
+                                snr_col_cad_gas = col
+                                break
+                        if not snr_col_cad_gas and len(self.df_data_cad_gas.columns) >= 2:
+                            snr_col_cad_gas = self.df_data_cad_gas.columns[1]
+                        
+                        if snr_col_cad_gas:
+                            categories_cg = []
+                            proceso_vals_cg = []
+                            diario_vals_cg = []
+                            programa_vals_cg = []
+                            columna1_vals_cg = []
+
+                            # Filtrar producción anual (últimas 17 categorías)
+                            prod_rows_cg = []
+                            for idx, row in self.df_prod_cad_gas.iterrows():
+                                cat = str(row.iloc[0]).strip()
+                                val = row.iloc[1]
+                                if not cat: continue
+                                if not any(c.isalpha() for c in cat):
+                                    prod_rows_cg.append((cat, val))
+                                else:
+                                    try:
+                                        if float(val) != 0: prod_rows_cg.append((cat, val))
+                                    except: pass
 
 
+
+
+
+                            if len(prod_rows_cg) > 17: prod_rows_cg = prod_rows_cg[-17:]
+
+                            for i in range(len(prod_rows_cg)):
+                                categories_cg.append(prod_rows_cg[i][0])
+                                try: proceso_vals_cg.append(float(prod_rows_cg[i][1]))
+                                except: proceso_vals_cg.append(None)
+                                diario_vals_cg.append(None)
+                                programa_vals_cg.append(None)
+                                columna1_vals_cg.append(None)
+ 
+                            # Llenar datos diarios (31 días)
+                            num_dias_reales_cg = 31
+                            for i in range(30, -1, -1):
+                                val_snr = 0
+                                if i < len(self.df_data_cad_gas):
+                                    try:
+                                        raw_val = self.df_data_cad_gas[snr_col_cad_gas].iloc[i]
+                                        val_snr = float(raw_val) if raw_val != "" else 0
+                                    except: val_snr = 0
+                                if val_snr != 0:
+                                    num_dias_reales_cg = i + 1
+                                    break
+ 
+                            for i in range(31):
+                                categories_cg.append(str(i + 1))
+                                proceso_vals_cg.append(None)
+                                if i >= num_dias_reales_cg:
+                                    diario_vals_cg.append(None); programa_vals_cg.append(None); columna1_vals_cg.append(None)
+                                    continue
+                                
+                                try: diario_vals_cg.append(float(self.df_data_cad_gas[snr_col_cad_gas].iloc[i]))
+                                except: diario_vals_cg.append(None)
+                                
+                                try: programa_vals_cg.append(float(self.df_snr_cad_gas.iloc[i, 0]))
+                                except: programa_vals_cg.append(None)
+                                
+                                try: columna1_vals_cg.append(float(self.df_snr_cad_gas.iloc[i, 1]))
+                                except: columna1_vals_cg.append(None)
+ 
+                            self.update_slide_chart(chart_cad_gas, categories_cg, proceso_vals_cg, diario_vals_cg, programa_vals_cg, columna1_vals_cg, wine_color, green_color)
+ 
+                    # --- 8. PROCESAR DIAPOSITIVA DE DIESEL CADEREYTA (DIAPOSITIVA 12) ---
+                    if self.df_data_cad_die is not None and self.df_snr_cad_die is not None and self.df_prod_cad_die is not None:
+                        slide_cad_die = prs.slides[11]
+                        chart_cad_die = None
+                        for shape in slide_cad_die.shapes:
+                            if shape.has_chart:
+                                chart_cad_die = shape.chart
+                                break
+                        
+                        if chart_cad_die:
+                            snr_col_cad_die = None
+                            for col in self.df_data_cad_die.columns:
+                                if "SNR" in str(col).upper():
+                                    snr_col_cad_die = col
+                                    break
+                            if not snr_col_cad_die and len(self.df_data_cad_die.columns) >= 2:
+                                snr_col_cad_die = self.df_data_cad_die.columns[1]
+                            
+                            if snr_col_cad_die:
+                                categories_cd = []
+                                proceso_vals_cd = []
+                                diario_vals_cd = []
+                                programa_vals_cd = []
+                                columna1_vals_cd = []
+ 
+                                prod_rows_cd = []
+                                for idx, row in self.df_prod_cad_die.iterrows():
+                                    cat = str(row.iloc[0]).strip()
+                                    val = row.iloc[1]
+                                    if not cat: continue
+                                    if not any(c.isalpha() for c in cat):
+                                        prod_rows_cd.append((cat, val))
+                                    else:
+                                        try:
+                                            if float(val) != 0: prod_rows_cd.append((cat, val))
+                                        except: pass
+                                
+                                if len(prod_rows_cd) > 17: prod_rows_cd = prod_rows_cd[-17:]
+ 
+                                for i in range(len(prod_rows_cd)):
+                                    categories_cd.append(prod_rows_cd[i][0])
+                                    try: proceso_vals_cd.append(float(prod_rows_cd[i][1]))
+                                    except: proceso_vals_cd.append(None)
+                                    diario_vals_cd.append(None)
+                                    programa_vals_cd.append(None)
+                                    columna1_vals_cd.append(None)
+ 
+                                num_dias_reales_cd = 31
+                                for i in range(30, -1, -1):
+                                    val_snr = 0
+                                    if i < len(self.df_data_cad_die):
+                                        try:
+                                            raw_val = self.df_data_cad_die[snr_col_cad_die].iloc[i]
+                                            val_snr = float(raw_val) if raw_val != "" else 0
+                                        except: val_snr = 0
+                                    if val_snr != 0:
+                                        num_dias_reales_cd = i + 1
+                                        break
+ 
+                                for i in range(31):
+                                    categories_cd.append(str(i + 1))
+                                    proceso_vals_cd.append(None)
+                                    if i >= num_dias_reales_cd:
+                                        diario_vals_cd.append(None); programa_vals_cd.append(None); columna1_vals_cd.append(None)
+                                        continue
+                                    
+                                    try: diario_vals_cd.append(float(self.df_data_cad_die[snr_col_cad_die].iloc[i]))
+                                    except: diario_vals_cd.append(None)
+                                    
+                                    try: programa_vals_cd.append(float(self.df_snr_cad_die.iloc[i, 0]))
+                                    except: programa_vals_cd.append(None)
+                                    
+                                    try: columna1_vals_cd.append(float(self.df_snr_cad_die.iloc[i, 1]))
+                                    except: columna1_vals_cd.append(None)
+ 
+                                self.update_slide_chart(chart_cad_die, categories_cd, proceso_vals_cd, diario_vals_cd, programa_vals_cd, columna1_vals_cd, wine_color, green_color)
+
+ 
             prs.save(save_path)
+
 
             self.after(0, self.on_pptx_success, save_path)
 
