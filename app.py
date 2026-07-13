@@ -6,6 +6,7 @@ from CTkTable import CTkTable
 import threading
 import traceback
 from termcolor import colored
+import db_helper
 
 class ExcelViewerApp(ctk.CTk):
     def __init__(self):
@@ -56,18 +57,27 @@ class ExcelViewerApp(ctk.CTk):
                                             fg_color="#8b5cf6", hover_color="#7c3aed")
         self.btn_powerpoint.pack(pady=15, padx=10, side="left")
 
+        # Botón para agregar años manualmente a la BD
+        self.btn_add_year = ctk.CTkButton(self.top_frame, 
+                                          text="Agregar Año Extra", 
+                                          font=("Roboto", 14, "bold"),
+                                          command=self.open_add_year_dialog,
+                                          height=40,
+                                          fg_color="#007bff", hover_color="#0056b3")
+        self.btn_add_year.pack(pady=15, padx=10, side="left")
+
         # ComboBox para alternar visualización de procesos
         self.lbl_proceso = ctk.CTkLabel(self.top_frame, text="Proceso:", font=("Roboto", 14, "bold"))
         self.lbl_proceso.pack(pady=15, padx=(20, 5), side="left")
         
         self.cb_proceso = ctk.CTkComboBox(self.top_frame, 
-                                            values=["Gasolinas", "Diesel", "Turbosina", "Asfalto", "Combustoleo", "Cadereyta -Crudo", "Cadereyta -Gasolinas", "Cadereyta -Diesel"],
+                                            values=["Crudo", "Gasolinas", "Diesel", "Turbosina", "Asfalto", "Combustoleo", "Cadereyta -Crudo", "Cadereyta -Gasolinas", "Cadereyta -Diesel"],
                                             font=("Roboto", 14),
                                             command=self.on_proceso_changed,
                                             state="readonly",
                                             width=150)
         self.cb_proceso.pack(pady=15, padx=5, side="left")
-        self.cb_proceso.set("Gasolinas")
+        self.cb_proceso.set("Crudo")
 
 
         # Scrollable Frame para contener la tabla
@@ -103,6 +113,11 @@ class ExcelViewerApp(ctk.CTk):
         self.df_snr_cad_die = None
         self.df_prod_cad_die = None
         self.df_sim_cad_die = None
+        # Datos de Cadereyta -Crudo
+        self.df_data_cad = None
+        self.df_snr_cad = None
+        self.df_prod_cad = None
+        self.df_sim_cad = None
  
         # Datos de Turbosina
         self.df_data_turbosina = None
@@ -141,6 +156,88 @@ class ExcelViewerApp(ctk.CTk):
         if text_msg is not None:
             self.lbl_file.configure(text=text_msg)
 
+    def open_add_year_dialog(self):
+        dialog = ctk.CTkToplevel(self)
+        dialog.title("Agregar/Editar Producción")
+        dialog.geometry("450x500")
+        dialog.transient(self)
+        dialog.grab_set()
+
+        lbl_proceso = ctk.CTkLabel(dialog, text="Proceso:", font=("Roboto", 14, "bold"))
+        lbl_proceso.pack(pady=(10, 0))
+        opciones_procesos = ["Crudo", "Cadereyta -Crudo", "Gasolinas", "Cadereyta -Gasolinas", "Diesel", "Cadereyta -Diesel", "Turbosina", "Asfalto", "Combustoleo"]
+        combo_proceso = ctk.CTkComboBox(dialog, values=opciones_procesos, width=250)
+        combo_proceso.pack(pady=(5, 10))
+
+        tipo_var = ctk.StringVar(value="mes")
+        frame_radios = ctk.CTkFrame(dialog, fg_color="transparent")
+        frame_radios.pack(pady=10)
+        
+        radio_mes = ctk.CTkRadioButton(frame_radios, text="Agregar un Mes", variable=tipo_var, value="mes")
+        radio_mes.pack(side="left", padx=10)
+        radio_anio = ctk.CTkRadioButton(frame_radios, text="Agregar un Año (Total)", variable=tipo_var, value="anio")
+        radio_anio.pack(side="left", padx=10)
+
+        lbl_anio = ctk.CTkLabel(dialog, text="Año (ej. 2024):", font=("Roboto", 14, "bold"))
+        lbl_anio.pack(pady=(10, 0))
+        entry_anio = ctk.CTkEntry(dialog, width=250)
+        entry_anio.pack(pady=(5, 10))
+
+        frame_mes_input = ctk.CTkFrame(dialog, fg_color="transparent")
+        frame_mes_input.pack(pady=5)
+        lbl_mes = ctk.CTkLabel(frame_mes_input, text="Mes:", font=("Roboto", 14, "bold"))
+        lbl_mes.pack(side="left", padx=5)
+        meses_opciones = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
+        combo_mes = ctk.CTkComboBox(frame_mes_input, values=meses_opciones, width=150)
+        combo_mes.pack(side="left", padx=5)
+
+        def on_radio_change(*args):
+            if tipo_var.get() == "anio":
+                combo_mes.configure(state="disabled")
+            else:
+                combo_mes.configure(state="normal")
+        tipo_var.trace("w", on_radio_change)
+
+        lbl_prod = ctk.CTkLabel(dialog, text="Producción:", font=("Roboto", 14, "bold"))
+        lbl_prod.pack(pady=(10, 0))
+        entry_prod = ctk.CTkEntry(dialog, width=250)
+        entry_prod.pack(pady=(5, 20))
+
+        def on_save():
+            proceso = combo_proceso.get()
+            anio = entry_anio.get().strip()
+            if not anio.isdigit():
+                messagebox.showerror("Error", "El año debe ser un número válido.")
+                return
+            
+            try:
+                prod = float(entry_prod.get().strip())
+            except:
+                messagebox.showerror("Error", "La producción debe ser numérica.")
+                return
+            
+            import db_helper
+            mes_val = combo_mes.get() if tipo_var.get() == "mes" else "AÑO"
+            
+            db_helper.save_extra_prod(proceso, anio, mes_val, prod)
+            
+            tipo_txt = "mes de " + mes_val if mes_val != "AÑO" else "año completo"
+            messagebox.showinfo("Éxito", f"Producción del {tipo_txt} para '{proceso}' en {anio} guardada correctamente.\n\nVuelve a hacer clic en 'Buscar Archivo Excel' para recargar las gráficas.")
+            dialog.destroy()
+
+        def on_clear():
+            if messagebox.askyesno("Confirmar", "¿Estás seguro de que quieres borrar TODOS los años y meses extra de la Base de Datos? (Esto no afecta al Excel original)"):
+                import db_helper
+                db_helper.clear_db()
+                messagebox.showinfo("Limpieza Completa", "Se ha borrado toda la información extra de la base de datos local.\n\nVuelve a hacer clic en 'Buscar Archivo Excel' para recargar las gráficas.")
+                dialog.destroy()
+
+        btn_save = ctk.CTkButton(dialog, text="Guardar", command=on_save, fg_color="#28a745", hover_color="#218838")
+        btn_save.pack(pady=(15, 5))
+
+        btn_clear = ctk.CTkButton(dialog, text="Limpiar Base de Datos", command=on_clear, fg_color="#dc3545", hover_color="#c82333")
+        btn_clear.pack(pady=5)
+
     def save_to_database(self):
         if self.df_data is None or self.df_snr is None or self.df_prod is None or self.df_sim is None:
             messagebox.showerror("Error", "Primero debes buscar un archivo Excel para extraer los datos.")
@@ -177,56 +274,90 @@ class ExcelViewerApp(ctk.CTk):
 
                 def redondear_df(df):
                     out = df.copy()
+                    
+                    # Renombrar columnas vacías o duplicadas para que SQLite no arroje error
+                    nuevas_columnas = []
+                    for i, c in enumerate(out.columns):
+                        if str(c).strip() == "" or pd.isna(c):
+                            nuevas_columnas.append(f"Col_Vacia_{i+1}")
+                        else:
+                            nuevas_columnas.append(str(c))
+                            
+                    vistos = set()
+                    for i in range(len(nuevas_columnas)):
+                        orig = nuevas_columnas[i]
+                        if orig in vistos:
+                            j = 1
+                            while f"{orig}_{j}" in vistos:
+                                j += 1
+                            nuevas_columnas[i] = f"{orig}_{j}"
+                        vistos.add(nuevas_columnas[i])
+                        
+                    out.columns = nuevas_columnas
+
                     for c in out.columns:
                         out[c] = out[c].map(to_int_val)
                     return out
 
+                def save_df(df, table_name):
+                    if df is not None and len(df.columns) > 0:
+                        redondear_df(df).to_sql(table_name, conn, if_exists='replace', index=False)
+
                 # Guardar datos de Crudo
-                redondear_df(self.df_data).to_sql('crudo_tabla_principal', conn, if_exists='replace', index=False)
-                redondear_df(self.df_snr).to_sql('crudo_programa_snr', conn, if_exists='replace', index=False)
-                redondear_df(self.df_prod).to_sql('crudo_produccion', conn, if_exists='replace', index=False)
-                redondear_df(self.df_sim).to_sql('crudo_simulacion_anual', conn, if_exists='replace', index=False)
+                save_df(self.df_data, 'crudo_tabla_principal')
+                save_df(self.df_snr, 'crudo_programa_snr')
+                save_df(self.df_prod, 'crudo_produccion')
+                save_df(self.df_sim, 'crudo_simulacion_anual')
+
+                # Guardar datos de Crudo Cadereyta
+                save_df(getattr(self, 'df_data_cad', None), 'cadereyta_crudo_tabla_principal')
+                save_df(getattr(self, 'df_snr_cad', None), 'cadereyta_crudo_programa_snr')
+                save_df(getattr(self, 'df_prod_cad', None), 'cadereyta_crudo_produccion')
+                save_df(getattr(self, 'df_sim_cad', None), 'cadereyta_crudo_simulacion_anual')
 
                  # Guardar datos de Gasolinas
-                if self.df_data_gasolinas is not None:
-                    redondear_df(self.df_data_gasolinas).to_sql('gasolinas_tabla_principal', conn, if_exists='replace', index=False)
-                    redondear_df(self.df_snr_gasolinas).to_sql('gasolinas_programa_snr', conn, if_exists='replace', index=False)
-                    redondear_df(self.df_prod_gasolinas).to_sql('gasolinas_produccion', conn, if_exists='replace', index=False)
-                    if hasattr(self, 'df_sim_gasolinas') and self.df_sim_gasolinas is not None:
-                        redondear_df(self.df_sim_gasolinas).to_sql('gasolinas_simulacion_anual', conn, if_exists='replace', index=False)
+                save_df(self.df_data_gasolinas, 'gasolinas_tabla_principal')
+                save_df(self.df_snr_gasolinas, 'gasolinas_programa_snr')
+                save_df(self.df_prod_gasolinas, 'gasolinas_produccion')
+                save_df(getattr(self, 'df_sim_gasolinas', None), 'gasolinas_simulacion_anual')
 
                 # Guardar datos de Diesel
-                if self.df_data_diesel is not None:
-                    redondear_df(self.df_data_diesel).to_sql('diesel_tabla_principal', conn, if_exists='replace', index=False)
-                    redondear_df(self.df_snr_diesel).to_sql('diesel_programa_snr', conn, if_exists='replace', index=False)
-                    redondear_df(self.df_prod_diesel).to_sql('diesel_produccion', conn, if_exists='replace', index=False)
-                    if hasattr(self, 'df_sim_diesel') and self.df_sim_diesel is not None:
-                        redondear_df(self.df_sim_diesel).to_sql('diesel_simulacion_anual', conn, if_exists='replace', index=False)
+                save_df(self.df_data_diesel, 'diesel_tabla_principal')
+                save_df(self.df_snr_diesel, 'diesel_programa_snr')
+                save_df(self.df_prod_diesel, 'diesel_produccion')
+                save_df(getattr(self, 'df_sim_diesel', None), 'diesel_simulacion_anual')
 
                 # Guardar datos de Turbosina
-                if self.df_data_turbosina is not None:
-                    redondear_df(self.df_data_turbosina).to_sql('turbosina_tabla_principal', conn, if_exists='replace', index=False)
-                    redondear_df(self.df_snr_turbosina).to_sql('turbosina_programa_snr', conn, if_exists='replace', index=False)
-                    redondear_df(self.df_prod_turbosina).to_sql('turbosina_produccion', conn, if_exists='replace', index=False)
-                    if hasattr(self, 'df_sim_turbosina') and self.df_sim_turbosina is not None:
-                        redondear_df(self.df_sim_turbosina).to_sql('turbosina_simulacion_anual', conn, if_exists='replace', index=False)
+                save_df(self.df_data_turbosina, 'turbosina_tabla_principal')
+                save_df(self.df_snr_turbosina, 'turbosina_programa_snr')
+                save_df(self.df_prod_turbosina, 'turbosina_produccion')
+                save_df(getattr(self, 'df_sim_turbosina', None), 'turbosina_simulacion_anual')
 
                 # Guardar datos de Asfalto
-                if hasattr(self, 'df_data_asfalto') and self.df_data_asfalto is not None:
-                    redondear_df(self.df_data_asfalto).to_sql('asfalto_tabla_principal', conn, if_exists='replace', index=False)
-                    redondear_df(self.df_snr_asfalto).to_sql('asfalto_programa_snr', conn, if_exists='replace', index=False)
-                    redondear_df(self.df_prod_asfalto).to_sql('asfalto_produccion', conn, if_exists='replace', index=False)
-                    if hasattr(self, 'df_sim_asfalto') and self.df_sim_asfalto is not None:
-                        redondear_df(self.df_sim_asfalto).to_sql('asfalto_simulacion_anual', conn, if_exists='replace', index=False)
+                save_df(getattr(self, 'df_data_asfalto', None), 'asfalto_tabla_principal')
+                save_df(getattr(self, 'df_snr_asfalto', None), 'asfalto_programa_snr')
+                save_df(getattr(self, 'df_prod_asfalto', None), 'asfalto_produccion')
+                save_df(getattr(self, 'df_sim_asfalto', None), 'asfalto_simulacion_anual')
 
                 # Guardar datos de Combustoleo
-                if hasattr(self, 'df_data_combustoleo') and self.df_data_combustoleo is not None:
-                    redondear_df(self.df_data_combustoleo).to_sql('combustoleo_tabla_principal', conn, if_exists='replace', index=False)
-                    redondear_df(self.df_snr_combustoleo).to_sql('combustoleo_programa_snr', conn, if_exists='replace', index=False)
-                    redondear_df(self.df_prod_combustoleo).to_sql('combustoleo_produccion', conn, if_exists='replace', index=False)
-                    if hasattr(self, 'df_sim_combustoleo') and self.df_sim_combustoleo is not None:
-                        redondear_df(self.df_sim_combustoleo).to_sql('combustoleo_simulacion_anual', conn, if_exists='replace', index=False)
+                save_df(getattr(self, 'df_data_combustoleo', None), 'combustoleo_tabla_principal')
+                save_df(getattr(self, 'df_snr_combustoleo', None), 'combustoleo_programa_snr')
+                save_df(getattr(self, 'df_prod_combustoleo', None), 'combustoleo_produccion')
+                save_df(getattr(self, 'df_sim_combustoleo', None), 'combustoleo_simulacion_anual')
 
+                # Guardar datos de Cadereyta - Gasolinas
+                save_df(getattr(self, 'df_data_cad_gas', None), 'cadereyta_gasolinas_tabla_principal')
+                save_df(getattr(self, 'df_snr_cad_gas', None), 'cadereyta_gasolinas_programa_snr')
+                save_df(getattr(self, 'df_prod_cad_gas', None), 'cadereyta_gasolinas_produccion')
+                save_df(getattr(self, 'df_sim_cad_gas', None), 'cadereyta_gasolinas_simulacion_anual')
+
+                # Guardar datos de Cadereyta - Diesel
+                save_df(getattr(self, 'df_data_cad_die', None), 'cadereyta_diesel_tabla_principal')
+                save_df(getattr(self, 'df_snr_cad_die', None), 'cadereyta_diesel_programa_snr')
+                save_df(getattr(self, 'df_prod_cad_die', None), 'cadereyta_diesel_produccion')
+                save_df(getattr(self, 'df_sim_cad_die', None), 'cadereyta_diesel_simulacion_anual')
+
+                conn.commit()
                 conn.close()
                 messagebox.showinfo("Éxito", f"¡Los datos de todos los procesos han sido guardados en la base de datos!\n\nRuta:\n{db_path}")
             except Exception as e:
@@ -350,70 +481,155 @@ class ExcelViewerApp(ctk.CTk):
                             headers.append(str(val))
                 return headers
 
+            def merge_extra_prod(proceso_name, df_prod_current):
+                extra_rows = db_helper.get_extra_prod(proceso_name)
+                
+                cleaned_data = []
+                for _, row in df_prod_current.iterrows():
+                    val0 = str(row.iloc[0]).strip()
+                    if val0.endswith('.0'):
+                        val0 = val0[:-2]
+                    if val0.lower() in ['', 'nan', 'nat', 'none']:
+                        continue
+                    cleaned_data.append((val0, row.iloc[1]))
+
+                if not extra_rows:
+                    if not cleaned_data:
+                        return df_prod_current
+                    return pd.DataFrame(cleaned_data, columns=["Año/Mes", "Produccion"])
+
+                for r in extra_rows:
+                    anio, mes, prod = r
+                    anio = str(anio).strip()
+                    mes = str(mes).strip()
+                    
+                    if mes == "AÑO":
+                        insert_pos = 0
+                        replaced = False
+                        for i, (c_name, c_val) in enumerate(cleaned_data):
+                            if c_name.isdigit() and len(c_name) == 4:
+                                if c_name == anio:
+                                    cleaned_data[i] = (anio, prod)
+                                    replaced = True
+                                    break
+                                elif int(c_name) > int(anio):
+                                    insert_pos = i
+                                    break
+                                else:
+                                    insert_pos = i + 1
+                            else:
+                                insert_pos = i
+                                break
+                                
+                        if not replaced:
+                            cleaned_data.insert(insert_pos, (anio, prod))
+                    else:
+                        month_block_start = len(cleaned_data)
+                        for i, (c_name, c_val) in enumerate(cleaned_data):
+                            if not (c_name.isdigit() and len(c_name) == 4):
+                                month_block_start = i
+                                break
+                                
+                        meses_orden = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"]
+                        try:
+                            target_month_idx = meses_orden.index(mes.lower()[:3])
+                        except ValueError:
+                            target_month_idx = 99
+                            
+                        insert_pos = month_block_start
+                        replaced = False
+                        
+                        for i in range(month_block_start, len(cleaned_data)):
+                            c_name = cleaned_data[i][0]
+                            curr_month_str = c_name.lower()[:3]
+                            try:
+                                curr_m_idx = meses_orden.index(curr_month_str)
+                            except ValueError:
+                                curr_m_idx = -1
+                                
+                            if curr_m_idx == target_month_idx:
+                                cleaned_data[i] = (mes, prod)
+                                replaced = True
+                                break
+                            elif curr_m_idx > target_month_idx:
+                                insert_pos = i
+                                break
+                            else:
+                                insert_pos = i + 1
+                                
+                        if not replaced:
+                            cleaned_data.insert(insert_pos, (mes, prod))
+                            
+                df_merged = pd.DataFrame(cleaned_data, columns=["Año/Mes", "Produccion"])
+                return df_merged
+
             # --- 1. PROCESAR CRUDO (Cadereyta) ---
             self.after(0, self.update_progress, 0.2, "Procesando Crudo Cadereyta...")
-            # Encabezados fijos para mayor claridad
-            headers_cad = ["Cadereyta - Día", "Cadereyta - Producción"]
-            
-            # Leer Tabla 1 (Rows 21-51 -> index 20:51), Cols A y C
-            df = df_sheet.iloc[20:51, [0, 2]].copy()
-            df.columns = headers_cad
-            df = df.dropna(how='all')
-            df = remove_decimals(df)
-            df = filter_zero_rows(df)
-            df_data = df.copy()
- 
-            # Leer Tabla 2 (Programa, Rows 74-104 -> index 73:104), Col BI repetida (60, 60)
-            df_snr = df_sheet.iloc[73:104, [60, 60]].copy()
+            # --- 1. PROCESAR CRUDO (Estándar) ---
+            self.after(0, self.update_progress, 0.2, "Procesando Crudo...")
+            # Leer Tabla 1 (Rows 21-51 -> index 20:51), Cols A-H (0:8)
+            headers_cad = get_clean_headers(0, 0, 8)
+            df_data = df_sheet.iloc[20:51, 0:8].copy()
+            df_data.columns = headers_cad
+            df_data = df_data.dropna(how='all')
+            df_data = remove_decimals(df_data)
+            df_data = filter_zero_rows(df_data)
+
+            # Leer Tabla 2 (Programa, Rows 74-104 -> index 73:104), Cols AE-AF (30:32)
+            df_snr = df_sheet.iloc[73:104, 30:32].copy()
+            df_snr.columns = ["CMP", "PODIM"]
             df_snr = df_snr.dropna(how='all').dropna(axis=1, how='all')
             df_snr = remove_decimals(df_snr, skip_first=True)
             df_snr_copy = df_snr.copy()
- 
-            # --- Recortar filas de fin de mes ---
-            snr_col = None
-            for col in df_data.columns:
-                if "SNR" in str(col).upper():
-                    snr_col = col
-                    break
- 
-            num_dias_reales = 31
-            if snr_col:
-                for i in range(30, -1, -1):
-                    val_snr = 0
-                    if i < len(df_data):
-                        try:
-                            raw_val = df_data[snr_col].iloc[i]
-                            if raw_val != "":
-                                val_snr = float(raw_val)
-                        except:
-                            val_snr = 0
-                    if val_snr != 0:
-                        num_dias_reales = i + 1
-                        break
- 
-            df_data = df_data.iloc[:num_dias_reales]
-            df_snr_copy = df_snr_copy.iloc[:num_dias_reales]
- 
-            # Leer Tabla 3 (Fecha y Producción, Rows 21-40 -> index 20:40), Cols AW:AX (48:50)
-            df_prod_raw = df_sheet.iloc[20:40, 48:50].copy()
+
+            # Leer Tabla 3 (Fecha y Producción, Rows 21-40 -> index 20:40), Cols AE-AF (30:32)
+            df_prod_raw = df_sheet.iloc[20:40, 30:32].copy()
+            df_prod_raw.columns = ["Año/Mes", "Produccion"]
             df_prod_raw = df_prod_raw.dropna(how='all')
             
-            dic_idx = -1
+            dic_idx_crudo = -1
             for idx, row in df_prod_raw.iterrows():
                 val = str(row.iloc[0]).strip().lower()
                 if "dic" in val or "diciembre" in val:
-                    dic_idx = idx - 20 
+                    dic_idx_crudo = idx - 20
                     break
             
-            if dic_idx != -1:
-                df_prod = df_prod_raw.iloc[:dic_idx + 1]
+            if dic_idx_crudo != -1:
+                df_prod = df_prod_raw.iloc[:dic_idx_crudo + 1]
             else:
                 df_prod = df_prod_raw.iloc[:20]
                 
             df_prod = df_prod.dropna(axis=1, how='all')
             df_prod = remove_decimals(df_prod, skip_last=True)
+            df_prod = merge_extra_prod("Crudo", df_prod)
+            self.df_prod = df_prod.copy()
             df_prod_copy = df_prod.copy()
 
+            num_dias_reales = len(df_data) if not df_data.empty else 31
+
+            # --- 1.0 PROCESAR CRUDO CADEREYTA (Específico para Diapositiva 10) ---
+            # Columnas A (0) y C (2), Filas 21-51
+            df_data_cad = df_sheet.iloc[20:51, [0, 2]].copy()
+            df_data_cad.columns = ["Crudo", "Cadereyta"]
+            df_data_cad = df_data_cad.dropna(how='all')
+            df_data_cad = remove_decimals(df_data_cad)
+            df_data_cad = filter_zero_rows(df_data_cad)
+
+            # Programa: Columna BI (60) repetida, Filas 74-104
+            df_snr_cad = df_sheet.iloc[73:104, [60, 60]].copy()
+            df_snr_cad.columns = ["CMP", "PODIM"]
+            df_snr_cad = df_snr_cad.dropna(how='all').dropna(axis=1, how='all')
+            df_snr_cad = remove_decimals(df_snr_cad, skip_first=True)
+            df_snr_cad_copy = df_snr_cad.copy()
+            
+            # Fechas: Cols AW-AX (48:50), Filas 21-40
+            df_prod_cad = df_sheet.iloc[20:40, 48:50].copy()
+            df_prod_cad.columns = ["Año/Mes", "Produccion"]
+            df_prod_cad = df_prod_cad.dropna(how='all')
+            df_prod_cad = remove_decimals(df_prod_cad, skip_last=True)
+            df_prod_cad = merge_extra_prod("Cadereyta -Crudo", df_prod_cad)
+            df_prod_cad_copy = df_prod_cad.copy()
+            
             # --- 1.1 PROCESAR GASOLINAS (Cadereyta) ---
             self.after(0, self.update_progress, 0.25, "Procesando Gasolinas Cadereyta...")
             headers_cad_gas = ["Cadereyta Gas - Día", "Cadereyta Gas - Producción"]
@@ -432,7 +648,6 @@ class ExcelViewerApp(ctk.CTk):
             df_snr_cad_gas_copy = df_snr_cad_gas.copy()
             # Aplicar recorte de días reales basado en Crudo
             df_data_cad_gas = df_data_cad_gas.iloc[:num_dias_reales]
-            df_snr_cad_gas_copy = df_snr_cad_gas_copy.iloc[:num_dias_reales]
 
             # Leer Tabla 3 (Fecha y Producción Cadereyta Gas, Rows 21-40 -> index 20:40), Cols BO:BP (66:68)
             df_prod_cad_gas_raw = df_sheet.iloc[20:40, 66:68].copy()
@@ -452,6 +667,7 @@ class ExcelViewerApp(ctk.CTk):
                 
             df_prod_cad_gas = df_prod_cad_gas.dropna(axis=1, how='all')
             df_prod_cad_gas = remove_decimals(df_prod_cad_gas, skip_last=True)
+            df_prod_cad_gas = merge_extra_prod("Cadereyta -Gasolinas", df_prod_cad_gas)
             df_prod_cad_gas_copy = df_prod_cad_gas.copy()
 
             # --- 1.2 PROCESAR DIESEL (Cadereyta) ---
@@ -472,7 +688,6 @@ class ExcelViewerApp(ctk.CTk):
             df_snr_cad_die_copy = df_snr_cad_die.copy()
             # Aplicar recorte de días reales basado en Crudo
             df_data_cad_die = df_data_cad_die.iloc[:num_dias_reales]
-            df_snr_cad_die_copy = df_snr_cad_die_copy.iloc[:num_dias_reales]
 
             # Leer Tabla 3 (Fecha y Producción Cadereyta Die, Rows 21-40 -> index 20:40), Cols CG:CH (84:86)
             df_prod_cad_die_raw = df_sheet.iloc[20:40, 84:86].copy()
@@ -492,6 +707,7 @@ class ExcelViewerApp(ctk.CTk):
                 
             df_prod_cad_die = df_prod_cad_die.dropna(axis=1, how='all')
             df_prod_cad_die = remove_decimals(df_prod_cad_die, skip_last=True)
+            df_prod_cad_die = merge_extra_prod("Cadereyta -Diesel", df_prod_cad_die)
             df_prod_cad_die_copy = df_prod_cad_die.copy()
 
 
@@ -515,7 +731,6 @@ class ExcelViewerApp(ctk.CTk):
 
             # Recortar filas de fin de mes
             df_data_gasolinas = df_data_gasolinas.iloc[:num_dias_reales]
-            df_snr_gas_copy = df_snr_gas_copy.iloc[:num_dias_reales]
 
             # Leer Tabla 3 (Años, Rows 21-120 -> index 20:120), Cols AG:AH (32:34)
             df_prod_gas_raw = df_sheet.iloc[20:120, 32:34].copy()
@@ -535,6 +750,7 @@ class ExcelViewerApp(ctk.CTk):
                 
             df_prod_gas = df_prod_gas.dropna(axis=1, how='all')
             df_prod_gas = remove_decimals(df_prod_gas, skip_last=True)
+            df_prod_gas = merge_extra_prod("Gasolinas", df_prod_gas)
             df_prod_gasolinas_copy = df_prod_gas.copy()
 
 
@@ -557,7 +773,6 @@ class ExcelViewerApp(ctk.CTk):
 
             # Recortar filas de fin de mes
             df_data_diesel = df_data_diesel.iloc[:num_dias_reales]
-            df_snr_die_copy = df_snr_die_copy.iloc[:num_dias_reales]
 
             # Leer Tabla 3 (Años, Rows 21-120 -> index 20:120), Cols AK:AL (36:38)
             df_prod_die_raw = df_sheet.iloc[20:120, 36:38].copy()
@@ -577,6 +792,7 @@ class ExcelViewerApp(ctk.CTk):
                 
             df_prod_die = df_prod_die.dropna(axis=1, how='all')
             df_prod_die = remove_decimals(df_prod_die, skip_last=True)
+            df_prod_die = merge_extra_prod("Diesel", df_prod_die)
             df_prod_diesel_copy = df_prod_die.copy()
 
 
@@ -599,7 +815,6 @@ class ExcelViewerApp(ctk.CTk):
 
             # Recortar filas de fin de mes
             df_data_turbosina = df_data_turbosina.iloc[:num_dias_reales]
-            df_snr_turb_copy = df_snr_turb_copy.iloc[:num_dias_reales]
 
             # Leer Tabla 3 (Años, Rows 21-120 -> index 20:120), Cols AM:AN (38:40)
             df_prod_turb_raw = df_sheet.iloc[20:120, 38:40].copy()
@@ -619,6 +834,7 @@ class ExcelViewerApp(ctk.CTk):
                 
             df_prod_turb = df_prod_turb.dropna(axis=1, how='all')
             df_prod_turb = remove_decimals(df_prod_turb, skip_last=True)
+            df_prod_turb = merge_extra_prod("Turbosina", df_prod_turb)
             df_prod_turbosina_copy = df_prod_turb.copy()
 
 
@@ -639,7 +855,6 @@ class ExcelViewerApp(ctk.CTk):
 
             # Recortar filas de fin de mes
             df_data_asfalto = df_data_asfalto.iloc[:num_dias_reales]
-            df_snr_asf_copy = df_snr_asf_copy.iloc[:num_dias_reales]
 
             # Leer Tabla 3 (Años, Rows 121-140 -> index 120:140), Cols AQ:AR (42:44)
             df_prod_asf_raw = df_sheet.iloc[120:140, 42:44].copy()
@@ -659,6 +874,7 @@ class ExcelViewerApp(ctk.CTk):
 
             df_prod_asf = df_prod_asf.dropna(axis=1, how='all')
             df_prod_asf = remove_decimals(df_prod_asf, skip_last=True)
+            df_prod_asf = merge_extra_prod("Asfalto", df_prod_asf)
             df_prod_asfalto_copy = df_prod_asf.copy()
 
 
@@ -679,7 +895,6 @@ class ExcelViewerApp(ctk.CTk):
 
             # Recortar filas de fin de mes
             df_data_combustoleo = df_data_combustoleo.iloc[:num_dias_reales]
-            df_snr_comb_copy = df_snr_comb_copy.iloc[:num_dias_reales]
 
             # Leer Tabla 3 (Años, Rows 21-40 -> index 20:40), Cols AQ:AR (42:44)
             df_prod_comb_raw = df_sheet.iloc[20:40, 42:44].copy()
@@ -699,6 +914,7 @@ class ExcelViewerApp(ctk.CTk):
 
             df_prod_comb = df_prod_comb.dropna(axis=1, how='all')
             df_prod_comb = remove_decimals(df_prod_comb, skip_last=True)
+            df_prod_comb = merge_extra_prod("Combustoleo", df_prod_comb)
             df_prod_combustoleo_copy = df_prod_comb.copy()
 
 
@@ -938,6 +1154,28 @@ class ExcelViewerApp(ctk.CTk):
             promedio_cad_die = suma_total_cad_die / days_passed if days_passed > 0 else 0
             sim_data_cad_die.append(["TOTALES", "---", f"Días pasados: {days_passed}", f"Suma: {int(suma_total_cad_die)} | Prom: {promedio_cad_die:.2f}"])
             df_sim_cad_die = pd.DataFrame(sim_data_cad_die, columns=["Mes", "Producción", "Días", "Total (Prod x Días)"])
+            # Simulación Crudo Cadereyta
+            prod_dict_cad = {m: 0.0 for m in meses_nombres}
+            for idx, row_data in df_prod_cad.iterrows():
+                val_anio = str(row_data.iloc[0]).strip().lower()
+                val_prod = row_data.iloc[1]
+                try: p = float(val_prod)
+                except: p = 0.0
+                for i, (m_largo, m_corto) in enumerate(zip(meses_nombres, meses_cortos)):
+                    if m_largo.lower() in val_anio or m_corto.lower() in val_anio:
+                        prod_dict_cad[meses_nombres[i]] += p
+                        break
+            sim_data_cad = []
+            suma_total_cad = 0.0
+            for i, mes in enumerate(meses_nombres):
+                dias = dias_por_mes[i]
+                prod = prod_dict_cad[mes]
+                total = prod * dias
+                suma_total_cad += total
+                sim_data_cad.append([mes, int(prod), dias, int(total)])
+            promedio_cad = suma_total_cad / days_passed if days_passed > 0 else 0
+            sim_data_cad.append(["TOTALES", "---", f"Días pasados: {days_passed}", f"Suma: {int(suma_total_cad)} | Prom: {promedio_cad:.2f}"])
+            df_sim_cad = pd.DataFrame(sim_data_cad, columns=["Mes", "Producción", "Días", "Total (Prod x Días)"])
  
             self.after(0, self.update_progress, 0.97, "Finalizando...")
 
@@ -949,7 +1187,8 @@ class ExcelViewerApp(ctk.CTk):
                        df_data_asfalto, df_snr_asf_copy, df_prod_asfalto_copy, df_sim_asfalto,
                        df_data_combustoleo, df_snr_comb_copy, df_prod_combustoleo_copy, df_sim_combustoleo,
                        df_data_cad_gas, df_snr_cad_gas_copy, df_prod_cad_gas_copy, df_sim_cad_gas,
-                       df_data_cad_die, df_snr_cad_die_copy, df_prod_cad_die_copy, df_sim_cad_die)
+                       df_data_cad_die, df_snr_cad_die_copy, df_prod_cad_die_copy, df_sim_cad_die,
+                       df_data_cad, df_snr_cad_copy, df_prod_cad_copy, df_sim_cad)
 
         except Exception as e:
             err_details = traceback.format_exc()
@@ -962,7 +1201,8 @@ class ExcelViewerApp(ctk.CTk):
                             df_data_asfalto=None, df_snr_asfalto=None, df_prod_asfalto=None, df_sim_asfalto=None,
                             df_data_combustoleo=None, df_snr_combustoleo=None, df_prod_combustoleo=None, df_sim_combustoleo=None,
                             df_data_cad_gas=None, df_snr_cad_gas=None, df_prod_cad_gas=None, df_sim_cad_gas=None,
-                            df_data_cad_die=None, df_snr_cad_die=None, df_prod_cad_die=None, df_sim_cad_die=None):
+                            df_data_cad_die=None, df_snr_cad_die=None, df_prod_cad_die=None, df_sim_cad_die=None,
+                            df_data_cad=None, df_snr_cad=None, df_prod_cad=None, df_sim_cad=None):
         self.df_data = df_data
 
         self.df_snr = df_snr
@@ -988,6 +1228,11 @@ class ExcelViewerApp(ctk.CTk):
         self.df_snr_cad_die = df_snr_cad_die
         self.df_prod_cad_die = df_prod_cad_die
         self.df_sim_cad_die = df_sim_cad_die
+ 
+        self.df_data_cad = df_data_cad
+        self.df_snr_cad = df_snr_cad
+        self.df_prod_cad = df_prod_cad
+        self.df_sim_cad = df_sim_cad
  
         self.df_data_turbosina = df_data_turbosina
 
@@ -1039,13 +1284,20 @@ class ExcelViewerApp(ctk.CTk):
         if hasattr(self, 'lbl_table4') and self.lbl_table4 is not None:
             self.lbl_table4.destroy()
 
-        if selection == "Cadereyta -Crudo":
+        if selection == "Crudo":
             df_data = self.df_data
             df_snr = self.df_snr
             df_prod = self.df_prod
             df_sim = self.df_sim
-            lbl2_txt = "Programa del SNR (Col BI x2, Filas 74-104)"
-            lbl3_txt = "Fecha y Producción (AW-AX, Filas 21-40)"
+            lbl2_txt = "Programa (CMP, PODIM)"
+            lbl3_txt = "Fecha y Producción (Año/Mes, Producción)"
+        elif selection == "Cadereyta -Crudo":
+            df_data = self.df_data_cad
+            df_snr = self.df_snr_cad
+            df_prod = self.df_prod_cad
+            df_sim = self.df_sim_cad
+            lbl2_txt = "Programa Crudo Cadereyta (Col BI x2, Filas 74-104)"
+            lbl3_txt = "Fecha y Producción Crudo Cadereyta (AW-AX, Filas 21-40)"
         elif selection == "Cadereyta -Gasolinas":
             df_data = self.df_data_cad_gas
             df_snr = self.df_snr_cad_gas
@@ -1337,8 +1589,8 @@ class ExcelViewerApp(ctk.CTk):
             if len(prs.slides) < 12:
                 raise ValueError("La presentación debe tener al menos 12 diapositivas (incluyendo las de Cadereyta -Crudo, Gasolinas y Diesel).")
  
-            # --- 1. PROCESAR DIAPOSITIVA DE CRUDO CADEREYTA (DIAPOSITIVA 10) ---
-            slide = prs.slides[9]
+            # --- 1. PROCESAR DIAPOSITIVA DE CRUDO (DIAPOSITIVA 2) ---
+            slide = prs.slides[1]
             chart = None
 
             for shape in slide.shapes:
@@ -1347,20 +1599,12 @@ class ExcelViewerApp(ctk.CTk):
                     break
 
             if not chart:
-                raise ValueError("No se encontró ninguna gráfica en la décima diapositiva (Cadereyta -Crudo).")
+                raise ValueError("No se encontró ninguna gráfica en la segunda diapositiva (Crudo).")
 
-            snr_col = None
-            for col in self.df_data.columns:
-                if "SNR" in str(col).upper():
-                    snr_col = col
-                    break
- 
-            if not snr_col:
-                if len(self.df_data.columns) >= 2:
-                    snr_col = self.df_data.columns[1] # Usar la segunda columna por defecto
-                else:
-                    raise ValueError("No se encontró la columna 'SNR' y la tabla no tiene suficientes columnas.")
-
+            # Columnas específicas de la tabla 1 para Crudo: 'Crudo' (0), 'Cadereyta' (1)
+            # En la tabla, "Cadereyta" es la que va en la columna de proceso.
+            # Los datos de producción diaria están en la segunda columna (df_data.iloc[:, 1])
+            proceso_col = self.df_data.columns[1]
 
             categories = []
             proceso_vals = []
@@ -1368,123 +1612,107 @@ class ExcelViewerApp(ctk.CTk):
             programa_vals = []
             columna1_vals = []
 
-            # Filtrar df_prod para quedarnos con los años y los meses activos (con producción)
+            # Filtrar df_prod para quedarnos con los años y los meses activos
             prod_rows = []
             for idx, row in self.df_prod.iterrows():
                 cat = str(row.iloc[0]).strip()
                 val = row.iloc[1]
-                
-                if not cat:
-                    continue
-                    
-                # Si es un año (no contiene letras)
+                if not cat: continue
                 if not any(c.isalpha() for c in cat):
                     prod_rows.append((cat, val))
                 else:
-                    # Si es un mes, solo si tiene producción real (no vacío ni cero)
                     try:
                         p_val = float(val)
-                    except:
-                        p_val = 0
-                    if p_val != 0:
-                        prod_rows.append((cat, val))
+                        if p_val != 0: prod_rows.append((cat, val))
+                    except: pass
+            
+            if len(prod_rows) > 30: prod_rows = prod_rows[-30:]
 
-            # Si hay más de 17 filas (años + meses activos), nos quedamos con las últimas 17 (los más recientes)
-            if len(prod_rows) > 17:
-                prod_rows = prod_rows[-17:]
-
-            # Llenar filas de años y meses (sin celdas vacías al final)
             for i in range(len(prod_rows)):
-                cat_val = prod_rows[i][0]
-                try:
-                    proc_val = float(prod_rows[i][1])
-                except:
-                    proc_val = None
-                        
-                categories.append(cat_val)
-                proceso_vals.append(proc_val)
+                categories.append(prod_rows[i][0])
+                try: proceso_vals.append(float(prod_rows[i][1]))
+                except: proceso_vals.append(None)
                 diario_vals.append(None)
                 programa_vals.append(None)
                 columna1_vals.append(None)
 
-            # Llenar filas diarias
-            num_dias_reales = 31
-            for i in range(30, -1, -1):
-                val_snr = 0
-                if i < len(self.df_data):
-                    try:
-                        raw_val = self.df_data[snr_col].iloc[i]
-                        if raw_val != "":
-                            val_snr = float(raw_val)
-                        else:
-                            val_snr = 0
-                    except:
-                        val_snr = 0
-                if val_snr != 0:
-                    num_dias_reales = i + 1
-                    break
-
+            # Llenar datos diarios (31 días)
             for i in range(31):
                 categories.append(str(i + 1))
                 proceso_vals.append(None)
                 
-                if i >= num_dias_reales:
-                    diario_vals.append(None)
-                    programa_vals.append(None)
-                    columna1_vals.append(None)
-                    continue
-
-                d_val = None
-                if i < len(self.df_data):
-                    try:
-                        d_val = float(self.df_data[snr_col].iloc[i])
-                    except:
-                        d_val = None
-                diario_vals.append(d_val)
+                try: diario_vals.append(float(self.df_data[proceso_col].iloc[i]))
+                except: diario_vals.append(None)
                 
-                p_val = None
-                if i < len(self.df_snr):
-                    try:
-                        p_val = float(self.df_snr.iloc[i, 0])
-                    except:
-                        p_val = None
-                programa_vals.append(p_val)
+                try: programa_vals.append(float(self.df_snr.iloc[i, 0]))
+                except: programa_vals.append(None)
                 
-                c_val = None
-                if i < len(self.df_snr):
-                    try:
-                        c_val = float(self.df_snr.iloc[i, 1])
-                    except:
-                        c_val = None
-                columna1_vals.append(c_val)
+                try: columna1_vals.append(float(self.df_snr.iloc[i, 1]))
+                except: columna1_vals.append(None)
 
-            # --- EXTRAER COLORES DE LA PLANTILLA DE FORMA DINÁMICA ---
-            wine_color = None
-            green_color = None
+            # --- EXTRAER COLORES DE LA PLANTILLA ---
+            wine_color = RGBColor(0x69, 0x19, 0x32)
+            green_color = RGBColor(0x24, 0x5C, 0x4F)
 
-            if len(chart.series) > 0:
-                series = chart.series[0]
-                for p_idx in range(min(18, len(series.points))):
-                    try:
-                        point = series.points[p_idx]
-                        fill = point.format.fill
-                        if fill.type == 1: # SOLID
-                            color_val = fill.fore_color.rgb
-                            if p_idx == 15: # En la plantilla original, index 15 es Junio (vino)
-                                wine_color = color_val
-                            elif p_idx == 10: # En la plantilla original, index 10 es Enero (verde)
-                                green_color = color_val
-                    except Exception:
-                        pass
-
-            # Fallbacks seguros en caso de no encontrarse
-            if not wine_color:
-                wine_color = RGBColor(0x69, 0x19, 0x32)
-            if not green_color:
-                green_color = RGBColor(0x24, 0x5C, 0x4F)
-
-            # Actualizar la gráfica de Crudo (Diapositiva 2)
+            # Actualizar gráfica
             self.update_slide_chart(chart, categories, proceso_vals, diario_vals, programa_vals, columna1_vals, wine_color, green_color)
+
+
+            # --- NUEVA SECCIÓN: PROCESAR DIAPOSITIVA 10 (Crudo Cadereyta) ---
+            slide_cad = prs.slides[9]
+            chart_cad = None
+            for shape in slide_cad.shapes:
+                if shape.has_chart:
+                    chart_cad = shape.chart
+                    break
+            
+            if chart_cad:
+                categories_cad = []
+                proceso_vals_cad = []
+                diario_vals_cad = []
+                programa_vals_cad = []
+                columna1_vals_cad = []
+
+                # Filtrar df_prod_cad
+                prod_rows_cad = []
+                for idx, row in self.df_prod_cad.iterrows():
+                    cat = str(row.iloc[0]).strip()
+                    val = row.iloc[1]
+                    if not cat: continue
+                    if not any(c.isalpha() for c in cat):
+                        prod_rows_cad.append((cat, val))
+                    else:
+                        try:
+                            p_val = float(val)
+                            if p_val != 0: prod_rows_cad.append((cat, val))
+                        except: pass
+                
+                if len(prod_rows_cad) > 30: prod_rows_cad = prod_rows_cad[-30:]
+                
+                for i in range(len(prod_rows_cad)):
+                    categories_cad.append(prod_rows_cad[i][0])
+                    try: proceso_vals_cad.append(float(prod_rows_cad[i][1]))
+                    except: proceso_vals_cad.append(None)
+                    diario_vals_cad.append(None)
+                    programa_vals_cad.append(None)
+                    columna1_vals_cad.append(None)
+
+                proceso_col_cad = self.df_data_cad.columns[1]
+
+                for i in range(31):
+                    categories_cad.append(str(i + 1))
+                    proceso_vals_cad.append(None)
+                    
+                    try: diario_vals_cad.append(float(self.df_data_cad[proceso_col_cad].iloc[i]))
+                    except: diario_vals_cad.append(None)
+                    
+                    try: programa_vals_cad.append(float(self.df_snr_cad.iloc[i, 0]))
+                    except: programa_vals_cad.append(None)
+                    
+                    try: columna1_vals_cad.append(float(self.df_snr_cad.iloc[i, 1]))
+                    except: columna1_vals_cad.append(None)
+
+                self.update_slide_chart(chart_cad, categories_cad, proceso_vals_cad, diario_vals_cad, programa_vals_cad, columna1_vals_cad, wine_color, green_color)
 
 
             # --- 2. PROCESAR DIAPOSITIVA DE GASOLINAS (DIAPOSITIVA 3) ---
@@ -1532,9 +1760,9 @@ class ExcelViewerApp(ctk.CTk):
                     if p_val != 0:
                         prod_rows_gas.append((cat, val))
 
-            # Ajustar al límite de 17 categorías
-            if len(prod_rows_gas) > 17:
-                prod_rows_gas = prod_rows_gas[-17:]
+            # Ajustar al límite de 30 categorías
+            if len(prod_rows_gas) > 30:
+                prod_rows_gas = prod_rows_gas[-30:]
 
             # Llenar filas de años y meses (sin celdas vacías al final)
             for i in range(len(prod_rows_gas)):
@@ -1551,32 +1779,10 @@ class ExcelViewerApp(ctk.CTk):
                 columna1_vals_gas.append(None)
 
             # Llenar filas diarias
-            num_dias_reales_gas = 31
-            for i in range(30, -1, -1):
-                val_snr = 0
-                if i < len(self.df_data_gasolinas):
-                    try:
-                        raw_val = self.df_data_gasolinas[snr_col_gas].iloc[i]
-                        if raw_val != "":
-                            val_snr = float(raw_val)
-                        else:
-                            val_snr = 0
-                    except:
-                        val_snr = 0
-                if val_snr != 0:
-                    num_dias_reales_gas = i + 1
-                    break
-
             for i in range(31):
                 categories_gas.append(str(i + 1))
                 proceso_vals_gas.append(None)
                 
-                if i >= num_dias_reales_gas:
-                    diario_vals_gas.append(None)
-                    programa_vals_gas.append(None)
-                    columna1_vals_gas.append(None)
-                    continue
-
                 d_val = None
                 if i < len(self.df_data_gasolinas):
                     try:
@@ -1650,9 +1856,9 @@ class ExcelViewerApp(ctk.CTk):
                     if p_val != 0:
                         prod_rows_die.append((cat, val))
 
-            # Ajustar al límite de 17 categorías
-            if len(prod_rows_die) > 17:
-                prod_rows_die = prod_rows_die[-17:]
+            # Ajustar al límite de 30 categorías
+            if len(prod_rows_die) > 30:
+                prod_rows_die = prod_rows_die[-30:]
 
             # Llenar filas de años y meses (sin celdas vacías al final)
             for i in range(len(prod_rows_die)):
@@ -1669,32 +1875,10 @@ class ExcelViewerApp(ctk.CTk):
                 columna1_vals_die.append(None)
 
             # Llenar filas diarias
-            num_dias_reales_die = 31
-            for i in range(30, -1, -1):
-                val_snr = 0
-                if i < len(self.df_data_diesel):
-                    try:
-                        raw_val = self.df_data_diesel[snr_col_die].iloc[i]
-                        if raw_val != "":
-                            val_snr = float(raw_val)
-                        else:
-                            val_snr = 0
-                    except:
-                        val_snr = 0
-                if val_snr != 0:
-                    num_dias_reales_die = i + 1
-                    break
-
             for i in range(31):
                 categories_die.append(str(i + 1))
                 proceso_vals_die.append(None)
                 
-                if i >= num_dias_reales_die:
-                    diario_vals_die.append(None)
-                    programa_vals_die.append(None)
-                    columna1_vals_die.append(None)
-                    continue
-
                 d_val = None
                 if i < len(self.df_data_diesel):
                     try:
@@ -1768,9 +1952,9 @@ class ExcelViewerApp(ctk.CTk):
                     if p_val != 0:
                         prod_rows_turb.append((cat, val))
 
-            # Ajustar al límite de 17 categorías
-            if len(prod_rows_turb) > 17:
-                prod_rows_turb = prod_rows_turb[-17:]
+            # Ajustar al límite de 30 categorías
+            if len(prod_rows_turb) > 30:
+                prod_rows_turb = prod_rows_turb[-30:]
 
             # Llenar filas de años y meses (sin celdas vacías al final)
             for i in range(len(prod_rows_turb)):
@@ -1787,32 +1971,10 @@ class ExcelViewerApp(ctk.CTk):
                 columna1_vals_turb.append(None)
 
             # Llenar filas diarias
-            num_dias_reales_turb = 31
-            for i in range(30, -1, -1):
-                val_snr = 0
-                if i < len(self.df_data_turbosina):
-                    try:
-                        raw_val = self.df_data_turbosina[snr_col_turb].iloc[i]
-                        if raw_val != "":
-                            val_snr = float(raw_val)
-                        else:
-                            val_snr = 0
-                    except:
-                        val_snr = 0
-                if val_snr != 0:
-                    num_dias_reales_turb = i + 1
-                    break
-
             for i in range(31):
                 categories_turb.append(str(i + 1))
                 proceso_vals_turb.append(None)
                 
-                if i >= num_dias_reales_turb:
-                    diario_vals_turb.append(None)
-                    programa_vals_turb.append(None)
-                    columna1_vals_turb.append(None)
-                    continue
-
                 d_val = None
                 if i < len(self.df_data_turbosina):
                     try:
@@ -1889,9 +2051,9 @@ class ExcelViewerApp(ctk.CTk):
                         if p_val != 0:
                             prod_rows_asf.append((cat, val))
 
-                # Ajustar al límite de 17 categorías
-                if len(prod_rows_asf) > 17:
-                    prod_rows_asf = prod_rows_asf[-17:]
+                # Ajustar al límite de 30 categorías
+                if len(prod_rows_asf) > 30:
+                    prod_rows_asf = prod_rows_asf[-30:]
 
                 # Llenar filas de años y meses (sin celdas vacías al final)
                 for i in range(len(prod_rows_asf)):
@@ -1908,31 +2070,9 @@ class ExcelViewerApp(ctk.CTk):
                     columna1_vals_asf.append(None)
 
                 # Llenar filas diarias
-                num_dias_reales_asf = 31
-                for i in range(30, -1, -1):
-                    val_snr = 0
-                    if i < len(self.df_data_asfalto):
-                        try:
-                            raw_val = self.df_data_asfalto[snr_col_asf].iloc[i]
-                            if raw_val != "":
-                                val_snr = float(raw_val)
-                            else:
-                                val_snr = 0
-                        except:
-                            val_snr = 0
-                    if val_snr != 0:
-                        num_dias_reales_asf = i + 1
-                        break
-
                 for i in range(31):
                     categories_asf.append(str(i + 1))
                     proceso_vals_asf.append(None)
-
-                    if i >= num_dias_reales_asf:
-                        diario_vals_asf.append(None)
-                        programa_vals_asf.append(None)
-                        columna1_vals_asf.append(None)
-                        continue
 
                     d_val = None
                     if i < len(self.df_data_asfalto):
@@ -2013,9 +2153,9 @@ class ExcelViewerApp(ctk.CTk):
                         if p_val != 0:
                             prod_rows_comb.append((cat, val))
 
-                # Ajustar al límite de 17 categorías
-                if len(prod_rows_comb) > 17:
-                    prod_rows_comb = prod_rows_comb[-17:]
+                # Ajustar al límite de 30 categorías
+                if len(prod_rows_comb) > 30:
+                    prod_rows_comb = prod_rows_comb[-30:]
 
                 # Llenar filas de años y meses (sin celdas vacías al final)
                 for i in range(len(prod_rows_comb)):
@@ -2032,31 +2172,9 @@ class ExcelViewerApp(ctk.CTk):
                     columna1_vals_comb.append(None)
 
                 # Llenar filas diarias
-                num_dias_reales_comb = 31
-                for i in range(30, -1, -1):
-                    val_snr = 0
-                    if i < len(self.df_data_combustoleo):
-                        try:
-                            raw_val = self.df_data_combustoleo[diario_col_comb].iloc[i]
-                            if raw_val != "":
-                                val_snr = float(raw_val)
-                            else:
-                                val_snr = 0
-                        except:
-                            val_snr = 0
-                    if val_snr != 0:
-                        num_dias_reales_comb = i + 1
-                        break
-
                 for i in range(31):
                     categories_comb.append(str(i + 1))
                     proceso_vals_comb.append(None)
-
-                    if i >= num_dias_reales_comb:
-                        diario_vals_comb.append(None)
-                        programa_vals_comb.append(None)
-                        columna1_vals_comb.append(None)
-                        continue
 
                     d_val = None
                     if i < len(self.df_data_combustoleo):
@@ -2111,7 +2229,7 @@ class ExcelViewerApp(ctk.CTk):
                             programa_vals_cg = []
                             columna1_vals_cg = []
 
-                            # Filtrar producción anual (últimas 17 categorías)
+                            # Filtrar producción anual (últimas 30 categorías)
                             prod_rows_cg = []
                             for idx, row in self.df_prod_cad_gas.iterrows():
                                 cat = str(row.iloc[0]).strip()
@@ -2128,7 +2246,7 @@ class ExcelViewerApp(ctk.CTk):
 
 
 
-                            if len(prod_rows_cg) > 17: prod_rows_cg = prod_rows_cg[-17:]
+                            if len(prod_rows_cg) > 30: prod_rows_cg = prod_rows_cg[-30:]
 
                             for i in range(len(prod_rows_cg)):
                                 categories_cg.append(prod_rows_cg[i][0])
@@ -2139,24 +2257,9 @@ class ExcelViewerApp(ctk.CTk):
                                 columna1_vals_cg.append(None)
  
                             # Llenar datos diarios (31 días)
-                            num_dias_reales_cg = 31
-                            for i in range(30, -1, -1):
-                                val_snr = 0
-                                if i < len(self.df_data_cad_gas):
-                                    try:
-                                        raw_val = self.df_data_cad_gas[snr_col_cad_gas].iloc[i]
-                                        val_snr = float(raw_val) if raw_val != "" else 0
-                                    except: val_snr = 0
-                                if val_snr != 0:
-                                    num_dias_reales_cg = i + 1
-                                    break
- 
                             for i in range(31):
                                 categories_cg.append(str(i + 1))
                                 proceso_vals_cg.append(None)
-                                if i >= num_dias_reales_cg:
-                                    diario_vals_cg.append(None); programa_vals_cg.append(None); columna1_vals_cg.append(None)
-                                    continue
                                 
                                 try: diario_vals_cg.append(float(self.df_data_cad_gas[snr_col_cad_gas].iloc[i]))
                                 except: diario_vals_cg.append(None)
@@ -2206,7 +2309,7 @@ class ExcelViewerApp(ctk.CTk):
                                             if float(val) != 0: prod_rows_cd.append((cat, val))
                                         except: pass
                                 
-                                if len(prod_rows_cd) > 17: prod_rows_cd = prod_rows_cd[-17:]
+                                if len(prod_rows_cd) > 30: prod_rows_cd = prod_rows_cd[-30:]
  
                                 for i in range(len(prod_rows_cd)):
                                     categories_cd.append(prod_rows_cd[i][0])
@@ -2216,24 +2319,10 @@ class ExcelViewerApp(ctk.CTk):
                                     programa_vals_cd.append(None)
                                     columna1_vals_cd.append(None)
  
-                                num_dias_reales_cd = 31
-                                for i in range(30, -1, -1):
-                                    val_snr = 0
-                                    if i < len(self.df_data_cad_die):
-                                        try:
-                                            raw_val = self.df_data_cad_die[snr_col_cad_die].iloc[i]
-                                            val_snr = float(raw_val) if raw_val != "" else 0
-                                        except: val_snr = 0
-                                    if val_snr != 0:
-                                        num_dias_reales_cd = i + 1
-                                        break
- 
+                                # Llenar datos diarios (31 días)
                                 for i in range(31):
                                     categories_cd.append(str(i + 1))
                                     proceso_vals_cd.append(None)
-                                    if i >= num_dias_reales_cd:
-                                        diario_vals_cd.append(None); programa_vals_cd.append(None); columna1_vals_cd.append(None)
-                                        continue
                                     
                                     try: diario_vals_cd.append(float(self.df_data_cad_die[snr_col_cad_die].iloc[i]))
                                     except: diario_vals_cd.append(None)
