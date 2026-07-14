@@ -524,7 +524,7 @@ def load_data(app, file_path):
 
         # --- 1.9 PROCESAR COMBUSTOLEO MADERO ---
         app.after(0, app.update_progress, 0.40, "Procesando Combustoleo Madero...")
-        df_data_mad_comb = df_sheet.iloc[158:189, [19, 20]].copy()
+        df_data_mad_comb = df_sheet.iloc[158:189, [18, 20]].copy()
         df_data_mad_comb.columns = ["Comb Día", "Madero Comb"]
         df_data_mad_comb = df_data_mad_comb.dropna(how='all')
         df_data_mad_comb = remove_decimals(df_data_mad_comb)
