@@ -384,7 +384,6 @@ def load_data(app, file_path):
         df_data_mad_crud.columns = ["Crudo Día", "Madero Crudo"]
         df_data_mad_crud = df_data_mad_crud.dropna(how='all')
         df_data_mad_crud = remove_decimals(df_data_mad_crud)
-        df_data_mad_crud = filter_zero_rows(df_data_mad_crud)
         df_data_mad_crud = df_data_mad_crud.iloc[:num_dias_reales]
 
         df_snr_mad_crud = df_sheet.iloc[73:104, [61, 61]].copy()
@@ -420,7 +419,6 @@ def load_data(app, file_path):
         df_data_mad_gas.columns = ["Gas Día", "Madero Gas"]
         df_data_mad_gas = df_data_mad_gas.dropna(how='all')
         df_data_mad_gas = remove_decimals(df_data_mad_gas)
-        df_data_mad_gas = filter_zero_rows(df_data_mad_gas)
         df_data_mad_gas = df_data_mad_gas.iloc[:num_dias_reales]
 
         df_snr_mad_gas = df_sheet.iloc[73:104, [71, 71]].copy()
@@ -456,7 +454,6 @@ def load_data(app, file_path):
         df_data_mad_die.columns = ["Diesel Día", "Madero Die"]
         df_data_mad_die = df_data_mad_die.dropna(how='all')
         df_data_mad_die = remove_decimals(df_data_mad_die)
-        df_data_mad_die = filter_zero_rows(df_data_mad_die)
         df_data_mad_die = df_data_mad_die.iloc[:num_dias_reales]
 
         df_snr_mad_die = df_sheet.iloc[73:104, [81, 81]].copy()
@@ -492,7 +489,6 @@ def load_data(app, file_path):
         df_data_mad_turb.columns = ["Turb Día", "Madero Turb"]
         df_data_mad_turb = df_data_mad_turb.dropna(how='all')
         df_data_mad_turb = remove_decimals(df_data_mad_turb)
-        df_data_mad_turb = filter_zero_rows(df_data_mad_turb)
         df_data_mad_turb = df_data_mad_turb.iloc[:num_dias_reales]
 
         df_snr_mad_turb = df_sheet.iloc[73:104, [90, 90]].copy()
@@ -528,7 +524,6 @@ def load_data(app, file_path):
         df_data_mad_comb.columns = ["Comb Día", "Madero Comb"]
         df_data_mad_comb = df_data_mad_comb.dropna(how='all')
         df_data_mad_comb = remove_decimals(df_data_mad_comb)
-        df_data_mad_comb = filter_zero_rows(df_data_mad_comb)
         df_data_mad_comb = df_data_mad_comb.iloc[:num_dias_reales]
 
         df_snr_mad_comb = df_sheet.iloc[73:104, [99, 99]].copy()
