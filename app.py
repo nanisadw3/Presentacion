@@ -156,9 +156,12 @@ class ExcelViewerApp(ctk.CTk):
         self.df_sim_turbosina = None
 
         # Definir directorio por defecto (con fallback si no existe el de descargas)
-        downloads_path = "/mnt/c/Users/10900096799/Downloads"
+        downloads_path = os.path.join(os.path.expanduser("~"), "Downloads")
+        wsl_path = "/mnt/c/Users/10900096799/Downloads"
         if os.path.exists(downloads_path):
             self.default_dir = downloads_path
+        elif os.path.exists(wsl_path):
+            self.default_dir = wsl_path
         else:
             self.default_dir = os.path.dirname(os.path.abspath(__file__))
 

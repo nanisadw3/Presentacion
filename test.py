@@ -1,7 +1,12 @@
 import pandas as pd
 import sys
 
-file_path = "/mnt/c/Users/10900096799/Downloads/2026 Datos para MV Jun comparativo con rend.xlsm"
+import os
+
+filename = "2026 Datos para MV Jun comparativo con rend.xlsm"
+downloads_path = os.path.join(os.path.expanduser("~"), "Downloads", filename)
+wsl_path = os.path.join("/mnt/c/Users/10900096799/Downloads", filename)
+file_path = downloads_path if os.path.exists(downloads_path) else wsl_path
 try:
     xls = pd.ExcelFile(file_path)
     print("Sheets:", xls.sheet_names)
