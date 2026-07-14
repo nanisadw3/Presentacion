@@ -1043,6 +1043,181 @@ def load_data(app, file_path):
         df_prod_sal_comb = merge_extra_prod("Salina Cruz -Combustoleo", df_prod_sal_comb)
         df_prod_sal_comb_copy = df_prod_sal_comb.copy()
 
+        # --- 1.24 PROCESAR CRUDO TULA ---
+        app.after(0, app.update_progress, 0.55, "Procesando Crudo Tula...")
+        df_data_tula_crud = df_sheet.iloc[20:51, [0, 7]].copy()
+        df_data_tula_crud.columns = ["Crudo Día", "Tula Crudo"]
+        df_data_tula_crud = df_data_tula_crud.dropna(how='all')
+        df_data_tula_crud = remove_decimals(df_data_tula_crud)
+        df_data_tula_crud = df_data_tula_crud.iloc[:num_dias_reales]
+
+        df_snr_tula_crud = df_sheet.iloc[73:104, [65, 65]].copy()
+        df_snr_tula_crud.columns = ["CMP", "PODIM"]
+        df_snr_tula_crud = df_snr_tula_crud.dropna(how='all').dropna(axis=1, how='all')
+        df_snr_tula_crud = remove_decimals(df_snr_tula_crud, skip_first=True)
+        df_snr_tula_crud_copy = df_snr_tula_crud.copy()
+
+        df_prod_tula_crud_raw = df_sheet.iloc[20:40, 62:64].copy()
+        df_prod_tula_crud_raw.columns = ["Año/Mes", "Produccion"]
+        df_prod_tula_crud_raw = df_prod_tula_crud_raw.dropna(how='all')
+
+        dic_idx_tula_crud = -1
+        for idx, row in df_prod_tula_crud_raw.iterrows():
+            val = str(row.iloc[0]).strip().lower()
+            if "dic" in val or "diciembre" in val:
+                dic_idx_tula_crud = idx - 20
+                break
+
+        if dic_idx_tula_crud != -1:
+            df_prod_tula_crud = df_prod_tula_crud_raw.iloc[:dic_idx_tula_crud + 1]
+        else:
+            df_prod_tula_crud = df_prod_tula_crud_raw.iloc[:20]
+
+        df_prod_tula_crud = df_prod_tula_crud.dropna(axis=1, how='all')
+        df_prod_tula_crud = remove_decimals(df_prod_tula_crud, skip_last=True)
+        df_prod_tula_crud = merge_extra_prod("Tula -Crudo", df_prod_tula_crud)
+        df_prod_tula_crud_copy = df_prod_tula_crud.copy()
+
+        # --- 1.25 PROCESAR GASOLINAS TULA ---
+        app.after(0, app.update_progress, 0.56, "Procesando Gasolinas Tula...")
+        df_data_tula_gas = df_sheet.iloc[20:51, [11, 17]].copy()
+        df_data_tula_gas.columns = ["Gas Día", "Tula Gas"]
+        df_data_tula_gas = df_data_tula_gas.dropna(how='all')
+        df_data_tula_gas = remove_decimals(df_data_tula_gas)
+        df_data_tula_gas = df_data_tula_gas.iloc[:num_dias_reales]
+
+        df_snr_tula_gas = df_sheet.iloc[73:104, [75, 75]].copy()
+        df_snr_tula_gas.columns = ["CMP", "PODIM"]
+        df_snr_tula_gas = df_snr_tula_gas.dropna(how='all').dropna(axis=1, how='all')
+        df_snr_tula_gas = remove_decimals(df_snr_tula_gas, skip_first=True)
+        df_snr_tula_gas_copy = df_snr_tula_gas.copy()
+
+        df_prod_tula_gas_raw = df_sheet.iloc[20:40, 80:82].copy()
+        df_prod_tula_gas_raw.columns = ["Año/Mes", "Produccion"]
+        df_prod_tula_gas_raw = df_prod_tula_gas_raw.dropna(how='all')
+
+        dic_idx_tula_gas = -1
+        for idx, row in df_prod_tula_gas_raw.iterrows():
+            val = str(row.iloc[0]).strip().lower()
+            if "dic" in val or "diciembre" in val:
+                dic_idx_tula_gas = idx - 20
+                break
+
+        if dic_idx_tula_gas != -1:
+            df_prod_tula_gas = df_prod_tula_gas_raw.iloc[:dic_idx_tula_gas + 1]
+        else:
+            df_prod_tula_gas = df_prod_tula_gas_raw.iloc[:20]
+
+        df_prod_tula_gas = df_prod_tula_gas.dropna(axis=1, how='all')
+        df_prod_tula_gas = remove_decimals(df_prod_tula_gas, skip_last=True)
+        df_prod_tula_gas = merge_extra_prod("Tula -Gasolinas", df_prod_tula_gas)
+        df_prod_tula_gas_copy = df_prod_tula_gas.copy()
+
+        # --- 1.26 PROCESAR DIESEL TULA ---
+        app.after(0, app.update_progress, 0.57, "Procesando Diesel Tula...")
+        df_data_tula_die = df_sheet.iloc[73:104, [0, 6]].copy()
+        df_data_tula_die.columns = ["Diesel Día", "Tula Die"]
+        df_data_tula_die = df_data_tula_die.dropna(how='all')
+        df_data_tula_die = remove_decimals(df_data_tula_die)
+        df_data_tula_die = df_data_tula_die.iloc[:num_dias_reales]
+
+        df_snr_tula_die = df_sheet.iloc[73:104, [85, 85]].copy()
+        df_snr_tula_die.columns = ["CMP", "PODIM"]
+        df_snr_tula_die = df_snr_tula_die.dropna(how='all').dropna(axis=1, how='all')
+        df_snr_tula_die = remove_decimals(df_snr_tula_die, skip_first=True)
+        df_snr_tula_die_copy = df_snr_tula_die.copy()
+
+        df_prod_tula_die_raw = df_sheet.iloc[20:40, 97:99].copy()
+        df_prod_tula_die_raw.columns = ["Año/Mes", "Produccion"]
+        df_prod_tula_die_raw = df_prod_tula_die_raw.dropna(how='all')
+
+        dic_idx_tula_die = -1
+        for idx, row in df_prod_tula_die_raw.iterrows():
+            val = str(row.iloc[0]).strip().lower()
+            if "dic" in val or "diciembre" in val:
+                dic_idx_tula_die = idx - 20
+                break
+
+        if dic_idx_tula_die != -1:
+            df_prod_tula_die = df_prod_tula_die_raw.iloc[:dic_idx_tula_die + 1]
+        else:
+            df_prod_tula_die = df_prod_tula_die_raw.iloc[:20]
+
+        df_prod_tula_die = df_prod_tula_die.dropna(axis=1, how='all')
+        df_prod_tula_die = remove_decimals(df_prod_tula_die, skip_last=True)
+        df_prod_tula_die = merge_extra_prod("Tula -Diesel", df_prod_tula_die)
+        df_prod_tula_die_copy = df_prod_tula_die.copy()
+
+        # --- 1.27 PROCESAR TURBOSINA TULA ---
+        app.after(0, app.update_progress, 0.58, "Procesando Turbosina Tula...")
+        df_data_tula_turb = df_sheet.iloc[73:104, [11, 15]].copy()
+        df_data_tula_turb.columns = ["Turb Día", "Tula Turb"]
+        df_data_tula_turb = df_data_tula_turb.dropna(how='all')
+        df_data_tula_turb = remove_decimals(df_data_tula_turb)
+        df_data_tula_turb = df_data_tula_turb.iloc[:num_dias_reales]
+
+        df_snr_tula_turb = df_sheet.iloc[73:104, [93, 93]].copy()
+        df_snr_tula_turb.columns = ["CMP", "PODIM"]
+        df_snr_tula_turb = df_snr_tula_turb.dropna(how='all').dropna(axis=1, how='all')
+        df_snr_tula_turb = remove_decimals(df_snr_tula_turb, skip_first=True)
+        df_snr_tula_turb_copy = df_snr_tula_turb.copy()
+
+        df_prod_tula_turb_raw = df_sheet.iloc[20:40, 107:109].copy()
+        df_prod_tula_turb_raw.columns = ["Año/Mes", "Produccion"]
+        df_prod_tula_turb_raw = df_prod_tula_turb_raw.dropna(how='all')
+
+        dic_idx_tula_turb = -1
+        for idx, row in df_prod_tula_turb_raw.iterrows():
+            val = str(row.iloc[0]).strip().lower()
+            if "dic" in val or "diciembre" in val:
+                dic_idx_tula_turb = idx - 20
+                break
+
+        if dic_idx_tula_turb != -1:
+            df_prod_tula_turb = df_prod_tula_turb_raw.iloc[:dic_idx_tula_turb + 1]
+        else:
+            df_prod_tula_turb = df_prod_tula_turb_raw.iloc[:20]
+
+        df_prod_tula_turb = df_prod_tula_turb.dropna(axis=1, how='all')
+        df_prod_tula_turb = remove_decimals(df_prod_tula_turb, skip_last=True)
+        df_prod_tula_turb = merge_extra_prod("Tula -Turbosina", df_prod_tula_turb)
+        df_prod_tula_turb_copy = df_prod_tula_turb.copy()
+
+        # --- 1.28 PROCESAR COMBUSTOLEO TULA ---
+        app.after(0, app.update_progress, 0.59, "Procesando Combustoleo Tula...")
+        df_data_tula_comb = df_sheet.iloc[158:189, [18, 24]].copy()
+        df_data_tula_comb.columns = ["Comb Día", "Tula Comb"]
+        df_data_tula_comb = df_data_tula_comb.dropna(how='all')
+        df_data_tula_comb = remove_decimals(df_data_tula_comb)
+        df_data_tula_comb = df_data_tula_comb.iloc[:num_dias_reales]
+
+        df_snr_tula_comb = df_sheet.iloc[73:104, [104, 104]].copy()
+        df_snr_tula_comb.columns = ["CMP", "PODIM"]
+        df_snr_tula_comb = df_snr_tula_comb.dropna(how='all').dropna(axis=1, how='all')
+        df_snr_tula_comb = remove_decimals(df_snr_tula_comb, skip_first=True)
+        df_snr_tula_comb_copy = df_snr_tula_comb.copy()
+
+        df_prod_tula_comb_raw = df_sheet.iloc[157:179, 48:50].copy()
+        df_prod_tula_comb_raw.columns = ["Año/Mes", "Produccion"]
+        df_prod_tula_comb_raw = df_prod_tula_comb_raw.dropna(how='all')
+
+        dic_idx_tula_comb = -1
+        for idx, row in df_prod_tula_comb_raw.iterrows():
+            val = str(row.iloc[0]).strip().lower()
+            if "dic" in val or "diciembre" in val:
+                dic_idx_tula_comb = idx - 157
+                break
+
+        if dic_idx_tula_comb != -1:
+            df_prod_tula_comb = df_prod_tula_comb_raw.iloc[:dic_idx_tula_comb + 1]
+        else:
+            df_prod_tula_comb = df_prod_tula_comb_raw.iloc[:22]
+
+        df_prod_tula_comb = df_prod_tula_comb.dropna(axis=1, how='all')
+        df_prod_tula_comb = remove_decimals(df_prod_tula_comb, skip_last=True)
+        df_prod_tula_comb = merge_extra_prod("Tula -Combustoleo", df_prod_tula_comb)
+        df_prod_tula_comb_copy = df_prod_tula_comb.copy()
+
         # --- 2. PROCESAR GASOLINAS ---
         app.after(0, app.update_progress, 0.35, "Procesando Gasolinas...")
         # Leer fila 1 (index 0) para encabezados, Cols L:S (11:19)
@@ -1973,6 +2148,121 @@ def load_data(app, file_path):
         sim_data_sal_comb.append(["TOTALES", "---", f"Días pasados: {days_passed}", f"Suma: {int(suma_total_sal_comb)} | Prom: {promedio_sal_comb:.2f}"])
         df_sim_sal_comb = pd.DataFrame(sim_data_sal_comb, columns=["Mes", "Producción", "Días", "Total (Prod x Días)"])
 
+        # 28. Simulación Tula Crudo
+        prod_dict_tula_crud = {m: 0.0 for m in meses_nombres}
+        for idx, row_data in df_prod_tula_crud.iterrows():
+            val_anio = str(row_data.iloc[0]).strip().lower()
+            val_prod = row_data.iloc[1]
+            try: p = float(val_prod)
+            except: p = 0.0
+            for i, (m_largo, m_corto) in enumerate(zip(meses_nombres, meses_cortos)):
+                if m_largo.lower() in val_anio or m_corto.lower() in val_anio:
+                    prod_dict_tula_crud[meses_nombres[i]] += p
+                    break
+        sim_data_tula_crud = []
+        suma_total_tula_crud = 0.0
+        for i, mes in enumerate(meses_nombres):
+            dias = dias_por_mes[i]
+            prod = prod_dict_tula_crud[mes]
+            total = prod * dias
+            suma_total_tula_crud += total
+            sim_data_tula_crud.append([mes, int(prod), dias, int(total)])
+        promedio_tula_crud = suma_total_tula_crud / days_passed if days_passed > 0 else 0
+        sim_data_tula_crud.append(["TOTALES", "---", f"Días pasados: {days_passed}", f"Suma: {int(suma_total_tula_crud)} | Prom: {promedio_tula_crud:.2f}"])
+        df_sim_tula_crud = pd.DataFrame(sim_data_tula_crud, columns=["Mes", "Producción", "Días", "Total (Prod x Días)"])
+
+        # 29. Simulación Tula Gasolinas
+        prod_dict_tula_gas = {m: 0.0 for m in meses_nombres}
+        for idx, row_data in df_prod_tula_gas.iterrows():
+            val_anio = str(row_data.iloc[0]).strip().lower()
+            val_prod = row_data.iloc[1]
+            try: p = float(val_prod)
+            except: p = 0.0
+            for i, (m_largo, m_corto) in enumerate(zip(meses_nombres, meses_cortos)):
+                if m_largo.lower() in val_anio or m_corto.lower() in val_anio:
+                    prod_dict_tula_gas[meses_nombres[i]] += p
+                    break
+        sim_data_tula_gas = []
+        suma_total_tula_gas = 0.0
+        for i, mes in enumerate(meses_nombres):
+            dias = dias_por_mes[i]
+            prod = prod_dict_tula_gas[mes]
+            total = prod * dias
+            suma_total_tula_gas += total
+            sim_data_tula_gas.append([mes, int(prod), dias, int(total)])
+        promedio_tula_gas = suma_total_tula_gas / days_passed if days_passed > 0 else 0
+        sim_data_tula_gas.append(["TOTALES", "---", f"Días pasados: {days_passed}", f"Suma: {int(suma_total_tula_gas)} | Prom: {promedio_tula_gas:.2f}"])
+        df_sim_tula_gas = pd.DataFrame(sim_data_tula_gas, columns=["Mes", "Producción", "Días", "Total (Prod x Días)"])
+
+        # 30. Simulación Tula Diesel
+        prod_dict_tula_die = {m: 0.0 for m in meses_nombres}
+        for idx, row_data in df_prod_tula_die.iterrows():
+            val_anio = str(row_data.iloc[0]).strip().lower()
+            val_prod = row_data.iloc[1]
+            try: p = float(val_prod)
+            except: p = 0.0
+            for i, (m_largo, m_corto) in enumerate(zip(meses_nombres, meses_cortos)):
+                if m_largo.lower() in val_anio or m_corto.lower() in val_anio:
+                    prod_dict_tula_die[meses_nombres[i]] += p
+                    break
+        sim_data_tula_die = []
+        suma_total_tula_die = 0.0
+        for i, mes in enumerate(meses_nombres):
+            dias = dias_por_mes[i]
+            prod = prod_dict_tula_die[mes]
+            total = prod * dias
+            suma_total_tula_die += total
+            sim_data_tula_die.append([mes, int(prod), dias, int(total)])
+        promedio_tula_die = suma_total_tula_die / days_passed if days_passed > 0 else 0
+        sim_data_tula_die.append(["TOTALES", "---", f"Días pasados: {days_passed}", f"Suma: {int(suma_total_tula_die)} | Prom: {promedio_tula_die:.2f}"])
+        df_sim_tula_die = pd.DataFrame(sim_data_tula_die, columns=["Mes", "Producción", "Días", "Total (Prod x Días)"])
+
+        # 31. Simulación Tula Turbosina
+        prod_dict_tula_turb = {m: 0.0 for m in meses_nombres}
+        for idx, row_data in df_prod_tula_turb.iterrows():
+            val_anio = str(row_data.iloc[0]).strip().lower()
+            val_prod = row_data.iloc[1]
+            try: p = float(val_prod)
+            except: p = 0.0
+            for i, (m_largo, m_corto) in enumerate(zip(meses_nombres, meses_cortos)):
+                if m_largo.lower() in val_anio or m_corto.lower() in val_anio:
+                    prod_dict_tula_turb[meses_nombres[i]] += p
+                    break
+        sim_data_tula_turb = []
+        suma_total_tula_turb = 0.0
+        for i, mes in enumerate(meses_nombres):
+            dias = dias_por_mes[i]
+            prod = prod_dict_tula_turb[mes]
+            total = prod * dias
+            suma_total_tula_turb += total
+            sim_data_tula_turb.append([mes, int(prod), dias, int(total)])
+        promedio_tula_turb = suma_total_tula_turb / days_passed if days_passed > 0 else 0
+        sim_data_tula_turb.append(["TOTALES", "---", f"Días pasados: {days_passed}", f"Suma: {int(suma_total_tula_turb)} | Prom: {promedio_tula_turb:.2f}"])
+        df_sim_tula_turb = pd.DataFrame(sim_data_tula_turb, columns=["Mes", "Producción", "Días", "Total (Prod x Días)"])
+
+        # 32. Simulación Tula Combustoleo
+        prod_dict_tula_comb = {m: 0.0 for m in meses_nombres}
+        for idx, row_data in df_prod_tula_comb.iterrows():
+            val_anio = str(row_data.iloc[0]).strip().lower()
+            val_prod = row_data.iloc[1]
+            try: p = float(val_prod)
+            except: p = 0.0
+            for i, (m_largo, m_corto) in enumerate(zip(meses_nombres, meses_cortos)):
+                if m_largo.lower() in val_anio or m_corto.lower() in val_anio:
+                    prod_dict_tula_comb[meses_nombres[i]] += p
+                    break
+        sim_data_tula_comb = []
+        suma_total_tula_comb = 0.0
+        for i, mes in enumerate(meses_nombres):
+            dias = dias_por_mes[i]
+            prod = prod_dict_tula_comb[mes]
+            total = prod * dias
+            suma_total_tula_comb += total
+            sim_data_tula_comb.append([mes, int(prod), dias, int(total)])
+        promedio_tula_comb = suma_total_tula_comb / days_passed if days_passed > 0 else 0
+        sim_data_tula_comb.append(["TOTALES", "---", f"Días pasados: {days_passed}", f"Suma: {int(suma_total_tula_comb)} | Prom: {promedio_tula_comb:.2f}"])
+        df_sim_tula_comb = pd.DataFrame(sim_data_tula_comb, columns=["Mes", "Producción", "Días", "Total (Prod x Días)"])
+
         app.after(0, app.update_progress, 0.97, "Finalizando...")
 
         # Pasar datos a la interfaz (main thread)
@@ -2004,7 +2294,12 @@ def load_data(app, file_path):
                    df_data_sal_gas, df_snr_sal_gas_copy, df_prod_sal_gas_copy, df_sim_sal_gas,
                    df_data_sal_die, df_snr_sal_die_copy, df_prod_sal_die_copy, df_sim_sal_die,
                    df_data_sal_turb, df_snr_sal_turb_copy, df_prod_sal_turb_copy, df_sim_sal_turb,
-                   df_data_sal_comb, df_snr_sal_comb_copy, df_prod_sal_comb_copy, df_sim_sal_comb)
+                   df_data_sal_comb, df_snr_sal_comb_copy, df_prod_sal_comb_copy, df_sim_sal_comb,
+                   df_data_tula_crud, df_snr_tula_crud_copy, df_prod_tula_crud_copy, df_sim_tula_crud,
+                   df_data_tula_gas, df_snr_tula_gas_copy, df_prod_tula_gas_copy, df_sim_tula_gas,
+                   df_data_tula_die, df_snr_tula_die_copy, df_prod_tula_die_copy, df_sim_tula_die,
+                   df_data_tula_turb, df_snr_tula_turb_copy, df_prod_tula_turb_copy, df_sim_tula_turb,
+                   df_data_tula_comb, df_snr_tula_comb_copy, df_prod_tula_comb_copy, df_sim_tula_comb)
 
     except Exception as e:
         err_details = traceback.format_exc()
