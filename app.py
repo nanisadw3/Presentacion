@@ -80,7 +80,7 @@ class ExcelViewerApp(ctk.CTk):
         self.lbl_proceso.pack(pady=15, padx=(20, 5), side="left")
         
         self.cb_proceso = ctk.CTkComboBox(self.top_frame, 
-                                            values=["Crudo", "Gasolinas", "Diesel", "Turbosina", "Asfalto", "Combustoleo", "Cadereyta -Crudo", "Cadereyta -Gasolinas", "Cadereyta -Diesel", "Cadereyta -Combustoleo", "Madero -Crudo", "Madero -Gasolinas", "Madero -Diesel", "Madero -Turbosina", "Madero -Combustoleo"],
+                                            values=["Crudo", "Gasolinas", "Diesel", "Turbosina", "Asfalto", "Combustoleo", "Cadereyta -Crudo", "Cadereyta -Gasolinas", "Cadereyta -Diesel", "Cadereyta -Combustoleo", "Madero -Crudo", "Madero -Gasolinas", "Madero -Diesel", "Madero -Turbosina", "Madero -Combustoleo", "Minatitlan -Crudo", "Minatitlan -Gasolinas", "Minatitlan -Diesel", "Minatitlan -Combustoleo"],
                                             font=("Roboto", 14),
                                             command=self.on_proceso_changed,
                                             state="readonly",
@@ -161,6 +161,30 @@ class ExcelViewerApp(ctk.CTk):
         self.df_snr_mad_comb = None
         self.df_prod_mad_comb = None
         self.df_sim_mad_comb = None
+
+        # Datos de Minatitlan -Crudo
+        self.df_data_mina_crud = None
+        self.df_snr_mina_crud = None
+        self.df_prod_mina_crud = None
+        self.df_sim_mina_crud = None
+
+        # Datos de Minatitlan -Gasolinas
+        self.df_data_mina_gas = None
+        self.df_snr_mina_gas = None
+        self.df_prod_mina_gas = None
+        self.df_sim_mina_gas = None
+
+        # Datos de Minatitlan -Diesel
+        self.df_data_mina_die = None
+        self.df_snr_mina_die = None
+        self.df_prod_mina_die = None
+        self.df_sim_mina_die = None
+
+        # Datos de Minatitlan -Combustoleo
+        self.df_data_mina_comb = None
+        self.df_snr_mina_comb = None
+        self.df_prod_mina_comb = None
+        self.df_sim_mina_comb = None
  
         # Datos de Turbosina
         self.df_data_turbosina = None
@@ -218,7 +242,7 @@ class ExcelViewerApp(ctk.CTk):
 
         lbl_proceso = ctk.CTkLabel(dialog, text="Proceso:", font=("Roboto", 14, "bold"))
         lbl_proceso.pack(pady=(10, 0))
-        opciones_procesos = ["Crudo", "Gasolinas", "Diesel", "Turbosina", "Asfalto", "Combustoleo", "Cadereyta -Crudo", "Cadereyta -Gasolinas", "Cadereyta -Diesel", "Cadereyta -Combustoleo", "Madero -Crudo", "Madero -Gasolinas", "Madero -Diesel", "Madero -Turbosina", "Madero -Combustoleo"]
+        opciones_procesos = ["Crudo", "Gasolinas", "Diesel", "Turbosina", "Asfalto", "Combustoleo", "Cadereyta -Crudo", "Cadereyta -Gasolinas", "Cadereyta -Diesel", "Cadereyta -Combustoleo", "Madero -Crudo", "Madero -Gasolinas", "Madero -Diesel", "Madero -Turbosina", "Madero -Combustoleo", "Minatitlan -Crudo", "Minatitlan -Gasolinas", "Minatitlan -Diesel", "Minatitlan -Combustoleo"]
         combo_proceso = ctk.CTkComboBox(dialog, values=opciones_procesos, width=250)
         combo_proceso.pack(pady=(5, 10))
 
@@ -452,6 +476,30 @@ class ExcelViewerApp(ctk.CTk):
                 save_df(getattr(self, 'df_prod_mad_comb', None), 'madero_combustoleo_produccion')
                 save_df(getattr(self, 'df_sim_mad_comb', None), 'madero_combustoleo_simulacion_anual')
 
+                # Guardar datos de Minatitlan - Crudo
+                save_df(getattr(self, 'df_data_mina_crud', None), 'minatitlan_crudo_tabla_principal')
+                save_df(getattr(self, 'df_snr_mina_crud', None), 'minatitlan_crudo_programa_snr')
+                save_df(getattr(self, 'df_prod_mina_crud', None), 'minatitlan_crudo_produccion')
+                save_df(getattr(self, 'df_sim_mina_crud', None), 'minatitlan_crudo_simulacion_anual')
+
+                # Guardar datos de Minatitlan - Gasolinas
+                save_df(getattr(self, 'df_data_mina_gas', None), 'minatitlan_gasolinas_tabla_principal')
+                save_df(getattr(self, 'df_snr_mina_gas', None), 'minatitlan_gasolinas_programa_snr')
+                save_df(getattr(self, 'df_prod_mina_gas', None), 'minatitlan_gasolinas_produccion')
+                save_df(getattr(self, 'df_sim_mina_gas', None), 'minatitlan_gasolinas_simulacion_anual')
+
+                # Guardar datos de Minatitlan - Diesel
+                save_df(getattr(self, 'df_data_mina_die', None), 'minatitlan_diesel_tabla_principal')
+                save_df(getattr(self, 'df_snr_mina_die', None), 'minatitlan_diesel_programa_snr')
+                save_df(getattr(self, 'df_prod_mina_die', None), 'minatitlan_diesel_produccion')
+                save_df(getattr(self, 'df_sim_mina_die', None), 'minatitlan_diesel_simulacion_anual')
+
+                # Guardar datos de Minatitlan - Combustoleo
+                save_df(getattr(self, 'df_data_mina_comb', None), 'minatitlan_combustoleo_tabla_principal')
+                save_df(getattr(self, 'df_snr_mina_comb', None), 'minatitlan_combustoleo_programa_snr')
+                save_df(getattr(self, 'df_prod_mina_comb', None), 'minatitlan_combustoleo_produccion')
+                save_df(getattr(self, 'df_sim_mina_comb', None), 'minatitlan_combustoleo_simulacion_anual')
+
                 conn.commit()
                 conn.close()
                 messagebox.showinfo("Éxito", f"¡Los datos de todos los procesos han sido guardados en la base de datos!\n\nRuta:\n{db_path}")
@@ -488,7 +536,11 @@ class ExcelViewerApp(ctk.CTk):
                             df_data_mad_gas=None, df_snr_mad_gas=None, df_prod_mad_gas=None, df_sim_mad_gas=None,
                             df_data_mad_die=None, df_snr_mad_die=None, df_prod_mad_die=None, df_sim_mad_die=None,
                             df_data_mad_turb=None, df_snr_mad_turb=None, df_prod_mad_turb=None, df_sim_mad_turb=None,
-                            df_data_mad_comb=None, df_snr_mad_comb=None, df_prod_mad_comb=None, df_sim_mad_comb=None):
+                            df_data_mad_comb=None, df_snr_mad_comb=None, df_prod_mad_comb=None, df_sim_mad_comb=None,
+                            df_data_mina_crud=None, df_snr_mina_crud=None, df_prod_mina_crud=None, df_sim_mina_crud=None,
+                            df_data_mina_gas=None, df_snr_mina_gas=None, df_prod_mina_gas=None, df_sim_mina_gas=None,
+                            df_data_mina_die=None, df_snr_mina_die=None, df_prod_mina_die=None, df_sim_mina_die=None,
+                            df_data_mina_comb=None, df_snr_mina_comb=None, df_prod_mina_comb=None, df_sim_mina_comb=None):
         self.df_data = df_data
 
         self.df_snr = df_snr
@@ -565,6 +617,26 @@ class ExcelViewerApp(ctk.CTk):
         self.df_snr_mad_comb = df_snr_mad_comb
         self.df_prod_mad_comb = df_prod_mad_comb
         self.df_sim_mad_comb = df_sim_mad_comb
+
+        self.df_data_mina_crud = df_data_mina_crud
+        self.df_snr_mina_crud = df_snr_mina_crud
+        self.df_prod_mina_crud = df_prod_mina_crud
+        self.df_sim_mina_crud = df_sim_mina_crud
+
+        self.df_data_mina_gas = df_data_mina_gas
+        self.df_snr_mina_gas = df_snr_mina_gas
+        self.df_prod_mina_gas = df_prod_mina_gas
+        self.df_sim_mina_gas = df_sim_mina_gas
+
+        self.df_data_mina_die = df_data_mina_die
+        self.df_snr_mina_die = df_snr_mina_die
+        self.df_prod_mina_die = df_prod_mina_die
+        self.df_sim_mina_die = df_sim_mina_die
+
+        self.df_data_mina_comb = df_data_mina_comb
+        self.df_snr_mina_comb = df_snr_mina_comb
+        self.df_prod_mina_comb = df_prod_mina_comb
+        self.df_sim_mina_comb = df_sim_mina_comb
 
         # Mostrar las tablas correspondientes a la selección actual del ComboBox
         self.show_proceso_tables(self.cb_proceso.get())
@@ -706,6 +778,34 @@ class ExcelViewerApp(ctk.CTk):
             df_sim = self.df_sim_mad_comb
             lbl2_txt = "Programa de Combustoleo Madero (Col CV x2, Filas 74-104)"
             lbl3_txt = "Fecha y Producción de Combustoleo Madero (AK-AL, Filas 158-179)"
+        elif selection == "Minatitlan -Crudo":
+            df_data = self.df_data_mina_crud
+            df_snr = self.df_snr_mina_crud
+            df_prod = self.df_prod_mina_crud
+            df_sim = self.df_sim_mina_crud
+            lbl2_txt = "Programa de Crudo Minatitlan (Col BK x2, Filas 74-104)"
+            lbl3_txt = "Fecha y Producción de Crudo Minatitlan (BC-BD, Filas 21-40)"
+        elif selection == "Minatitlan -Gasolinas":
+            df_data = self.df_data_mina_gas
+            df_snr = self.df_snr_mina_gas
+            df_prod = self.df_prod_mina_gas
+            df_sim = self.df_sim_mina_gas
+            lbl2_txt = "Programa de Gasolinas Minatitlan (Col BU x2, Filas 74-104)"
+            lbl3_txt = "Fecha y Producción de Gasolinas Minatitlan (BU-BV, Filas 21-40)"
+        elif selection == "Minatitlan -Diesel":
+            df_data = self.df_data_mina_die
+            df_snr = self.df_snr_mina_die
+            df_prod = self.df_prod_mina_die
+            df_sim = self.df_sim_mina_die
+            lbl2_txt = "Programa de Diesel Minatitlan (Col CE x2, Filas 74-104)"
+            lbl3_txt = "Fecha y Producción de Diesel Minatitlan (CM-CN, Filas 21-40)"
+        elif selection == "Minatitlan -Combustoleo":
+            df_data = self.df_data_mina_comb
+            df_snr = self.df_snr_mina_comb
+            df_prod = self.df_prod_mina_comb
+            df_sim = self.df_sim_mina_comb
+            lbl2_txt = "Programa de Combustoleo Minatitlan (Col CW x2, Filas 74-104)"
+            lbl3_txt = "Fecha y Producción de Combustoleo Minatitlan (AN-AO, Filas 158-179)"
 
         if df_data is None or df_snr is None or df_prod is None:
             return

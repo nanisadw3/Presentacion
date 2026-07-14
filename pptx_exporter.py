@@ -111,8 +111,8 @@ def export_to_pptx(app, file_path, save_path):
         from pptx.dml.color import RGBColor
 
         prs = Presentation(file_path)
-        if len(prs.slides) < 20:
-            raise ValueError("La presentación debe tener al menos 20 diapositivas (incluyendo las de Madero -Crudo, Gasolinas, Diesel, Turbosina y Combustoleo).")
+        if len(prs.slides) < 26:
+            raise ValueError("La presentación debe tener al menos 26 diapositivas (incluyendo las de Madero y Minatitlán).")
  
         # --- 1. PROCESAR DIAPOSITIVA DE CRUDO (DIAPOSITIVA 2) ---
         slide = prs.slides[1]
@@ -1225,6 +1225,254 @@ def export_to_pptx(app, file_path, save_path):
                             except: columna1_vals_mco.append(None)
 
                         update_slide_chart(chart_mad_comb, categories_mco, proceso_vals_mco, diario_vals_mco, programa_vals_mco, columna1_vals_mco, wine_color, green_color)
+
+            # --- 15. PROCESAR DIAPOSITIVA DE CRUDO MINATITLAN (DIAPOSITIVA 23) ---
+            if len(prs.slides) > 22 and app.df_data_mina_crud is not None and app.df_snr_mina_crud is not None and app.df_prod_mina_crud is not None:
+                slide_mina_crud = prs.slides[22]
+                chart_mina_crud = None
+                for shape in slide_mina_crud.shapes:
+                    if shape.has_chart:
+                        chart_mina_crud = shape.chart
+                        break
+                
+                if chart_mina_crud:
+                    snr_col_mina_crud = None
+                    for col in app.df_data_mina_crud.columns:
+                        if "SNR" in str(col).upper():
+                            snr_col_mina_crud = col
+                            break
+                    if not snr_col_mina_crud and len(app.df_data_mina_crud.columns) >= 2:
+                        snr_col_mina_crud = app.df_data_mina_crud.columns[1]
+
+                    if snr_col_mina_crud:
+                        categories_mic = []
+                        proceso_vals_mic = []
+                        diario_vals_mic = []
+                        programa_vals_mic = []
+                        columna1_vals_mic = []
+
+                        prod_rows_mic = []
+                        for idx, row in app.df_prod_mina_crud.iterrows():
+                            cat = str(row.iloc[0]).strip()
+                            val = row.iloc[1]
+                            if not cat: continue
+                            if not any(c.isalpha() for c in cat):
+                                prod_rows_mic.append((cat, val))
+                            else:
+                                try:
+                                    if float(val) != 0: prod_rows_mic.append((cat, val))
+                                except: pass
+
+                        if len(prod_rows_mic) > 30: prod_rows_mic = prod_rows_mic[-30:]
+
+                        for i in range(len(prod_rows_mic)):
+                            categories_mic.append(prod_rows_mic[i][0])
+                            try: proceso_vals_mic.append(float(prod_rows_mic[i][1]))
+                            except: proceso_vals_mic.append(None)
+                            diario_vals_mic.append(None)
+                            programa_vals_mic.append(None)
+                            columna1_vals_mic.append(None)
+
+                        for i in range(31):
+                            categories_mic.append(str(i + 1))
+                            proceso_vals_mic.append(None)
+                            
+                            try: diario_vals_mic.append(float(app.df_data_mina_crud[snr_col_mina_crud].iloc[i]))
+                            except: diario_vals_mic.append(None)
+                            
+                            try: programa_vals_mic.append(float(app.df_snr_mina_crud.iloc[i, 0]))
+                            except: programa_vals_mic.append(None)
+                            
+                            try: columna1_vals_mic.append(float(app.df_snr_mina_crud.iloc[i, 1]))
+                            except: columna1_vals_mic.append(None)
+
+                        update_slide_chart(chart_mina_crud, categories_mic, proceso_vals_mic, diario_vals_mic, programa_vals_mic, columna1_vals_mic, wine_color, green_color)
+
+            # --- 16. PROCESAR DIAPOSITIVA DE GASOLINAS MINATITLAN (DIAPOSITIVA 24) ---
+            if len(prs.slides) > 23 and app.df_data_mina_gas is not None and app.df_snr_mina_gas is not None and app.df_prod_mina_gas is not None:
+                slide_mina_gas = prs.slides[23]
+                chart_mina_gas = None
+                for shape in slide_mina_gas.shapes:
+                    if shape.has_chart:
+                        chart_mina_gas = shape.chart
+                        break
+                
+                if chart_mina_gas:
+                    snr_col_mina_gas = None
+                    for col in app.df_data_mina_gas.columns:
+                        if "SNR" in str(col).upper():
+                            snr_col_mina_gas = col
+                            break
+                    if not snr_col_mina_gas and len(app.df_data_mina_gas.columns) >= 2:
+                        snr_col_mina_gas = app.df_data_mina_gas.columns[1]
+
+                    if snr_col_mina_gas:
+                        categories_mig = []
+                        proceso_vals_mig = []
+                        diario_vals_mig = []
+                        programa_vals_mig = []
+                        columna1_vals_mig = []
+
+                        prod_rows_mig = []
+                        for idx, row in app.df_prod_mina_gas.iterrows():
+                            cat = str(row.iloc[0]).strip()
+                            val = row.iloc[1]
+                            if not cat: continue
+                            if not any(c.isalpha() for c in cat):
+                                prod_rows_mig.append((cat, val))
+                            else:
+                                try:
+                                    if float(val) != 0: prod_rows_mig.append((cat, val))
+                                except: pass
+
+                        if len(prod_rows_mig) > 30: prod_rows_mig = prod_rows_mig[-30:]
+
+                        for i in range(len(prod_rows_mig)):
+                            categories_mig.append(prod_rows_mig[i][0])
+                            try: proceso_vals_mig.append(float(prod_rows_mig[i][1]))
+                            except: proceso_vals_mig.append(None)
+                            diario_vals_mig.append(None)
+                            programa_vals_mig.append(None)
+                            columna1_vals_mig.append(None)
+
+                        for i in range(31):
+                            categories_mig.append(str(i + 1))
+                            proceso_vals_mig.append(None)
+                            
+                            try: diario_vals_mig.append(float(app.df_data_mina_gas[snr_col_mina_gas].iloc[i]))
+                            except: diario_vals_mig.append(None)
+                            
+                            try: programa_vals_mig.append(float(app.df_snr_mina_gas.iloc[i, 0]))
+                            except: programa_vals_mig.append(None)
+                            
+                            try: columna1_vals_mig.append(float(app.df_snr_mina_gas.iloc[i, 1]))
+                            except: columna1_vals_mig.append(None)
+
+                        update_slide_chart(chart_mina_gas, categories_mig, proceso_vals_mig, diario_vals_mig, programa_vals_mig, columna1_vals_mig, wine_color, green_color)
+
+            # --- 17. PROCESAR DIAPOSITIVA DE DIESEL MINATITLAN (DIAPOSITIVA 25) ---
+            if len(prs.slides) > 24 and app.df_data_mina_die is not None and app.df_snr_mina_die is not None and app.df_prod_mina_die is not None:
+                slide_mina_die = prs.slides[24]
+                chart_mina_die = None
+                for shape in slide_mina_die.shapes:
+                    if shape.has_chart:
+                        chart_mina_die = shape.chart
+                        break
+                
+                if chart_mina_die:
+                    snr_col_mina_die = None
+                    for col in app.df_data_mina_die.columns:
+                        if "SNR" in str(col).upper():
+                            snr_col_mina_die = col
+                            break
+                    if not snr_col_mina_die and len(app.df_data_mina_die.columns) >= 2:
+                        snr_col_mina_die = app.df_data_mina_die.columns[1]
+
+                    if snr_col_mina_die:
+                        categories_mid = []
+                        proceso_vals_mid = []
+                        diario_vals_mid = []
+                        programa_vals_mid = []
+                        columna1_vals_mid = []
+
+                        prod_rows_mid = []
+                        for idx, row in app.df_prod_mina_die.iterrows():
+                            cat = str(row.iloc[0]).strip()
+                            val = row.iloc[1]
+                            if not cat: continue
+                            if not any(c.isalpha() for c in cat):
+                                prod_rows_mid.append((cat, val))
+                            else:
+                                try:
+                                    if float(val) != 0: prod_rows_mid.append((cat, val))
+                                except: pass
+
+                        if len(prod_rows_mid) > 30: prod_rows_mid = prod_rows_mid[-30:]
+
+                        for i in range(len(prod_rows_mid)):
+                            categories_mid.append(prod_rows_mid[i][0])
+                            try: proceso_vals_mid.append(float(prod_rows_mid[i][1]))
+                            except: proceso_vals_mid.append(None)
+                            diario_vals_mid.append(None)
+                            programa_vals_mid.append(None)
+                            columna1_vals_mid.append(None)
+
+                        for i in range(31):
+                            categories_mid.append(str(i + 1))
+                            proceso_vals_mid.append(None)
+                            
+                            try: diario_vals_mid.append(float(app.df_data_mina_die[snr_col_mina_die].iloc[i]))
+                            except: diario_vals_mid.append(None)
+                            
+                            try: programa_vals_mid.append(float(app.df_snr_mina_die.iloc[i, 0]))
+                            except: programa_vals_mid.append(None)
+                            
+                            try: columna1_vals_mid.append(float(app.df_snr_mina_die.iloc[i, 1]))
+                            except: columna1_vals_mid.append(None)
+
+                        update_slide_chart(chart_mina_die, categories_mid, proceso_vals_mid, diario_vals_mid, programa_vals_mid, columna1_vals_mid, wine_color, green_color)
+
+            # --- 18. PROCESAR DIAPOSITIVA DE COMBUSTOLEO MINATITLAN (DIAPOSITIVA 26) ---
+            if len(prs.slides) > 25 and app.df_data_mina_comb is not None and app.df_snr_mina_comb is not None and app.df_prod_mina_comb is not None:
+                slide_mina_comb = prs.slides[25]
+                chart_mina_comb = None
+                for shape in slide_mina_comb.shapes:
+                    if shape.has_chart:
+                        chart_mina_comb = shape.chart
+                        break
+                
+                if chart_mina_comb:
+                    snr_col_mina_comb = None
+                    for col in app.df_data_mina_comb.columns:
+                        if "SNR" in str(col).upper():
+                            snr_col_mina_comb = col
+                            break
+                    if not snr_col_mina_comb and len(app.df_data_mina_comb.columns) >= 2:
+                        snr_col_mina_comb = app.df_data_mina_comb.columns[1]
+
+                    if snr_col_mina_comb:
+                        categories_mco = []
+                        proceso_vals_mco = []
+                        diario_vals_mco = []
+                        programa_vals_mco = []
+                        columna1_vals_mco = []
+
+                        prod_rows_mco = []
+                        for idx, row in app.df_prod_mina_comb.iterrows():
+                            cat = str(row.iloc[0]).strip()
+                            val = row.iloc[1]
+                            if not cat: continue
+                            if not any(c.isalpha() for c in cat):
+                                prod_rows_mco.append((cat, val))
+                            else:
+                                try:
+                                    if float(val) != 0: prod_rows_mco.append((cat, val))
+                                except: pass
+
+                        if len(prod_rows_mco) > 30: prod_rows_mco = prod_rows_mco[-30:]
+
+                        for i in range(len(prod_rows_mco)):
+                            categories_mco.append(prod_rows_mco[i][0])
+                            try: proceso_vals_mco.append(float(prod_rows_mco[i][1]))
+                            except: proceso_vals_mco.append(None)
+                            diario_vals_mco.append(None)
+                            programa_vals_mco.append(None)
+                            columna1_vals_mco.append(None)
+
+                        for i in range(31):
+                            categories_mco.append(str(i + 1))
+                            proceso_vals_mco.append(None)
+                            
+                            try: diario_vals_mco.append(float(app.df_data_mina_comb[snr_col_mina_comb].iloc[i]))
+                            except: diario_vals_mco.append(None)
+                            
+                            try: programa_vals_mco.append(float(app.df_snr_mina_comb.iloc[i, 0]))
+                            except: programa_vals_mco.append(None)
+                            
+                            try: columna1_vals_mco.append(float(app.df_snr_mina_comb.iloc[i, 1]))
+                            except: columna1_vals_mco.append(None)
+
+                        update_slide_chart(chart_mina_comb, categories_mco, proceso_vals_mco, diario_vals_mco, programa_vals_mco, columna1_vals_mco, wine_color, green_color)
 
         prs.save(save_path)
 

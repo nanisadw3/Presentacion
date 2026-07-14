@@ -553,6 +553,146 @@ def load_data(app, file_path):
         df_prod_mad_comb = merge_extra_prod("Madero -Combustoleo", df_prod_mad_comb)
         df_prod_mad_comb_copy = df_prod_mad_comb.copy()
 
+        # --- 1.10 PROCESAR CRUDO MINATITLAN ---
+        app.after(0, app.update_progress, 0.41, "Procesando Crudo Minatitlan...")
+        df_data_mina_crud = df_sheet.iloc[20:51, [0, 4]].copy()
+        df_data_mina_crud.columns = ["Crudo Día", "Minatitlan Crudo"]
+        df_data_mina_crud = df_data_mina_crud.dropna(how='all')
+        df_data_mina_crud = remove_decimals(df_data_mina_crud)
+        df_data_mina_crud = df_data_mina_crud.iloc[:num_dias_reales]
+
+        df_snr_mina_crud = df_sheet.iloc[73:104, [62, 62]].copy()
+        df_snr_mina_crud.columns = ["CMP", "PODIM"]
+        df_snr_mina_crud = df_snr_mina_crud.dropna(how='all').dropna(axis=1, how='all')
+        df_snr_mina_crud = remove_decimals(df_snr_mina_crud, skip_first=True)
+        df_snr_mina_crud_copy = df_snr_mina_crud.copy()
+
+        df_prod_mina_crud_raw = df_sheet.iloc[20:40, 54:56].copy()
+        df_prod_mina_crud_raw.columns = ["Año/Mes", "Produccion"]
+        df_prod_mina_crud_raw = df_prod_mina_crud_raw.dropna(how='all')
+
+        dic_idx_mina_crud = -1
+        for idx, row in df_prod_mina_crud_raw.iterrows():
+            val = str(row.iloc[0]).strip().lower()
+            if "dic" in val or "diciembre" in val:
+                dic_idx_mina_crud = idx - 20
+                break
+
+        if dic_idx_mina_crud != -1:
+            df_prod_mina_crud = df_prod_mina_crud_raw.iloc[:dic_idx_mina_crud + 1]
+        else:
+            df_prod_mina_crud = df_prod_mina_crud_raw.iloc[:20]
+
+        df_prod_mina_crud = df_prod_mina_crud.dropna(axis=1, how='all')
+        df_prod_mina_crud = remove_decimals(df_prod_mina_crud, skip_last=True)
+        df_prod_mina_crud = merge_extra_prod("Minatitlan -Crudo", df_prod_mina_crud)
+        df_prod_mina_crud_copy = df_prod_mina_crud.copy()
+
+        # --- 1.11 PROCESAR GASOLINAS MINATITLAN ---
+        app.after(0, app.update_progress, 0.42, "Procesando Gasolinas Minatitlan...")
+        df_data_mina_gas = df_sheet.iloc[20:51, [11, 14]].copy()
+        df_data_mina_gas.columns = ["Gas Día", "Minatitlan Gas"]
+        df_data_mina_gas = df_data_mina_gas.dropna(how='all')
+        df_data_mina_gas = remove_decimals(df_data_mina_gas)
+        df_data_mina_gas = df_data_mina_gas.iloc[:num_dias_reales]
+
+        df_snr_mina_gas = df_sheet.iloc[73:104, [72, 72]].copy()
+        df_snr_mina_gas.columns = ["CMP", "PODIM"]
+        df_snr_mina_gas = df_snr_mina_gas.dropna(how='all').dropna(axis=1, how='all')
+        df_snr_mina_gas = remove_decimals(df_snr_mina_gas, skip_first=True)
+        df_snr_mina_gas_copy = df_snr_mina_gas.copy()
+
+        df_prod_mina_gas_raw = df_sheet.iloc[20:40, 72:74].copy()
+        df_prod_mina_gas_raw.columns = ["Año/Mes", "Produccion"]
+        df_prod_mina_gas_raw = df_prod_mina_gas_raw.dropna(how='all')
+
+        dic_idx_mina_gas = -1
+        for idx, row in df_prod_mina_gas_raw.iterrows():
+            val = str(row.iloc[0]).strip().lower()
+            if "dic" in val or "diciembre" in val:
+                dic_idx_mina_gas = idx - 20
+                break
+
+        if dic_idx_mina_gas != -1:
+            df_prod_mina_gas = df_prod_mina_gas_raw.iloc[:dic_idx_mina_gas + 1]
+        else:
+            df_prod_mina_gas = df_prod_mina_gas_raw.iloc[:20]
+
+        df_prod_mina_gas = df_prod_mina_gas.dropna(axis=1, how='all')
+        df_prod_mina_gas = remove_decimals(df_prod_mina_gas, skip_last=True)
+        df_prod_mina_gas = merge_extra_prod("Minatitlan -Gasolinas", df_prod_mina_gas)
+        df_prod_mina_gas_copy = df_prod_mina_gas.copy()
+
+        # --- 1.12 PROCESAR DIESEL MINATITLAN ---
+        app.after(0, app.update_progress, 0.43, "Procesando Diesel Minatitlan...")
+        df_data_mina_die = df_sheet.iloc[73:104, [0, 3]].copy()
+        df_data_mina_die.columns = ["Diesel Día", "Minatitlan Die"]
+        df_data_mina_die = df_data_mina_die.dropna(how='all')
+        df_data_mina_die = remove_decimals(df_data_mina_die)
+        df_data_mina_die = df_data_mina_die.iloc[:num_dias_reales]
+
+        df_snr_mina_die = df_sheet.iloc[73:104, [82, 82]].copy()
+        df_snr_mina_die.columns = ["CMP", "PODIM"]
+        df_snr_mina_die = df_snr_mina_die.dropna(how='all').dropna(axis=1, how='all')
+        df_snr_mina_die = remove_decimals(df_snr_mina_die, skip_first=True)
+        df_snr_mina_die_copy = df_snr_mina_die.copy()
+
+        df_prod_mina_die_raw = df_sheet.iloc[20:40, 90:92].copy()
+        df_prod_mina_die_raw.columns = ["Año/Mes", "Produccion"]
+        df_prod_mina_die_raw = df_prod_mina_die_raw.dropna(how='all')
+
+        dic_idx_mina_die = -1
+        for idx, row in df_prod_mina_die_raw.iterrows():
+            val = str(row.iloc[0]).strip().lower()
+            if "dic" in val or "diciembre" in val:
+                dic_idx_mina_die = idx - 20
+                break
+
+        if dic_idx_mina_die != -1:
+            df_prod_mina_die = df_prod_mina_die_raw.iloc[:dic_idx_mina_die + 1]
+        else:
+            df_prod_mina_die = df_prod_mina_die_raw.iloc[:20]
+
+        df_prod_mina_die = df_prod_mina_die.dropna(axis=1, how='all')
+        df_prod_mina_die = remove_decimals(df_prod_mina_die, skip_last=True)
+        df_prod_mina_die = merge_extra_prod("Minatitlan -Diesel", df_prod_mina_die)
+        df_prod_mina_die_copy = df_prod_mina_die.copy()
+
+        # --- 1.13 PROCESAR COMBUSTOLEO MINATITLAN ---
+        app.after(0, app.update_progress, 0.44, "Procesando Combustoleo Minatitlan...")
+        df_data_mina_comb = df_sheet.iloc[158:189, [18, 21]].copy()
+        df_data_mina_comb.columns = ["Comb Día", "Minatitlan Comb"]
+        df_data_mina_comb = df_data_mina_comb.dropna(how='all')
+        df_data_mina_comb = remove_decimals(df_data_mina_comb)
+        df_data_mina_comb = df_data_mina_comb.iloc[:num_dias_reales]
+
+        df_snr_mina_comb = df_sheet.iloc[73:104, [100, 100]].copy()
+        df_snr_mina_comb.columns = ["CMP", "PODIM"]
+        df_snr_mina_comb = df_snr_mina_comb.dropna(how='all').dropna(axis=1, how='all')
+        df_snr_mina_comb = remove_decimals(df_snr_mina_comb, skip_first=True)
+        df_snr_mina_comb_copy = df_snr_mina_comb.copy()
+
+        df_prod_mina_comb_raw = df_sheet.iloc[157:179, 39:41].copy()
+        df_prod_mina_comb_raw.columns = ["Año/Mes", "Produccion"]
+        df_prod_mina_comb_raw = df_prod_mina_comb_raw.dropna(how='all')
+
+        dic_idx_mina_comb = -1
+        for idx, row in df_prod_mina_comb_raw.iterrows():
+            val = str(row.iloc[0]).strip().lower()
+            if "dic" in val or "diciembre" in val:
+                dic_idx_mina_comb = idx - 157
+                break
+
+        if dic_idx_mina_comb != -1:
+            df_prod_mina_comb = df_prod_mina_comb_raw.iloc[:dic_idx_mina_comb + 1]
+        else:
+            df_prod_mina_comb = df_prod_mina_comb_raw.iloc[:22]
+
+        df_prod_mina_comb = df_prod_mina_comb.dropna(axis=1, how='all')
+        df_prod_mina_comb = remove_decimals(df_prod_mina_comb, skip_last=True)
+        df_prod_mina_comb = merge_extra_prod("Minatitlan -Combustoleo", df_prod_mina_comb)
+        df_prod_mina_comb_copy = df_prod_mina_comb.copy()
+
         # --- 2. PROCESAR GASOLINAS ---
         app.after(0, app.update_progress, 0.35, "Procesando Gasolinas...")
         # Leer fila 1 (index 0) para encabezados, Cols L:S (11:19)
@@ -1161,6 +1301,98 @@ def load_data(app, file_path):
         sim_data_mad_comb.append(["TOTALES", "---", f"Días pasados: {days_passed}", f"Suma: {int(suma_total_mad_comb)} | Prom: {promedio_mad_comb:.2f}"])
         df_sim_mad_comb = pd.DataFrame(sim_data_mad_comb, columns=["Mes", "Producción", "Días", "Total (Prod x Días)"])
 
+        # 14. Simulación Minatitlan Crudo
+        prod_dict_mina_crud = {m: 0.0 for m in meses_nombres}
+        for idx, row_data in df_prod_mina_crud.iterrows():
+            val_anio = str(row_data.iloc[0]).strip().lower()
+            val_prod = row_data.iloc[1]
+            try: p = float(val_prod)
+            except: p = 0.0
+            for i, (m_largo, m_corto) in enumerate(zip(meses_nombres, meses_cortos)):
+                if m_largo.lower() in val_anio or m_corto.lower() in val_anio:
+                    prod_dict_mina_crud[meses_nombres[i]] += p
+                    break
+        sim_data_mina_crud = []
+        suma_total_mina_crud = 0.0
+        for i, mes in enumerate(meses_nombres):
+            dias = dias_por_mes[i]
+            prod = prod_dict_mina_crud[mes]
+            total = prod * dias
+            suma_total_mina_crud += total
+            sim_data_mina_crud.append([mes, int(prod), dias, int(total)])
+        promedio_mina_crud = suma_total_mina_crud / days_passed if days_passed > 0 else 0
+        sim_data_mina_crud.append(["TOTALES", "---", f"Días pasados: {days_passed}", f"Suma: {int(suma_total_mina_crud)} | Prom: {promedio_mina_crud:.2f}"])
+        df_sim_mina_crud = pd.DataFrame(sim_data_mina_crud, columns=["Mes", "Producción", "Días", "Total (Prod x Días)"])
+
+        # 15. Simulación Minatitlan Gasolinas
+        prod_dict_mina_gas = {m: 0.0 for m in meses_nombres}
+        for idx, row_data in df_prod_mina_gas.iterrows():
+            val_anio = str(row_data.iloc[0]).strip().lower()
+            val_prod = row_data.iloc[1]
+            try: p = float(val_prod)
+            except: p = 0.0
+            for i, (m_largo, m_corto) in enumerate(zip(meses_nombres, meses_cortos)):
+                if m_largo.lower() in val_anio or m_corto.lower() in val_anio:
+                    prod_dict_mina_gas[meses_nombres[i]] += p
+                    break
+        sim_data_mina_gas = []
+        suma_total_mina_gas = 0.0
+        for i, mes in enumerate(meses_nombres):
+            dias = dias_por_mes[i]
+            prod = prod_dict_mina_gas[mes]
+            total = prod * dias
+            suma_total_mina_gas += total
+            sim_data_mina_gas.append([mes, int(prod), dias, int(total)])
+        promedio_mina_gas = suma_total_mina_gas / days_passed if days_passed > 0 else 0
+        sim_data_mina_gas.append(["TOTALES", "---", f"Días pasados: {days_passed}", f"Suma: {int(suma_total_mina_gas)} | Prom: {promedio_mina_gas:.2f}"])
+        df_sim_mina_gas = pd.DataFrame(sim_data_mina_gas, columns=["Mes", "Producción", "Días", "Total (Prod x Días)"])
+
+        # 16. Simulación Minatitlan Diesel
+        prod_dict_mina_die = {m: 0.0 for m in meses_nombres}
+        for idx, row_data in df_prod_mina_die.iterrows():
+            val_anio = str(row_data.iloc[0]).strip().lower()
+            val_prod = row_data.iloc[1]
+            try: p = float(val_prod)
+            except: p = 0.0
+            for i, (m_largo, m_corto) in enumerate(zip(meses_nombres, meses_cortos)):
+                if m_largo.lower() in val_anio or m_corto.lower() in val_anio:
+                    prod_dict_mina_die[meses_nombres[i]] += p
+                    break
+        sim_data_mina_die = []
+        suma_total_mina_die = 0.0
+        for i, mes in enumerate(meses_nombres):
+            dias = dias_por_mes[i]
+            prod = prod_dict_mina_die[mes]
+            total = prod * dias
+            suma_total_mina_die += total
+            sim_data_mina_die.append([mes, int(prod), dias, int(total)])
+        promedio_mina_die = suma_total_mina_die / days_passed if days_passed > 0 else 0
+        sim_data_mina_die.append(["TOTALES", "---", f"Días pasados: {days_passed}", f"Suma: {int(suma_total_mina_die)} | Prom: {promedio_mina_die:.2f}"])
+        df_sim_mina_die = pd.DataFrame(sim_data_mina_die, columns=["Mes", "Producción", "Días", "Total (Prod x Días)"])
+
+        # 17. Simulación Minatitlan Combustoleo
+        prod_dict_mina_comb = {m: 0.0 for m in meses_nombres}
+        for idx, row_data in df_prod_mina_comb.iterrows():
+            val_anio = str(row_data.iloc[0]).strip().lower()
+            val_prod = row_data.iloc[1]
+            try: p = float(val_prod)
+            except: p = 0.0
+            for i, (m_largo, m_corto) in enumerate(zip(meses_nombres, meses_cortos)):
+                if m_largo.lower() in val_anio or m_corto.lower() in val_anio:
+                    prod_dict_mina_comb[meses_nombres[i]] += p
+                    break
+        sim_data_mina_comb = []
+        suma_total_mina_comb = 0.0
+        for i, mes in enumerate(meses_nombres):
+            dias = dias_por_mes[i]
+            prod = prod_dict_mina_comb[mes]
+            total = prod * dias
+            suma_total_mina_comb += total
+            sim_data_mina_comb.append([mes, int(prod), dias, int(total)])
+        promedio_mina_comb = suma_total_mina_comb / days_passed if days_passed > 0 else 0
+        sim_data_mina_comb.append(["TOTALES", "---", f"Días pasados: {days_passed}", f"Suma: {int(suma_total_mina_comb)} | Prom: {promedio_mina_comb:.2f}"])
+        df_sim_mina_comb = pd.DataFrame(sim_data_mina_comb, columns=["Mes", "Producción", "Días", "Total (Prod x Días)"])
+
         app.after(0, app.update_progress, 0.97, "Finalizando...")
 
         # Pasar datos a la interfaz (main thread)
@@ -1178,7 +1410,11 @@ def load_data(app, file_path):
                    df_data_mad_gas, df_snr_mad_gas_copy, df_prod_mad_gas_copy, df_sim_mad_gas,
                    df_data_mad_die, df_snr_mad_die_copy, df_prod_mad_die_copy, df_sim_mad_die,
                    df_data_mad_turb, df_snr_mad_turb_copy, df_prod_mad_turb_copy, df_sim_mad_turb,
-                   df_data_mad_comb, df_snr_mad_comb_copy, df_prod_mad_comb_copy, df_sim_mad_comb)
+                   df_data_mad_comb, df_snr_mad_comb_copy, df_prod_mad_comb_copy, df_sim_mad_comb,
+                   df_data_mina_crud, df_snr_mina_crud_copy, df_prod_mina_crud_copy, df_sim_mina_crud,
+                   df_data_mina_gas, df_snr_mina_gas_copy, df_prod_mina_gas_copy, df_sim_mina_gas,
+                   df_data_mina_die, df_snr_mina_die_copy, df_prod_mina_die_copy, df_sim_mina_die,
+                   df_data_mina_comb, df_snr_mina_comb_copy, df_prod_mina_comb_copy, df_sim_mina_comb)
 
     except Exception as e:
         err_details = traceback.format_exc()
