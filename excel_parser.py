@@ -695,7 +695,7 @@ def load_data(app, file_path):
 
         # --- 1.14 PROCESAR CRUDO SALAMANCA ---
         app.after(0, app.update_progress, 0.45, "Procesando Crudo Salamanca...")
-        df_data_sala_crud = df_sheet.iloc[73:104, [0, 4]].copy()
+        df_data_sala_crud = df_sheet.iloc[20:51, [0, 5]].copy()
         df_data_sala_crud.columns = ["Crudo Día", "Salamanca Crudo"]
         df_data_sala_crud = df_data_sala_crud.dropna(how='all')
         df_data_sala_crud = remove_decimals(df_data_sala_crud)
