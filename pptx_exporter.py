@@ -108,8 +108,8 @@ def export_to_pptx(app, file_path, save_path):
         from pptx.dml.color import RGBColor
 
         prs = Presentation(file_path)
-        if len(prs.slides) < 13:
-            raise ValueError("La presentación debe tener al menos 13 diapositivas (incluyendo las de Cadereyta -Crudo, Gasolinas, Diesel y Combustoleo).")
+        if len(prs.slides) < 18:
+            raise ValueError("La presentación debe tener al menos 18 diapositivas (incluyendo las de Madero -Crudo, Gasolinas y Diesel).")
  
         # --- 1. PROCESAR DIAPOSITIVA DE CRUDO (DIAPOSITIVA 2) ---
         slide = prs.slides[1]
@@ -919,6 +919,185 @@ def export_to_pptx(app, file_path, save_path):
                                 except: columna1_vals_cc.append(None)
  
                             update_slide_chart(chart_cad_comb, categories_cc, proceso_vals_cc, diario_vals_cc, programa_vals_cc, columna1_vals_cc, wine_color, green_color)
+
+            # --- 10. PROCESAR DIAPOSITIVA DE CRUDO MADERO (DIAPOSITIVA 16) ---
+            if len(prs.slides) > 15 and app.df_data_mad_crud is not None and app.df_snr_mad_crud is not None and app.df_prod_mad_crud is not None:
+                slide_mad_crud = prs.slides[15]
+                chart_mad_crud = None
+                for shape in slide_mad_crud.shapes:
+                    if shape.has_chart:
+                        chart_mad_crud = shape.chart
+                        break
+                
+                if chart_mad_crud:
+                    categories_mc = []
+                    proceso_vals_mc = []
+                    diario_vals_mc = []
+                    programa_vals_mc = []
+                    columna1_vals_mc = []
+
+                    prod_rows_mc = []
+                    for idx, row in app.df_prod_mad_crud.iterrows():
+                        cat = str(row.iloc[0]).strip()
+                        val = row.iloc[1]
+                        if not cat: continue
+                        if not any(c.isalpha() for c in cat):
+                            prod_rows_mc.append((cat, val))
+                        else:
+                            try:
+                                if float(val) != 0: prod_rows_mc.append((cat, val))
+                            except: pass
+
+                    if len(prod_rows_mc) > 30: prod_rows_mc = prod_rows_mc[-30:]
+
+                    for i in range(len(prod_rows_mc)):
+                        categories_mc.append(prod_rows_mc[i][0])
+                        try: proceso_vals_mc.append(float(prod_rows_mc[i][1]))
+                        except: proceso_vals_mc.append(None)
+                        diario_vals_mc.append(None)
+                        programa_vals_mc.append(None)
+                        columna1_vals_mc.append(None)
+
+                    proceso_col_mad_crud = app.df_data_mad_crud.columns[1]
+
+                    for i in range(31):
+                        categories_mc.append(str(i + 1))
+                        proceso_vals_mc.append(None)
+                        
+                        try: diario_vals_mc.append(float(app.df_data_mad_crud[proceso_col_mad_crud].iloc[i]))
+                        except: diario_vals_mc.append(None)
+                        
+                        try: programa_vals_mc.append(float(app.df_snr_mad_crud.iloc[i, 0]))
+                        except: programa_vals_mc.append(None)
+                        
+                        try: columna1_vals_mc.append(float(app.df_snr_mad_crud.iloc[i, 1]))
+                        except: columna1_vals_mc.append(None)
+
+                    update_slide_chart(chart_mad_crud, categories_mc, proceso_vals_mc, diario_vals_mc, programa_vals_mc, columna1_vals_mc, wine_color, green_color)
+
+            # --- 11. PROCESAR DIAPOSITIVA DE GASOLINAS MADERO (DIAPOSITIVA 17) ---
+            if len(prs.slides) > 16 and app.df_data_mad_gas is not None and app.df_snr_mad_gas is not None and app.df_prod_mad_gas is not None:
+                slide_mad_gas = prs.slides[16]
+                chart_mad_gas = None
+                for shape in slide_mad_gas.shapes:
+                    if shape.has_chart:
+                        chart_mad_gas = shape.chart
+                        break
+                
+                if chart_mad_gas:
+                    snr_col_mad_gas = None
+                    for col in app.df_data_mad_gas.columns:
+                        if "SNR" in str(col).upper() or "MADERO" in str(col).upper() or "PRODUCCIÓN" in str(col).upper():
+                            snr_col_mad_gas = col
+                            break
+                    if not snr_col_mad_gas and len(app.df_data_mad_gas.columns) >= 2:
+                        snr_col_mad_gas = app.df_data_mad_gas.columns[1]
+
+                    if snr_col_mad_gas:
+                        categories_mg = []
+                        proceso_vals_mg = []
+                        diario_vals_mg = []
+                        programa_vals_mg = []
+                        columna1_vals_mg = []
+
+                        prod_rows_mg = []
+                        for idx, row in app.df_prod_mad_gas.iterrows():
+                            cat = str(row.iloc[0]).strip()
+                            val = row.iloc[1]
+                            if not cat: continue
+                            if not any(c.isalpha() for c in cat):
+                                prod_rows_mg.append((cat, val))
+                            else:
+                                try:
+                                    if float(val) != 0: prod_rows_mg.append((cat, val))
+                                except: pass
+
+                        if len(prod_rows_mg) > 30: prod_rows_mg = prod_rows_mg[-30:]
+
+                        for i in range(len(prod_rows_mg)):
+                            categories_mg.append(prod_rows_mg[i][0])
+                            try: proceso_vals_mg.append(float(prod_rows_mg[i][1]))
+                            except: proceso_vals_mg.append(None)
+                            diario_vals_mg.append(None)
+                            programa_vals_mg.append(None)
+                            columna1_vals_mg.append(None)
+
+                        for i in range(31):
+                            categories_mg.append(str(i + 1))
+                            proceso_vals_mg.append(None)
+                            
+                            try: diario_vals_mg.append(float(app.df_data_mad_gas[snr_col_mad_gas].iloc[i]))
+                            except: diario_vals_mg.append(None)
+                            
+                            try: programa_vals_mg.append(float(app.df_snr_mad_gas.iloc[i, 0]))
+                            except: programa_vals_mg.append(None)
+                            
+                            try: columna1_vals_mg.append(float(app.df_snr_mad_gas.iloc[i, 1]))
+                            except: columna1_vals_mg.append(None)
+
+                        update_slide_chart(chart_mad_gas, categories_mg, proceso_vals_mg, diario_vals_mg, programa_vals_mg, columna1_vals_mg, wine_color, green_color)
+
+            # --- 12. PROCESAR DIAPOSITIVA DE DIESEL MADERO (DIAPOSITIVA 18) ---
+            if len(prs.slides) > 17 and app.df_data_mad_die is not None and app.df_snr_mad_die is not None and app.df_prod_mad_die is not None:
+                slide_mad_die = prs.slides[17]
+                chart_mad_die = None
+                for shape in slide_mad_die.shapes:
+                    if shape.has_chart:
+                        chart_mad_die = shape.chart
+                        break
+                
+                if chart_mad_die:
+                    snr_col_mad_die = None
+                    for col in app.df_data_mad_die.columns:
+                        if "SNR" in str(col).upper() or "MADERO" in str(col).upper() or "DIE" in str(col).upper():
+                            snr_col_mad_die = col
+                            break
+                    if not snr_col_mad_die and len(app.df_data_mad_die.columns) >= 2:
+                        snr_col_mad_die = app.df_data_mad_die.columns[1]
+
+                    if snr_col_mad_die:
+                        categories_md = []
+                        proceso_vals_md = []
+                        diario_vals_md = []
+                        programa_vals_md = []
+                        columna1_vals_md = []
+
+                        prod_rows_md = []
+                        for idx, row in app.df_prod_mad_die.iterrows():
+                            cat = str(row.iloc[0]).strip()
+                            val = row.iloc[1]
+                            if not cat: continue
+                            if not any(c.isalpha() for c in cat):
+                                prod_rows_md.append((cat, val))
+                            else:
+                                try:
+                                    if float(val) != 0: prod_rows_md.append((cat, val))
+                                except: pass
+
+                        if len(prod_rows_md) > 30: prod_rows_md = prod_rows_md[-30:]
+
+                        for i in range(len(prod_rows_md)):
+                            categories_md.append(prod_rows_md[i][0])
+                            try: proceso_vals_md.append(float(prod_rows_md[i][1]))
+                            except: proceso_vals_md.append(None)
+                            diario_vals_md.append(None)
+                            programa_vals_md.append(None)
+                            columna1_vals_md.append(None)
+
+                        for i in range(31):
+                            categories_md.append(str(i + 1))
+                            proceso_vals_md.append(None)
+                            
+                            try: diario_vals_md.append(float(app.df_data_mad_die[snr_col_mad_die].iloc[i]))
+                            except: diario_vals_md.append(None)
+                            
+                            try: programa_vals_md.append(float(app.df_snr_mad_die.iloc[i, 0]))
+                            except: programa_vals_md.append(None)
+                            
+                            try: columna1_vals_md.append(float(app.df_snr_mad_die.iloc[i, 1]))
+                            except: columna1_vals_md.append(None)
+
+                        update_slide_chart(chart_mad_die, categories_md, proceso_vals_md, diario_vals_md, programa_vals_md, columna1_vals_md, wine_color, green_color)
 
         prs.save(save_path)
 

@@ -376,6 +376,114 @@ def load_data(app, file_path):
 
 
 
+        # --- 1.5 PROCESAR CRUDO MADERO ---
+        app.after(0, app.update_progress, 0.36, "Procesando Crudo Madero...")
+        df_data_mad_crud = df_sheet.iloc[20:51, [0, 3]].copy()
+        df_data_mad_crud.columns = ["Crudo Día", "Madero Crudo"]
+        df_data_mad_crud = df_data_mad_crud.dropna(how='all')
+        df_data_mad_crud = remove_decimals(df_data_mad_crud)
+        df_data_mad_crud = filter_zero_rows(df_data_mad_crud)
+        df_data_mad_crud = df_data_mad_crud.iloc[:num_dias_reales]
+
+        df_snr_mad_crud = df_sheet.iloc[73:104, [61, 61]].copy()
+        df_snr_mad_crud.columns = ["CMP", "PODIM"]
+        df_snr_mad_crud = df_snr_mad_crud.dropna(how='all').dropna(axis=1, how='all')
+        df_snr_mad_crud = remove_decimals(df_snr_mad_crud, skip_first=True)
+        df_snr_mad_crud_copy = df_snr_mad_crud.copy()
+
+        df_prod_mad_crud_raw = df_sheet.iloc[20:40, 50:52].copy()
+        df_prod_mad_crud_raw.columns = ["Año/Mes", "Produccion"]
+        df_prod_mad_crud_raw = df_prod_mad_crud_raw.dropna(how='all')
+
+        dic_idx_mad_crud = -1
+        for idx, row in df_prod_mad_crud_raw.iterrows():
+            val = str(row.iloc[0]).strip().lower()
+            if "dic" in val or "diciembre" in val:
+                dic_idx_mad_crud = idx - 20
+                break
+
+        if dic_idx_mad_crud != -1:
+            df_prod_mad_crud = df_prod_mad_crud_raw.iloc[:dic_idx_mad_crud + 1]
+        else:
+            df_prod_mad_crud = df_prod_mad_crud_raw.iloc[:20]
+
+        df_prod_mad_crud = df_prod_mad_crud.dropna(axis=1, how='all')
+        df_prod_mad_crud = remove_decimals(df_prod_mad_crud, skip_last=True)
+        df_prod_mad_crud = merge_extra_prod("Madero -Crudo", df_prod_mad_crud)
+        df_prod_mad_crud_copy = df_prod_mad_crud.copy()
+
+        # --- 1.6 PROCESAR GASOLINAS MADERO ---
+        app.after(0, app.update_progress, 0.37, "Procesando Gasolinas Madero...")
+        df_data_mad_gas = df_sheet.iloc[20:51, [11, 13]].copy()
+        df_data_mad_gas.columns = ["Gas Día", "Madero Gas"]
+        df_data_mad_gas = df_data_mad_gas.dropna(how='all')
+        df_data_mad_gas = remove_decimals(df_data_mad_gas)
+        df_data_mad_gas = filter_zero_rows(df_data_mad_gas)
+        df_data_mad_gas = df_data_mad_gas.iloc[:num_dias_reales]
+
+        df_snr_mad_gas = df_sheet.iloc[73:104, [71, 71]].copy()
+        df_snr_mad_gas.columns = ["CMP", "PODIM"]
+        df_snr_mad_gas = df_snr_mad_gas.dropna(how='all').dropna(axis=1, how='all')
+        df_snr_mad_gas = remove_decimals(df_snr_mad_gas, skip_first=True)
+        df_snr_mad_gas_copy = df_snr_mad_gas.copy()
+
+        df_prod_mad_gas_raw = df_sheet.iloc[20:40, 70:72].copy()
+        df_prod_mad_gas_raw.columns = ["Año/Mes", "Produccion"]
+        df_prod_mad_gas_raw = df_prod_mad_gas_raw.dropna(how='all')
+
+        dic_idx_mad_gas = -1
+        for idx, row in df_prod_mad_gas_raw.iterrows():
+            val = str(row.iloc[0]).strip().lower()
+            if "dic" in val or "diciembre" in val:
+                dic_idx_mad_gas = idx - 20
+                break
+
+        if dic_idx_mad_gas != -1:
+            df_prod_mad_gas = df_prod_mad_gas_raw.iloc[:dic_idx_mad_gas + 1]
+        else:
+            df_prod_mad_gas = df_prod_mad_gas_raw.iloc[:20]
+
+        df_prod_mad_gas = df_prod_mad_gas.dropna(axis=1, how='all')
+        df_prod_mad_gas = remove_decimals(df_prod_mad_gas, skip_last=True)
+        df_prod_mad_gas = merge_extra_prod("Madero -Gasolinas", df_prod_mad_gas)
+        df_prod_mad_gas_copy = df_prod_mad_gas.copy()
+
+        # --- 1.7 PROCESAR DIESEL MADERO ---
+        app.after(0, app.update_progress, 0.38, "Procesando Diesel Madero...")
+        df_data_mad_die = df_sheet.iloc[73:104, [0, 2]].copy()
+        df_data_mad_die.columns = ["Diesel Día", "Madero Die"]
+        df_data_mad_die = df_data_mad_die.dropna(how='all')
+        df_data_mad_die = remove_decimals(df_data_mad_die)
+        df_data_mad_die = filter_zero_rows(df_data_mad_die)
+        df_data_mad_die = df_data_mad_die.iloc[:num_dias_reales]
+
+        df_snr_mad_die = df_sheet.iloc[73:104, [81, 81]].copy()
+        df_snr_mad_die.columns = ["CMP", "PODIM"]
+        df_snr_mad_die = df_snr_mad_die.dropna(how='all').dropna(axis=1, how='all')
+        df_snr_mad_die = remove_decimals(df_snr_mad_die, skip_first=True)
+        df_snr_mad_die_copy = df_snr_mad_die.copy()
+
+        df_prod_mad_die_raw = df_sheet.iloc[20:40, 86:88].copy()
+        df_prod_mad_die_raw.columns = ["Año/Mes", "Produccion"]
+        df_prod_mad_die_raw = df_prod_mad_die_raw.dropna(how='all')
+
+        dic_idx_mad_die = -1
+        for idx, row in df_prod_mad_die_raw.iterrows():
+            val = str(row.iloc[0]).strip().lower()
+            if "dic" in val or "diciembre" in val:
+                dic_idx_mad_die = idx - 20
+                break
+
+        if dic_idx_mad_die != -1:
+            df_prod_mad_die = df_prod_mad_die_raw.iloc[:dic_idx_mad_die + 1]
+        else:
+            df_prod_mad_die = df_prod_mad_die_raw.iloc[:20]
+
+        df_prod_mad_die = df_prod_mad_die.dropna(axis=1, how='all')
+        df_prod_mad_die = remove_decimals(df_prod_mad_die, skip_last=True)
+        df_prod_mad_die = merge_extra_prod("Madero -Diesel", df_prod_mad_die)
+        df_prod_mad_die_copy = df_prod_mad_die.copy()
+
         # --- 2. PROCESAR GASOLINAS ---
         app.after(0, app.update_progress, 0.35, "Procesando Gasolinas...")
         # Leer fila 1 (index 0) para encabezados, Cols L:S (11:19)
@@ -869,6 +977,75 @@ def load_data(app, file_path):
         sim_data_cad.append(["TOTALES", "---", f"Días pasados: {days_passed}", f"Suma: {int(suma_total_cad)} | Prom: {promedio_cad:.2f}"])
         df_sim_cad = pd.DataFrame(sim_data_cad, columns=["Mes", "Producción", "Días", "Total (Prod x Días)"])
  
+        # 9. Simulación Madero Crudo
+        prod_dict_mad_crud = {m: 0.0 for m in meses_nombres}
+        for idx, row_data in df_prod_mad_crud.iterrows():
+            val_anio = str(row_data.iloc[0]).strip().lower()
+            val_prod = row_data.iloc[1]
+            try: p = float(val_prod)
+            except: p = 0.0
+            for i, (m_largo, m_corto) in enumerate(zip(meses_nombres, meses_cortos)):
+                if m_largo.lower() in val_anio or m_corto.lower() in val_anio:
+                    prod_dict_mad_crud[meses_nombres[i]] += p
+                    break
+        sim_data_mad_crud = []
+        suma_total_mad_crud = 0.0
+        for i, mes in enumerate(meses_nombres):
+            dias = dias_por_mes[i]
+            prod = prod_dict_mad_crud[mes]
+            total = prod * dias
+            suma_total_mad_crud += total
+            sim_data_mad_crud.append([mes, int(prod), dias, int(total)])
+        promedio_mad_crud = suma_total_mad_crud / days_passed if days_passed > 0 else 0
+        sim_data_mad_crud.append(["TOTALES", "---", f"Días pasados: {days_passed}", f"Suma: {int(suma_total_mad_crud)} | Prom: {promedio_mad_crud:.2f}"])
+        df_sim_mad_crud = pd.DataFrame(sim_data_mad_crud, columns=["Mes", "Producción", "Días", "Total (Prod x Días)"])
+
+        # 10. Simulación Madero Gasolinas
+        prod_dict_mad_gas = {m: 0.0 for m in meses_nombres}
+        for idx, row_data in df_prod_mad_gas.iterrows():
+            val_anio = str(row_data.iloc[0]).strip().lower()
+            val_prod = row_data.iloc[1]
+            try: p = float(val_prod)
+            except: p = 0.0
+            for i, (m_largo, m_corto) in enumerate(zip(meses_nombres, meses_cortos)):
+                if m_largo.lower() in val_anio or m_corto.lower() in val_anio:
+                    prod_dict_mad_gas[meses_nombres[i]] += p
+                    break
+        sim_data_mad_gas = []
+        suma_total_mad_gas = 0.0
+        for i, mes in enumerate(meses_nombres):
+            dias = dias_por_mes[i]
+            prod = prod_dict_mad_gas[mes]
+            total = prod * dias
+            suma_total_mad_gas += total
+            sim_data_mad_gas.append([mes, int(prod), dias, int(total)])
+        promedio_mad_gas = suma_total_mad_gas / days_passed if days_passed > 0 else 0
+        sim_data_mad_gas.append(["TOTALES", "---", f"Días pasados: {days_passed}", f"Suma: {int(suma_total_mad_gas)} | Prom: {promedio_mad_gas:.2f}"])
+        df_sim_mad_gas = pd.DataFrame(sim_data_mad_gas, columns=["Mes", "Producción", "Días", "Total (Prod x Días)"])
+
+        # 11. Simulación Madero Diesel
+        prod_dict_mad_die = {m: 0.0 for m in meses_nombres}
+        for idx, row_data in df_prod_mad_die.iterrows():
+            val_anio = str(row_data.iloc[0]).strip().lower()
+            val_prod = row_data.iloc[1]
+            try: p = float(val_prod)
+            except: p = 0.0
+            for i, (m_largo, m_corto) in enumerate(zip(meses_nombres, meses_cortos)):
+                if m_largo.lower() in val_anio or m_corto.lower() in val_anio:
+                    prod_dict_mad_die[meses_nombres[i]] += p
+                    break
+        sim_data_mad_die = []
+        suma_total_mad_die = 0.0
+        for i, mes in enumerate(meses_nombres):
+            dias = dias_por_mes[i]
+            prod = prod_dict_mad_die[mes]
+            total = prod * dias
+            suma_total_mad_die += total
+            sim_data_mad_die.append([mes, int(prod), dias, int(total)])
+        promedio_mad_die = suma_total_mad_die / days_passed if days_passed > 0 else 0
+        sim_data_mad_die.append(["TOTALES", "---", f"Días pasados: {days_passed}", f"Suma: {int(suma_total_mad_die)} | Prom: {promedio_mad_die:.2f}"])
+        df_sim_mad_die = pd.DataFrame(sim_data_mad_die, columns=["Mes", "Producción", "Días", "Total (Prod x Días)"])
+
         app.after(0, app.update_progress, 0.97, "Finalizando...")
 
         # Pasar datos a la interfaz (main thread)
@@ -881,9 +1058,11 @@ def load_data(app, file_path):
                    df_data_cad_gas, df_snr_cad_gas_copy, df_prod_cad_gas_copy, df_sim_cad_gas,
                    df_data_cad_die, df_snr_cad_die_copy, df_prod_cad_die_copy, df_sim_cad_die,
                    df_data_cad, df_snr_cad_copy, df_prod_cad_copy, df_sim_cad,
-                   df_data_cad_comb, df_snr_cad_comb_copy, df_prod_cad_comb_copy, df_sim_cad_comb)
+                   df_data_cad_comb, df_snr_cad_comb_copy, df_prod_cad_comb_copy, df_sim_cad_comb,
+                   df_data_mad_crud, df_snr_mad_crud_copy, df_prod_mad_crud_copy, df_sim_mad_crud,
+                   df_data_mad_gas, df_snr_mad_gas_copy, df_prod_mad_gas_copy, df_sim_mad_gas,
+                   df_data_mad_die, df_snr_mad_die_copy, df_prod_mad_die_copy, df_sim_mad_die)
 
     except Exception as e:
         err_details = traceback.format_exc()
         app.after(0, app.on_load_error, str(e), err_details)
-
