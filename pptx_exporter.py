@@ -990,7 +990,7 @@ def export_to_pptx(app, file_path, save_path):
                 if chart_mad_gas:
                     snr_col_mad_gas = None
                     for col in app.df_data_mad_gas.columns:
-                        if "SNR" in str(col).upper() or "MADERO" in str(col).upper() or "PRODUCCIÓN" in str(col).upper():
+                        if "SNR" in str(col).upper():
                             snr_col_mad_gas = col
                             break
                     if not snr_col_mad_gas and len(app.df_data_mad_gas.columns) >= 2:
@@ -1052,7 +1052,7 @@ def export_to_pptx(app, file_path, save_path):
                 if chart_mad_die:
                     snr_col_mad_die = None
                     for col in app.df_data_mad_die.columns:
-                        if "SNR" in str(col).upper() or "MADERO" in str(col).upper() or "DIE" in str(col).upper():
+                        if "SNR" in str(col).upper():
                             snr_col_mad_die = col
                             break
                     if not snr_col_mad_die and len(app.df_data_mad_die.columns) >= 2:
