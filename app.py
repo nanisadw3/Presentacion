@@ -729,6 +729,7 @@ class ExcelViewerApp(ctk.CTk):
                             df_data_sal_crud=None, df_snr_sal_crud=None, df_prod_sal_crud=None, df_sim_sal_crud=None,
                             df_data_sal_gas=None, df_snr_sal_gas=None, df_prod_sal_gas=None, df_sim_sal_gas=None,
                             df_data_sal_die=None, df_snr_sal_die=None, df_prod_sal_die=None, df_sim_sal_die=None,
+                            df_data_sal_turb=None, df_snr_sal_turb=None, df_prod_sal_turb=None, df_sim_sal_turb=None,
                             df_data_sal_comb=None, df_snr_sal_comb=None, df_prod_sal_comb=None, df_sim_sal_comb=None,
                             df_data_tula_crud=None, df_snr_tula_crud=None, df_prod_tula_crud=None, df_sim_tula_crud=None,
                             df_data_tula_gas=None, df_snr_tula_gas=None, df_prod_tula_gas=None, df_sim_tula_gas=None,
