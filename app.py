@@ -1,7 +1,9 @@
+import os
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+
 import customtkinter as ctk
 import pandas as pd
 from tkinter import filedialog, messagebox
-import os
 from CTkTable import CTkTable
 import threading
 import traceback

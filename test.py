@@ -1,7 +1,8 @@
+import os
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+
 import pandas as pd
 import sys
-
-import os
 
 filename = "2026 Datos para MV Jun comparativo con rend.xlsm"
 downloads_path = os.path.join(os.path.expanduser("~"), "Downloads", filename)
