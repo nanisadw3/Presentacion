@@ -80,7 +80,7 @@ class ExcelViewerApp(ctk.CTk):
         self.lbl_proceso.pack(pady=15, padx=(20, 5), side="left")
         
         self.cb_proceso = ctk.CTkComboBox(self.top_frame, 
-                                            values=["Crudo", "Gasolinas", "Diesel", "Turbosina", "Asfalto", "Combustoleo", "Cadereyta -Crudo", "Cadereyta -Gasolinas", "Cadereyta -Diesel", "Cadereyta -Combustoleo", "Madero -Crudo", "Madero -Gasolinas", "Madero -Diesel", "Madero -Turbosina", "Madero -Combustoleo", "Minatitlan -Crudo", "Minatitlan -Gasolinas", "Minatitlan -Diesel", "Minatitlan -Combustoleo"],
+                                            values=["Crudo", "Gasolinas", "Diesel", "Turbosina", "Asfalto", "Combustoleo", "Cadereyta -Crudo", "Cadereyta -Gasolinas", "Cadereyta -Diesel", "Cadereyta -Combustoleo", "Madero -Crudo", "Madero -Gasolinas", "Madero -Diesel", "Madero -Turbosina", "Madero -Combustoleo", "Minatitlan -Crudo", "Minatitlan -Gasolinas", "Minatitlan -Diesel", "Minatitlan -Combustoleo", "Salamanca -Crudo", "Salamanca -Gasolinas", "Salamanca -Diesel", "Salamanca -Turbosina", "Salamanca -Combustoleo"],
                                             font=("Roboto", 14),
                                             command=self.on_proceso_changed,
                                             state="readonly",
@@ -185,6 +185,36 @@ class ExcelViewerApp(ctk.CTk):
         self.df_snr_mina_comb = None
         self.df_prod_mina_comb = None
         self.df_sim_mina_comb = None
+
+        # Datos de Salamanca -Crudo
+        self.df_data_sala_crud = None
+        self.df_snr_sala_crud = None
+        self.df_prod_sala_crud = None
+        self.df_sim_sala_crud = None
+
+        # Datos de Salamanca -Gasolinas
+        self.df_data_sala_gas = None
+        self.df_snr_sala_gas = None
+        self.df_prod_sala_gas = None
+        self.df_sim_sala_gas = None
+
+        # Datos de Salamanca -Diesel
+        self.df_data_sala_die = None
+        self.df_snr_sala_die = None
+        self.df_prod_sala_die = None
+        self.df_sim_sala_die = None
+
+        # Datos de Salamanca -Turbosina
+        self.df_data_sala_turb = None
+        self.df_snr_sala_turb = None
+        self.df_prod_sala_turb = None
+        self.df_sim_sala_turb = None
+
+        # Datos de Salamanca -Combustoleo
+        self.df_data_sala_comb = None
+        self.df_snr_sala_comb = None
+        self.df_prod_sala_comb = None
+        self.df_sim_sala_comb = None
  
         # Datos de Turbosina
         self.df_data_turbosina = None
@@ -242,7 +272,7 @@ class ExcelViewerApp(ctk.CTk):
 
         lbl_proceso = ctk.CTkLabel(dialog, text="Proceso:", font=("Roboto", 14, "bold"))
         lbl_proceso.pack(pady=(10, 0))
-        opciones_procesos = ["Crudo", "Gasolinas", "Diesel", "Turbosina", "Asfalto", "Combustoleo", "Cadereyta -Crudo", "Cadereyta -Gasolinas", "Cadereyta -Diesel", "Cadereyta -Combustoleo", "Madero -Crudo", "Madero -Gasolinas", "Madero -Diesel", "Madero -Turbosina", "Madero -Combustoleo", "Minatitlan -Crudo", "Minatitlan -Gasolinas", "Minatitlan -Diesel", "Minatitlan -Combustoleo"]
+        opciones_procesos = ["Crudo", "Gasolinas", "Diesel", "Turbosina", "Asfalto", "Combustoleo", "Cadereyta -Crudo", "Cadereyta -Gasolinas", "Cadereyta -Diesel", "Cadereyta -Combustoleo", "Madero -Crudo", "Madero -Gasolinas", "Madero -Diesel", "Madero -Turbosina", "Madero -Combustoleo", "Minatitlan -Crudo", "Minatitlan -Gasolinas", "Minatitlan -Diesel", "Minatitlan -Combustoleo", "Salamanca -Crudo", "Salamanca -Gasolinas", "Salamanca -Diesel", "Salamanca -Turbosina", "Salamanca -Combustoleo"]
         combo_proceso = ctk.CTkComboBox(dialog, values=opciones_procesos, width=250)
         combo_proceso.pack(pady=(5, 10))
 
@@ -500,6 +530,36 @@ class ExcelViewerApp(ctk.CTk):
                 save_df(getattr(self, 'df_prod_mina_comb', None), 'minatitlan_combustoleo_produccion')
                 save_df(getattr(self, 'df_sim_mina_comb', None), 'minatitlan_combustoleo_simulacion_anual')
 
+                # Guardar datos de Salamanca - Crudo
+                save_df(getattr(self, 'df_data_sala_crud', None), 'salamanca_crudo_tabla_principal')
+                save_df(getattr(self, 'df_snr_sala_crud', None), 'salamanca_crudo_programa_snr')
+                save_df(getattr(self, 'df_prod_sala_crud', None), 'salamanca_crudo_produccion')
+                save_df(getattr(self, 'df_sim_sala_crud', None), 'salamanca_crudo_simulacion_anual')
+
+                # Guardar datos de Salamanca - Gasolinas
+                save_df(getattr(self, 'df_data_sala_gas', None), 'salamanca_gasolinas_tabla_principal')
+                save_df(getattr(self, 'df_snr_sala_gas', None), 'salamanca_gasolinas_programa_snr')
+                save_df(getattr(self, 'df_prod_sala_gas', None), 'salamanca_gasolinas_produccion')
+                save_df(getattr(self, 'df_sim_sala_gas', None), 'salamanca_gasolinas_simulacion_anual')
+
+                # Guardar datos de Salamanca - Diesel
+                save_df(getattr(self, 'df_data_sala_die', None), 'salamanca_diesel_tabla_principal')
+                save_df(getattr(self, 'df_snr_sala_die', None), 'salamanca_diesel_programa_snr')
+                save_df(getattr(self, 'df_prod_sala_die', None), 'salamanca_diesel_produccion')
+                save_df(getattr(self, 'df_sim_sala_die', None), 'salamanca_diesel_simulacion_anual')
+
+                # Guardar datos de Salamanca - Turbosina
+                save_df(getattr(self, 'df_data_sala_turb', None), 'salamanca_turbosina_tabla_principal')
+                save_df(getattr(self, 'df_snr_sala_turb', None), 'salamanca_turbosina_programa_snr')
+                save_df(getattr(self, 'df_prod_sala_turb', None), 'salamanca_turbosina_produccion')
+                save_df(getattr(self, 'df_sim_sala_turb', None), 'salamanca_turbosina_simulacion_anual')
+
+                # Guardar datos de Salamanca - Combustoleo
+                save_df(getattr(self, 'df_data_sala_comb', None), 'salamanca_combustoleo_tabla_principal')
+                save_df(getattr(self, 'df_snr_sala_comb', None), 'salamanca_combustoleo_programa_snr')
+                save_df(getattr(self, 'df_prod_sala_comb', None), 'salamanca_combustoleo_produccion')
+                save_df(getattr(self, 'df_sim_sala_comb', None), 'salamanca_combustoleo_simulacion_anual')
+
                 conn.commit()
                 conn.close()
                 messagebox.showinfo("Éxito", f"¡Los datos de todos los procesos han sido guardados en la base de datos!\n\nRuta:\n{db_path}")
@@ -540,7 +600,12 @@ class ExcelViewerApp(ctk.CTk):
                             df_data_mina_crud=None, df_snr_mina_crud=None, df_prod_mina_crud=None, df_sim_mina_crud=None,
                             df_data_mina_gas=None, df_snr_mina_gas=None, df_prod_mina_gas=None, df_sim_mina_gas=None,
                             df_data_mina_die=None, df_snr_mina_die=None, df_prod_mina_die=None, df_sim_mina_die=None,
-                            df_data_mina_comb=None, df_snr_mina_comb=None, df_prod_mina_comb=None, df_sim_mina_comb=None):
+                            df_data_mina_comb=None, df_snr_mina_comb=None, df_prod_mina_comb=None, df_sim_mina_comb=None,
+                            df_data_sala_crud=None, df_snr_sala_crud=None, df_prod_sala_crud=None, df_sim_sala_crud=None,
+                            df_data_sala_gas=None, df_snr_sala_gas=None, df_prod_sala_gas=None, df_sim_sala_gas=None,
+                            df_data_sala_die=None, df_snr_sala_die=None, df_prod_sala_die=None, df_sim_sala_die=None,
+                            df_data_sala_turb=None, df_snr_sala_turb=None, df_prod_sala_turb=None, df_sim_sala_turb=None,
+                            df_data_sala_comb=None, df_snr_sala_comb=None, df_prod_sala_comb=None, df_sim_sala_comb=None):
         self.df_data = df_data
 
         self.df_snr = df_snr
@@ -637,6 +702,31 @@ class ExcelViewerApp(ctk.CTk):
         self.df_snr_mina_comb = df_snr_mina_comb
         self.df_prod_mina_comb = df_prod_mina_comb
         self.df_sim_mina_comb = df_sim_mina_comb
+
+        self.df_data_sala_crud = df_data_sala_crud
+        self.df_snr_sala_crud = df_snr_sala_crud
+        self.df_prod_sala_crud = df_prod_sala_crud
+        self.df_sim_sala_crud = df_sim_sala_crud
+
+        self.df_data_sala_gas = df_data_sala_gas
+        self.df_snr_sala_gas = df_snr_sala_gas
+        self.df_prod_sala_gas = df_prod_sala_gas
+        self.df_sim_sala_gas = df_sim_sala_gas
+
+        self.df_data_sala_die = df_data_sala_die
+        self.df_snr_sala_die = df_snr_sala_die
+        self.df_prod_sala_die = df_prod_sala_die
+        self.df_sim_sala_die = df_sim_sala_die
+
+        self.df_data_sala_turb = df_data_sala_turb
+        self.df_snr_sala_turb = df_snr_sala_turb
+        self.df_prod_sala_turb = df_prod_sala_turb
+        self.df_sim_sala_turb = df_sim_sala_turb
+
+        self.df_data_sala_comb = df_data_sala_comb
+        self.df_snr_sala_comb = df_snr_sala_comb
+        self.df_prod_sala_comb = df_prod_sala_comb
+        self.df_sim_sala_comb = df_sim_sala_comb
 
         # Mostrar las tablas correspondientes a la selección actual del ComboBox
         self.show_proceso_tables(self.cb_proceso.get())
@@ -806,6 +896,41 @@ class ExcelViewerApp(ctk.CTk):
             df_sim = self.df_sim_mina_comb
             lbl2_txt = "Programa de Combustoleo Minatitlan (Col CW x2, Filas 74-104)"
             lbl3_txt = "Fecha y Producción de Combustoleo Minatitlan (AN-AO, Filas 158-179)"
+        elif selection == "Salamanca -Crudo":
+            df_data = self.df_data_sala_crud
+            df_snr = self.df_snr_sala_crud
+            df_prod = self.df_prod_sala_crud
+            df_sim = self.df_sim_sala_crud
+            lbl2_txt = "Programa de Crudo Salamanca (Col BL x2, Filas 74-104)"
+            lbl3_txt = "Fecha y Producción de Crudo Salamanca (BE-BF, Filas 21-40)"
+        elif selection == "Salamanca -Gasolinas":
+            df_data = self.df_data_sala_gas
+            df_snr = self.df_snr_sala_gas
+            df_prod = self.df_prod_sala_gas
+            df_sim = self.df_sim_sala_gas
+            lbl2_txt = "Programa de Gasolinas Salamanca (Col BV x2, Filas 74-104)"
+            lbl3_txt = "Fecha y Producción de Gasolinas Salamanca (BW-BX, Filas 21-40)"
+        elif selection == "Salamanca -Diesel":
+            df_data = self.df_data_sala_die
+            df_snr = self.df_snr_sala_die
+            df_prod = self.df_prod_sala_die
+            df_sim = self.df_sim_sala_die
+            lbl2_txt = "Programa de Diesel Salamanca (Col CF x2, Filas 74-104)"
+            lbl3_txt = "Fecha y Producción de Diesel Salamanca (CO-CP, Filas 21-40)"
+        elif selection == "Salamanca -Turbosina":
+            df_data = self.df_data_sala_turb
+            df_snr = self.df_snr_sala_turb
+            df_prod = self.df_prod_sala_turb
+            df_sim = self.df_sim_sala_turb
+            lbl2_txt = "Programa de Turbosina Salamanca (Col CN x2, Filas 74-104)"
+            lbl3_txt = "Fecha y Producción de Turbosina Salamanca (CZ-DA, Filas 21-40)"
+        elif selection == "Salamanca -Combustoleo":
+            df_data = self.df_data_sala_comb
+            df_snr = self.df_snr_sala_comb
+            df_prod = self.df_prod_sala_comb
+            df_sim = self.df_sim_sala_comb
+            lbl2_txt = "Programa de Combustoleo Salamanca (Col CY x2, Filas 74-104)"
+            lbl3_txt = "Fecha y Producción de Combustoleo Salamanca (AQ-AR, Filas 158-179)"
 
         if df_data is None or df_snr is None or df_prod is None:
             return

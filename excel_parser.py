@@ -693,6 +693,181 @@ def load_data(app, file_path):
         df_prod_mina_comb = merge_extra_prod("Minatitlan -Combustoleo", df_prod_mina_comb)
         df_prod_mina_comb_copy = df_prod_mina_comb.copy()
 
+        # --- 1.14 PROCESAR CRUDO SALAMANCA ---
+        app.after(0, app.update_progress, 0.45, "Procesando Crudo Salamanca...")
+        df_data_sala_crud = df_sheet.iloc[73:104, [0, 4]].copy()
+        df_data_sala_crud.columns = ["Crudo Día", "Salamanca Crudo"]
+        df_data_sala_crud = df_data_sala_crud.dropna(how='all')
+        df_data_sala_crud = remove_decimals(df_data_sala_crud)
+        df_data_sala_crud = df_data_sala_crud.iloc[:num_dias_reales]
+
+        df_snr_sala_crud = df_sheet.iloc[73:104, [63, 63]].copy()
+        df_snr_sala_crud.columns = ["CMP", "PODIM"]
+        df_snr_sala_crud = df_snr_sala_crud.dropna(how='all').dropna(axis=1, how='all')
+        df_snr_sala_crud = remove_decimals(df_snr_sala_crud, skip_first=True)
+        df_snr_sala_crud_copy = df_snr_sala_crud.copy()
+
+        df_prod_sala_crud_raw = df_sheet.iloc[20:40, 56:58].copy()
+        df_prod_sala_crud_raw.columns = ["Año/Mes", "Produccion"]
+        df_prod_sala_crud_raw = df_prod_sala_crud_raw.dropna(how='all')
+
+        dic_idx_sala_crud = -1
+        for idx, row in df_prod_sala_crud_raw.iterrows():
+            val = str(row.iloc[0]).strip().lower()
+            if "dic" in val or "diciembre" in val:
+                dic_idx_sala_crud = idx - 20
+                break
+
+        if dic_idx_sala_crud != -1:
+            df_prod_sala_crud = df_prod_sala_crud_raw.iloc[:dic_idx_sala_crud + 1]
+        else:
+            df_prod_sala_crud = df_prod_sala_crud_raw.iloc[:20]
+
+        df_prod_sala_crud = df_prod_sala_crud.dropna(axis=1, how='all')
+        df_prod_sala_crud = remove_decimals(df_prod_sala_crud, skip_last=True)
+        df_prod_sala_crud = merge_extra_prod("Salamanca -Crudo", df_prod_sala_crud)
+        df_prod_sala_crud_copy = df_prod_sala_crud.copy()
+
+        # --- 1.15 PROCESAR GASOLINAS SALAMANCA ---
+        app.after(0, app.update_progress, 0.46, "Procesando Gasolinas Salamanca...")
+        df_data_sala_gas = df_sheet.iloc[20:51, [11, 15]].copy()
+        df_data_sala_gas.columns = ["Gas Día", "Salamanca Gas"]
+        df_data_sala_gas = df_data_sala_gas.dropna(how='all')
+        df_data_sala_gas = remove_decimals(df_data_sala_gas)
+        df_data_sala_gas = df_data_sala_gas.iloc[:num_dias_reales]
+
+        df_snr_sala_gas = df_sheet.iloc[73:104, [73, 73]].copy()
+        df_snr_sala_gas.columns = ["CMP", "PODIM"]
+        df_snr_sala_gas = df_snr_sala_gas.dropna(how='all').dropna(axis=1, how='all')
+        df_snr_sala_gas = remove_decimals(df_snr_sala_gas, skip_first=True)
+        df_snr_sala_gas_copy = df_snr_sala_gas.copy()
+
+        df_prod_sala_gas_raw = df_sheet.iloc[20:40, 74:76].copy()
+        df_prod_sala_gas_raw.columns = ["Año/Mes", "Produccion"]
+        df_prod_sala_gas_raw = df_prod_sala_gas_raw.dropna(how='all')
+
+        dic_idx_sala_gas = -1
+        for idx, row in df_prod_sala_gas_raw.iterrows():
+            val = str(row.iloc[0]).strip().lower()
+            if "dic" in val or "diciembre" in val:
+                dic_idx_sala_gas = idx - 20
+                break
+
+        if dic_idx_sala_gas != -1:
+            df_prod_sala_gas = df_prod_sala_gas_raw.iloc[:dic_idx_sala_gas + 1]
+        else:
+            df_prod_sala_gas = df_prod_sala_gas_raw.iloc[:20]
+
+        df_prod_sala_gas = df_prod_sala_gas.dropna(axis=1, how='all')
+        df_prod_sala_gas = remove_decimals(df_prod_sala_gas, skip_last=True)
+        df_prod_sala_gas = merge_extra_prod("Salamanca -Gasolinas", df_prod_sala_gas)
+        df_prod_sala_gas_copy = df_prod_sala_gas.copy()
+
+        # --- 1.16 PROCESAR DIESEL SALAMANCA ---
+        app.after(0, app.update_progress, 0.47, "Procesando Diesel Salamanca...")
+        df_data_sala_die = df_sheet.iloc[73:104, [0, 4]].copy()
+        df_data_sala_die.columns = ["Diesel Día", "Salamanca Die"]
+        df_data_sala_die = df_data_sala_die.dropna(how='all')
+        df_data_sala_die = remove_decimals(df_data_sala_die)
+        df_data_sala_die = df_data_sala_die.iloc[:num_dias_reales]
+
+        df_snr_sala_die = df_sheet.iloc[73:104, [83, 83]].copy()
+        df_snr_sala_die.columns = ["CMP", "PODIM"]
+        df_snr_sala_die = df_snr_sala_die.dropna(how='all').dropna(axis=1, how='all')
+        df_snr_sala_die = remove_decimals(df_snr_sala_die, skip_first=True)
+        df_snr_sala_die_copy = df_snr_sala_die.copy()
+
+        df_prod_sala_die_raw = df_sheet.iloc[20:40, 92:94].copy()
+        df_prod_sala_die_raw.columns = ["Año/Mes", "Produccion"]
+        df_prod_sala_die_raw = df_prod_sala_die_raw.dropna(how='all')
+
+        dic_idx_sala_die = -1
+        for idx, row in df_prod_sala_die_raw.iterrows():
+            val = str(row.iloc[0]).strip().lower()
+            if "dic" in val or "diciembre" in val:
+                dic_idx_sala_die = idx - 20
+                break
+
+        if dic_idx_sala_die != -1:
+            df_prod_sala_die = df_prod_sala_die_raw.iloc[:dic_idx_sala_die + 1]
+        else:
+            df_prod_sala_die = df_prod_sala_die_raw.iloc[:20]
+
+        df_prod_sala_die = df_prod_sala_die.dropna(axis=1, how='all')
+        df_prod_sala_die = remove_decimals(df_prod_sala_die, skip_last=True)
+        df_prod_sala_die = merge_extra_prod("Salamanca -Diesel", df_prod_sala_die)
+        df_prod_sala_die_copy = df_prod_sala_die.copy()
+
+        # --- 1.17 PROCESAR TURBOSINA SALAMANCA ---
+        app.after(0, app.update_progress, 0.48, "Procesando Turbosina Salamanca...")
+        df_data_sala_turb = df_sheet.iloc[73:104, [11, 13]].copy()
+        df_data_sala_turb.columns = ["Turb Día", "Salamanca Turb"]
+        df_data_sala_turb = df_data_sala_turb.dropna(how='all')
+        df_data_sala_turb = remove_decimals(df_data_sala_turb)
+        df_data_sala_turb = df_data_sala_turb.iloc[:num_dias_reales]
+
+        df_snr_sala_turb = df_sheet.iloc[73:104, [91, 91]].copy()
+        df_snr_sala_turb.columns = ["CMP", "PODIM"]
+        df_snr_sala_turb = df_snr_sala_turb.dropna(how='all').dropna(axis=1, how='all')
+        df_snr_sala_turb = remove_decimals(df_snr_sala_turb, skip_first=True)
+        df_snr_sala_turb_copy = df_snr_sala_turb.copy()
+
+        df_prod_sala_turb_raw = df_sheet.iloc[20:40, 103:105].copy()
+        df_prod_sala_turb_raw.columns = ["Año/Mes", "Produccion"]
+        df_prod_sala_turb_raw = df_prod_sala_turb_raw.dropna(how='all')
+
+        dic_idx_sala_turb = -1
+        for idx, row in df_prod_sala_turb_raw.iterrows():
+            val = str(row.iloc[0]).strip().lower()
+            if "dic" in val or "diciembre" in val:
+                dic_idx_sala_turb = idx - 20
+                break
+
+        if dic_idx_sala_turb != -1:
+            df_prod_sala_turb = df_prod_sala_turb_raw.iloc[:dic_idx_sala_turb + 1]
+        else:
+            df_prod_sala_turb = df_prod_sala_turb_raw.iloc[:20]
+
+        df_prod_sala_turb = df_prod_sala_turb.dropna(axis=1, how='all')
+        df_prod_sala_turb = remove_decimals(df_prod_sala_turb, skip_last=True)
+        df_prod_sala_turb = merge_extra_prod("Salamanca -Turbosina", df_prod_sala_turb)
+        df_prod_sala_turb_copy = df_prod_sala_turb.copy()
+
+        # --- 1.18 PROCESAR COMBUSTOLEO SALAMANCA ---
+        app.after(0, app.update_progress, 0.49, "Procesando Combustoleo Salamanca...")
+        df_data_sala_comb = df_sheet.iloc[158:189, [18, 22]].copy()
+        df_data_sala_comb.columns = ["Comb Día", "Salamanca Comb"]
+        df_data_sala_comb = df_data_sala_comb.dropna(how='all')
+        df_data_sala_comb = remove_decimals(df_data_sala_comb)
+        df_data_sala_comb = df_data_sala_comb.iloc[:num_dias_reales]
+
+        df_snr_sala_comb = df_sheet.iloc[73:104, [102, 102]].copy()
+        df_snr_sala_comb.columns = ["CMP", "PODIM"]
+        df_snr_sala_comb = df_snr_sala_comb.dropna(how='all').dropna(axis=1, how='all')
+        df_snr_sala_comb = remove_decimals(df_snr_sala_comb, skip_first=True)
+        df_snr_sala_comb_copy = df_snr_sala_comb.copy()
+
+        df_prod_sala_comb_raw = df_sheet.iloc[157:179, 42:44].copy()
+        df_prod_sala_comb_raw.columns = ["Año/Mes", "Produccion"]
+        df_prod_sala_comb_raw = df_prod_sala_comb_raw.dropna(how='all')
+
+        dic_idx_sala_comb = -1
+        for idx, row in df_prod_sala_comb_raw.iterrows():
+            val = str(row.iloc[0]).strip().lower()
+            if "dic" in val or "diciembre" in val:
+                dic_idx_sala_comb = idx - 157
+                break
+
+        if dic_idx_sala_comb != -1:
+            df_prod_sala_comb = df_prod_sala_comb_raw.iloc[:dic_idx_sala_comb + 1]
+        else:
+            df_prod_sala_comb = df_prod_sala_comb_raw.iloc[:22]
+
+        df_prod_sala_comb = df_prod_sala_comb.dropna(axis=1, how='all')
+        df_prod_sala_comb = remove_decimals(df_prod_sala_comb, skip_last=True)
+        df_prod_sala_comb = merge_extra_prod("Salamanca -Combustoleo", df_prod_sala_comb)
+        df_prod_sala_comb_copy = df_prod_sala_comb.copy()
+
         # --- 2. PROCESAR GASOLINAS ---
         app.after(0, app.update_progress, 0.35, "Procesando Gasolinas...")
         # Leer fila 1 (index 0) para encabezados, Cols L:S (11:19)
@@ -1393,6 +1568,121 @@ def load_data(app, file_path):
         sim_data_mina_comb.append(["TOTALES", "---", f"Días pasados: {days_passed}", f"Suma: {int(suma_total_mina_comb)} | Prom: {promedio_mina_comb:.2f}"])
         df_sim_mina_comb = pd.DataFrame(sim_data_mina_comb, columns=["Mes", "Producción", "Días", "Total (Prod x Días)"])
 
+        # 18. Simulación Salamanca Crudo
+        prod_dict_sala_crud = {m: 0.0 for m in meses_nombres}
+        for idx, row_data in df_prod_sala_crud.iterrows():
+            val_anio = str(row_data.iloc[0]).strip().lower()
+            val_prod = row_data.iloc[1]
+            try: p = float(val_prod)
+            except: p = 0.0
+            for i, (m_largo, m_corto) in enumerate(zip(meses_nombres, meses_cortos)):
+                if m_largo.lower() in val_anio or m_corto.lower() in val_anio:
+                    prod_dict_sala_crud[meses_nombres[i]] += p
+                    break
+        sim_data_sala_crud = []
+        suma_total_sala_crud = 0.0
+        for i, mes in enumerate(meses_nombres):
+            dias = dias_por_mes[i]
+            prod = prod_dict_sala_crud[mes]
+            total = prod * dias
+            suma_total_sala_crud += total
+            sim_data_sala_crud.append([mes, int(prod), dias, int(total)])
+        promedio_sala_crud = suma_total_sala_crud / days_passed if days_passed > 0 else 0
+        sim_data_sala_crud.append(["TOTALES", "---", f"Días pasados: {days_passed}", f"Suma: {int(suma_total_sala_crud)} | Prom: {promedio_sala_crud:.2f}"])
+        df_sim_sala_crud = pd.DataFrame(sim_data_sala_crud, columns=["Mes", "Producción", "Días", "Total (Prod x Días)"])
+
+        # 19. Simulación Salamanca Gasolinas
+        prod_dict_sala_gas = {m: 0.0 for m in meses_nombres}
+        for idx, row_data in df_prod_sala_gas.iterrows():
+            val_anio = str(row_data.iloc[0]).strip().lower()
+            val_prod = row_data.iloc[1]
+            try: p = float(val_prod)
+            except: p = 0.0
+            for i, (m_largo, m_corto) in enumerate(zip(meses_nombres, meses_cortos)):
+                if m_largo.lower() in val_anio or m_corto.lower() in val_anio:
+                    prod_dict_sala_gas[meses_nombres[i]] += p
+                    break
+        sim_data_sala_gas = []
+        suma_total_sala_gas = 0.0
+        for i, mes in enumerate(meses_nombres):
+            dias = dias_por_mes[i]
+            prod = prod_dict_sala_gas[mes]
+            total = prod * dias
+            suma_total_sala_gas += total
+            sim_data_sala_gas.append([mes, int(prod), dias, int(total)])
+        promedio_sala_gas = suma_total_sala_gas / days_passed if days_passed > 0 else 0
+        sim_data_sala_gas.append(["TOTALES", "---", f"Días pasados: {days_passed}", f"Suma: {int(suma_total_sala_gas)} | Prom: {promedio_sala_gas:.2f}"])
+        df_sim_sala_gas = pd.DataFrame(sim_data_sala_gas, columns=["Mes", "Producción", "Días", "Total (Prod x Días)"])
+
+        # 20. Simulación Salamanca Diesel
+        prod_dict_sala_die = {m: 0.0 for m in meses_nombres}
+        for idx, row_data in df_prod_sala_die.iterrows():
+            val_anio = str(row_data.iloc[0]).strip().lower()
+            val_prod = row_data.iloc[1]
+            try: p = float(val_prod)
+            except: p = 0.0
+            for i, (m_largo, m_corto) in enumerate(zip(meses_nombres, meses_cortos)):
+                if m_largo.lower() in val_anio or m_corto.lower() in val_anio:
+                    prod_dict_sala_die[meses_nombres[i]] += p
+                    break
+        sim_data_sala_die = []
+        suma_total_sala_die = 0.0
+        for i, mes in enumerate(meses_nombres):
+            dias = dias_por_mes[i]
+            prod = prod_dict_sala_die[mes]
+            total = prod * dias
+            suma_total_sala_die += total
+            sim_data_sala_die.append([mes, int(prod), dias, int(total)])
+        promedio_sala_die = suma_total_sala_die / days_passed if days_passed > 0 else 0
+        sim_data_sala_die.append(["TOTALES", "---", f"Días pasados: {days_passed}", f"Suma: {int(suma_total_sala_die)} | Prom: {promedio_sala_die:.2f}"])
+        df_sim_sala_die = pd.DataFrame(sim_data_sala_die, columns=["Mes", "Producción", "Días", "Total (Prod x Días)"])
+
+        # 21. Simulación Salamanca Turbosina
+        prod_dict_sala_turb = {m: 0.0 for m in meses_nombres}
+        for idx, row_data in df_prod_sala_turb.iterrows():
+            val_anio = str(row_data.iloc[0]).strip().lower()
+            val_prod = row_data.iloc[1]
+            try: p = float(val_prod)
+            except: p = 0.0
+            for i, (m_largo, m_corto) in enumerate(zip(meses_nombres, meses_cortos)):
+                if m_largo.lower() in val_anio or m_corto.lower() in val_anio:
+                    prod_dict_sala_turb[meses_nombres[i]] += p
+                    break
+        sim_data_sala_turb = []
+        suma_total_sala_turb = 0.0
+        for i, mes in enumerate(meses_nombres):
+            dias = dias_por_mes[i]
+            prod = prod_dict_sala_turb[mes]
+            total = prod * dias
+            suma_total_sala_turb += total
+            sim_data_sala_turb.append([mes, int(prod), dias, int(total)])
+        promedio_sala_turb = suma_total_sala_turb / days_passed if days_passed > 0 else 0
+        sim_data_sala_turb.append(["TOTALES", "---", f"Días pasados: {days_passed}", f"Suma: {int(suma_total_sala_turb)} | Prom: {promedio_sala_turb:.2f}"])
+        df_sim_sala_turb = pd.DataFrame(sim_data_sala_turb, columns=["Mes", "Producción", "Días", "Total (Prod x Días)"])
+
+        # 22. Simulación Salamanca Combustoleo
+        prod_dict_sala_comb = {m: 0.0 for m in meses_nombres}
+        for idx, row_data in df_prod_sala_comb.iterrows():
+            val_anio = str(row_data.iloc[0]).strip().lower()
+            val_prod = row_data.iloc[1]
+            try: p = float(val_prod)
+            except: p = 0.0
+            for i, (m_largo, m_corto) in enumerate(zip(meses_nombres, meses_cortos)):
+                if m_largo.lower() in val_anio or m_corto.lower() in val_anio:
+                    prod_dict_sala_comb[meses_nombres[i]] += p
+                    break
+        sim_data_sala_comb = []
+        suma_total_sala_comb = 0.0
+        for i, mes in enumerate(meses_nombres):
+            dias = dias_por_mes[i]
+            prod = prod_dict_sala_comb[mes]
+            total = prod * dias
+            suma_total_sala_comb += total
+            sim_data_sala_comb.append([mes, int(prod), dias, int(total)])
+        promedio_sala_comb = suma_total_sala_comb / days_passed if days_passed > 0 else 0
+        sim_data_sala_comb.append(["TOTALES", "---", f"Días pasados: {days_passed}", f"Suma: {int(suma_total_sala_comb)} | Prom: {promedio_sala_comb:.2f}"])
+        df_sim_sala_comb = pd.DataFrame(sim_data_sala_comb, columns=["Mes", "Producción", "Días", "Total (Prod x Días)"])
+
         app.after(0, app.update_progress, 0.97, "Finalizando...")
 
         # Pasar datos a la interfaz (main thread)
@@ -1414,7 +1704,12 @@ def load_data(app, file_path):
                    df_data_mina_crud, df_snr_mina_crud_copy, df_prod_mina_crud_copy, df_sim_mina_crud,
                    df_data_mina_gas, df_snr_mina_gas_copy, df_prod_mina_gas_copy, df_sim_mina_gas,
                    df_data_mina_die, df_snr_mina_die_copy, df_prod_mina_die_copy, df_sim_mina_die,
-                   df_data_mina_comb, df_snr_mina_comb_copy, df_prod_mina_comb_copy, df_sim_mina_comb)
+                   df_data_mina_comb, df_snr_mina_comb_copy, df_prod_mina_comb_copy, df_sim_mina_comb,
+                   df_data_sala_crud, df_snr_sala_crud_copy, df_prod_sala_crud_copy, df_sim_sala_crud,
+                   df_data_sala_gas, df_snr_sala_gas_copy, df_prod_sala_gas_copy, df_sim_sala_gas,
+                   df_data_sala_die, df_snr_sala_die_copy, df_prod_sala_die_copy, df_sim_sala_die,
+                   df_data_sala_turb, df_snr_sala_turb_copy, df_prod_sala_turb_copy, df_sim_sala_turb,
+                   df_data_sala_comb, df_snr_sala_comb_copy, df_prod_sala_comb_copy, df_sim_sala_comb)
 
     except Exception as e:
         err_details = traceback.format_exc()
