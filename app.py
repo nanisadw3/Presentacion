@@ -80,7 +80,7 @@ class ExcelViewerApp(ctk.CTk):
         self.lbl_proceso.pack(pady=15, padx=(20, 5), side="left")
         
         self.cb_proceso = ctk.CTkComboBox(self.top_frame, 
-                                            values=["Crudo", "Gasolinas", "Diesel", "Turbosina", "Asfalto", "Combustoleo", "Cadereyta -Crudo", "Cadereyta -Gasolinas", "Cadereyta -Diesel", "Cadereyta -Combustoleo", "Madero -Crudo", "Madero -Gasolinas", "Madero -Diesel"],
+                                            values=["Crudo", "Gasolinas", "Diesel", "Turbosina", "Asfalto", "Combustoleo", "Cadereyta -Crudo", "Cadereyta -Gasolinas", "Cadereyta -Diesel", "Cadereyta -Combustoleo", "Madero -Crudo", "Madero -Gasolinas", "Madero -Diesel", "Madero -Turbosina", "Madero -Combustoleo"],
                                             font=("Roboto", 14),
                                             command=self.on_proceso_changed,
                                             state="readonly",
@@ -149,6 +149,18 @@ class ExcelViewerApp(ctk.CTk):
         self.df_snr_mad_die = None
         self.df_prod_mad_die = None
         self.df_sim_mad_die = None
+
+        # Datos de Madero -Turbosina
+        self.df_data_mad_turb = None
+        self.df_snr_mad_turb = None
+        self.df_prod_mad_turb = None
+        self.df_sim_mad_turb = None
+
+        # Datos de Madero -Combustoleo
+        self.df_data_mad_comb = None
+        self.df_snr_mad_comb = None
+        self.df_prod_mad_comb = None
+        self.df_sim_mad_comb = None
  
         # Datos de Turbosina
         self.df_data_turbosina = None
@@ -206,7 +218,7 @@ class ExcelViewerApp(ctk.CTk):
 
         lbl_proceso = ctk.CTkLabel(dialog, text="Proceso:", font=("Roboto", 14, "bold"))
         lbl_proceso.pack(pady=(10, 0))
-        opciones_procesos = ["Crudo", "Gasolinas", "Diesel", "Turbosina", "Asfalto", "Combustoleo", "Cadereyta -Crudo", "Cadereyta -Gasolinas", "Cadereyta -Diesel", "Cadereyta -Combustoleo", "Madero -Crudo", "Madero -Gasolinas", "Madero -Diesel"]
+        opciones_procesos = ["Crudo", "Gasolinas", "Diesel", "Turbosina", "Asfalto", "Combustoleo", "Cadereyta -Crudo", "Cadereyta -Gasolinas", "Cadereyta -Diesel", "Cadereyta -Combustoleo", "Madero -Crudo", "Madero -Gasolinas", "Madero -Diesel", "Madero -Turbosina", "Madero -Combustoleo"]
         combo_proceso = ctk.CTkComboBox(dialog, values=opciones_procesos, width=250)
         combo_proceso.pack(pady=(5, 10))
 
@@ -428,6 +440,18 @@ class ExcelViewerApp(ctk.CTk):
                 save_df(getattr(self, 'df_prod_mad_die', None), 'madero_diesel_produccion')
                 save_df(getattr(self, 'df_sim_mad_die', None), 'madero_diesel_simulacion_anual')
 
+                # Guardar datos de Madero - Turbosina
+                save_df(getattr(self, 'df_data_mad_turb', None), 'madero_turbosina_tabla_principal')
+                save_df(getattr(self, 'df_snr_mad_turb', None), 'madero_turbosina_programa_snr')
+                save_df(getattr(self, 'df_prod_mad_turb', None), 'madero_turbosina_produccion')
+                save_df(getattr(self, 'df_sim_mad_turb', None), 'madero_turbosina_simulacion_anual')
+
+                # Guardar datos de Madero - Combustoleo
+                save_df(getattr(self, 'df_data_mad_comb', None), 'madero_combustoleo_tabla_principal')
+                save_df(getattr(self, 'df_snr_mad_comb', None), 'madero_combustoleo_programa_snr')
+                save_df(getattr(self, 'df_prod_mad_comb', None), 'madero_combustoleo_produccion')
+                save_df(getattr(self, 'df_sim_mad_comb', None), 'madero_combustoleo_simulacion_anual')
+
                 conn.commit()
                 conn.close()
                 messagebox.showinfo("Éxito", f"¡Los datos de todos los procesos han sido guardados en la base de datos!\n\nRuta:\n{db_path}")
@@ -462,7 +486,9 @@ class ExcelViewerApp(ctk.CTk):
                             df_data_cad_comb=None, df_snr_cad_comb=None, df_prod_cad_comb=None, df_sim_cad_comb=None,
                             df_data_mad_crud=None, df_snr_mad_crud=None, df_prod_mad_crud=None, df_sim_mad_crud=None,
                             df_data_mad_gas=None, df_snr_mad_gas=None, df_prod_mad_gas=None, df_sim_mad_gas=None,
-                            df_data_mad_die=None, df_snr_mad_die=None, df_prod_mad_die=None, df_sim_mad_die=None):
+                            df_data_mad_die=None, df_snr_mad_die=None, df_prod_mad_die=None, df_sim_mad_die=None,
+                            df_data_mad_turb=None, df_snr_mad_turb=None, df_prod_mad_turb=None, df_sim_mad_turb=None,
+                            df_data_mad_comb=None, df_snr_mad_comb=None, df_prod_mad_comb=None, df_sim_mad_comb=None):
         self.df_data = df_data
 
         self.df_snr = df_snr
@@ -529,6 +555,16 @@ class ExcelViewerApp(ctk.CTk):
         self.df_snr_mad_die = df_snr_mad_die
         self.df_prod_mad_die = df_prod_mad_die
         self.df_sim_mad_die = df_sim_mad_die
+
+        self.df_data_mad_turb = df_data_mad_turb
+        self.df_snr_mad_turb = df_snr_mad_turb
+        self.df_prod_mad_turb = df_prod_mad_turb
+        self.df_sim_mad_turb = df_sim_mad_turb
+
+        self.df_data_mad_comb = df_data_mad_comb
+        self.df_snr_mad_comb = df_snr_mad_comb
+        self.df_prod_mad_comb = df_prod_mad_comb
+        self.df_sim_mad_comb = df_sim_mad_comb
 
         # Mostrar las tablas correspondientes a la selección actual del ComboBox
         self.show_proceso_tables(self.cb_proceso.get())
@@ -656,6 +692,20 @@ class ExcelViewerApp(ctk.CTk):
             df_sim = self.df_sim_mad_die
             lbl2_txt = "Programa de Diesel Madero (Col CD x2, Filas 74-104)"
             lbl3_txt = "Fecha y Producción de Diesel Madero (CI-CJ, Filas 21-40)"
+        elif selection == "Madero -Turbosina":
+            df_data = self.df_data_mad_turb
+            df_snr = self.df_snr_mad_turb
+            df_prod = self.df_prod_mad_turb
+            df_sim = self.df_sim_mad_turb
+            lbl2_txt = "Programa de Turbosina Madero (Col CM x2, Filas 74-104)"
+            lbl3_txt = "Fecha y Producción de Turbosina Madero (CX-CY, Filas 21-40)"
+        elif selection == "Madero -Combustoleo":
+            df_data = self.df_data_mad_comb
+            df_snr = self.df_snr_mad_comb
+            df_prod = self.df_prod_mad_comb
+            df_sim = self.df_sim_mad_comb
+            lbl2_txt = "Programa de Combustoleo Madero (Col CV x2, Filas 74-104)"
+            lbl3_txt = "Fecha y Producción de Combustoleo Madero (AK-AL, Filas 158-179)"
 
         if df_data is None or df_snr is None or df_prod is None:
             return
