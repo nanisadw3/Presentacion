@@ -111,8 +111,8 @@ def export_to_pptx(app, file_path, save_path):
         from pptx.dml.color import RGBColor
 
         prs = Presentation(file_path)
-        if len(prs.slides) < 33:
-            raise ValueError("La presentación debe tener al menos 33 diapositivas (incluyendo las de Madero, Minatitlán y Salamanca).")
+        if len(prs.slides) < 40:
+            raise ValueError("La presentación debe tener al menos 40 diapositivas (incluyendo las de Madero, Minatitlán, Salamanca y Salina Cruz).")
  
         # --- 1. PROCESAR DIAPOSITIVA DE CRUDO (DIAPOSITIVA 2) ---
         slide = prs.slides[1]
@@ -1783,6 +1783,316 @@ def export_to_pptx(app, file_path, save_path):
                             except: columna1_vals_sco.append(None)
 
                         update_slide_chart(chart_sala_comb, categories_sco, proceso_vals_sco, diario_vals_sco, programa_vals_sco, columna1_vals_sco, wine_color, green_color)
+
+            # --- 24. PROCESAR DIAPOSITIVA DE CRUDO SALINA CRUZ (DIAPOSITIVA 36) ---
+            if len(prs.slides) > 35 and app.df_data_sal_crud is not None and app.df_snr_sal_crud is not None and app.df_prod_sal_crud is not None:
+                slide_sal_crud = prs.slides[35]
+                chart_sal_crud = None
+                for shape in slide_sal_crud.shapes:
+                    if shape.has_chart:
+                        chart_sal_crud = shape.chart
+                        break
+                
+                if chart_sal_crud:
+                    snr_col_sal_crud = None
+                    for col in app.df_data_sal_crud.columns:
+                        if "SNR" in str(col).upper():
+                            snr_col_sal_crud = col
+                            break
+                    if not snr_col_sal_crud and len(app.df_data_sal_crud.columns) >= 2:
+                        snr_col_sal_crud = app.df_data_sal_crud.columns[1]
+
+                    if snr_col_sal_crud:
+                        categories_sc = []
+                        proceso_vals_sc = []
+                        diario_vals_sc = []
+                        programa_vals_sc = []
+                        columna1_vals_sc = []
+
+                        prod_rows_sc = []
+                        for idx, row in app.df_prod_sal_crud.iterrows():
+                            cat = str(row.iloc[0]).strip()
+                            val = row.iloc[1]
+                            if not cat: continue
+                            if not any(c.isalpha() for c in cat):
+                                prod_rows_sc.append((cat, val))
+                            else:
+                                try:
+                                    if float(val) != 0: prod_rows_sc.append((cat, val))
+                                except: pass
+
+                        if len(prod_rows_sc) > 30: prod_rows_sc = prod_rows_sc[-30:]
+
+                        for i in range(len(prod_rows_sc)):
+                            categories_sc.append(prod_rows_sc[i][0])
+                            try: proceso_vals_sc.append(float(prod_rows_sc[i][1]))
+                            except: proceso_vals_sc.append(None)
+                            diario_vals_sc.append(None)
+                            programa_vals_sc.append(None)
+                            columna1_vals_sc.append(None)
+
+                        for i in range(31):
+                            categories_sc.append(str(i + 1))
+                            proceso_vals_sc.append(None)
+                            
+                            try: diario_vals_sc.append(float(app.df_data_sal_crud[snr_col_sal_crud].iloc[i]))
+                            except: diario_vals_sc.append(None)
+                            
+                            try: programa_vals_sc.append(float(app.df_snr_sal_crud.iloc[i, 0]))
+                            except: programa_vals_sc.append(None)
+                            
+                            try: columna1_vals_sc.append(float(app.df_snr_sal_crud.iloc[i, 1]))
+                            except: columna1_vals_sc.append(None)
+
+                        update_slide_chart(chart_sal_crud, categories_sc, proceso_vals_sc, diario_vals_sc, programa_vals_sc, columna1_vals_sc, wine_color, green_color)
+
+            # --- 25. PROCESAR DIAPOSITIVA DE GASOLINAS SALINA CRUZ (DIAPOSITIVA 37) ---
+            if len(prs.slides) > 36 and app.df_data_sal_gas is not None and app.df_snr_sal_gas is not None and app.df_prod_sal_gas is not None:
+                slide_sal_gas = prs.slides[36]
+                chart_sal_gas = None
+                for shape in slide_sal_gas.shapes:
+                    if shape.has_chart:
+                        chart_sal_gas = shape.chart
+                        break
+                
+                if chart_sal_gas:
+                    snr_col_sal_gas = None
+                    for col in app.df_data_sal_gas.columns:
+                        if "SNR" in str(col).upper():
+                            snr_col_sal_gas = col
+                            break
+                    if not snr_col_sal_gas and len(app.df_data_sal_gas.columns) >= 2:
+                        snr_col_sal_gas = app.df_data_sal_gas.columns[1]
+
+                    if snr_col_sal_gas:
+                        categories_sg = []
+                        proceso_vals_sg = []
+                        diario_vals_sg = []
+                        programa_vals_sg = []
+                        columna1_vals_sg = []
+
+                        prod_rows_sg = []
+                        for idx, row in app.df_prod_sal_gas.iterrows():
+                            cat = str(row.iloc[0]).strip()
+                            val = row.iloc[1]
+                            if not cat: continue
+                            if not any(c.isalpha() for c in cat):
+                                prod_rows_sg.append((cat, val))
+                            else:
+                                try:
+                                    if float(val) != 0: prod_rows_sg.append((cat, val))
+                                except: pass
+
+                        if len(prod_rows_sg) > 30: prod_rows_sg = prod_rows_sg[-30:]
+
+                        for i in range(len(prod_rows_sg)):
+                            categories_sg.append(prod_rows_sg[i][0])
+                            try: proceso_vals_sg.append(float(prod_rows_sg[i][1]))
+                            except: proceso_vals_sg.append(None)
+                            diario_vals_sg.append(None)
+                            programa_vals_sg.append(None)
+                            columna1_vals_sg.append(None)
+
+                        for i in range(31):
+                            categories_sg.append(str(i + 1))
+                            proceso_vals_sg.append(None)
+                            
+                            try: diario_vals_sg.append(float(app.df_data_sal_gas[snr_col_sal_gas].iloc[i]))
+                            except: diario_vals_sg.append(None)
+                            
+                            try: programa_vals_sg.append(float(app.df_snr_sal_gas.iloc[i, 0]))
+                            except: programa_vals_sg.append(None)
+                            
+                            try: columna1_vals_sg.append(float(app.df_snr_sal_gas.iloc[i, 1]))
+                            except: columna1_vals_sg.append(None)
+
+                        update_slide_chart(chart_sal_gas, categories_sg, proceso_vals_sg, diario_vals_sg, programa_vals_sg, columna1_vals_sg, wine_color, green_color)
+
+            # --- 26. PROCESAR DIAPOSITIVA DE DIESEL SALINA CRUZ (DIAPOSITIVA 38) ---
+            if len(prs.slides) > 37 and app.df_data_sal_die is not None and app.df_snr_sal_die is not None and app.df_prod_sal_die is not None:
+                slide_sal_die = prs.slides[37]
+                chart_sal_die = None
+                for shape in slide_sal_die.shapes:
+                    if shape.has_chart:
+                        chart_sal_die = shape.chart
+                        break
+                
+                if chart_sal_die:
+                    snr_col_sal_die = None
+                    for col in app.df_data_sal_die.columns:
+                        if "SNR" in str(col).upper():
+                            snr_col_sal_die = col
+                            break
+                    if not snr_col_sal_die and len(app.df_data_sal_die.columns) >= 2:
+                        snr_col_sal_die = app.df_data_sal_die.columns[1]
+
+                    if snr_col_sal_die:
+                        categories_sd = []
+                        proceso_vals_sd = []
+                        diario_vals_sd = []
+                        programa_vals_sd = []
+                        columna1_vals_sd = []
+
+                        prod_rows_sd = []
+                        for idx, row in app.df_prod_sal_die.iterrows():
+                            cat = str(row.iloc[0]).strip()
+                            val = row.iloc[1]
+                            if not cat: continue
+                            if not any(c.isalpha() for c in cat):
+                                prod_rows_sd.append((cat, val))
+                            else:
+                                try:
+                                    if float(val) != 0: prod_rows_sd.append((cat, val))
+                                except: pass
+
+                        if len(prod_rows_sd) > 30: prod_rows_sd = prod_rows_sd[-30:]
+
+                        for i in range(len(prod_rows_sd)):
+                            categories_sd.append(prod_rows_sd[i][0])
+                            try: proceso_vals_sd.append(float(prod_rows_sd[i][1]))
+                            except: proceso_vals_sd.append(None)
+                            diario_vals_sd.append(None)
+                            programa_vals_sd.append(None)
+                            columna1_vals_sd.append(None)
+
+                        for i in range(31):
+                            categories_sd.append(str(i + 1))
+                            proceso_vals_sd.append(None)
+                            
+                            try: diario_vals_sd.append(float(app.df_data_sal_die[snr_col_sal_die].iloc[i]))
+                            except: diario_vals_sd.append(None)
+                            
+                            try: programa_vals_sd.append(float(app.df_snr_sal_die.iloc[i, 0]))
+                            except: programa_vals_sd.append(None)
+                            
+                            try: columna1_vals_sd.append(float(app.df_snr_sal_die.iloc[i, 1]))
+                            except: columna1_vals_sd.append(None)
+
+                        update_slide_chart(chart_sal_die, categories_sd, proceso_vals_sd, diario_vals_sd, programa_vals_sd, columna1_vals_sd, wine_color, green_color)
+
+            # --- 27. PROCESAR DIAPOSITIVA DE TURBOSINA SALINA CRUZ (DIAPOSITIVA 39) ---
+            if len(prs.slides) > 38 and app.df_data_sal_turb is not None and app.df_snr_sal_turb is not None and app.df_prod_sal_turb is not None:
+                slide_sal_turb = prs.slides[38]
+                chart_sal_turb = None
+                for shape in slide_sal_turb.shapes:
+                    if shape.has_chart:
+                        chart_sal_turb = shape.chart
+                        break
+                
+                if chart_sal_turb:
+                    snr_col_sal_turb = None
+                    for col in app.df_data_sal_turb.columns:
+                        if "SNR" in str(col).upper():
+                            snr_col_sal_turb = col
+                            break
+                    if not snr_col_sal_turb and len(app.df_data_sal_turb.columns) >= 2:
+                        snr_col_sal_turb = app.df_data_sal_turb.columns[1]
+
+                    if snr_col_sal_turb:
+                        categories_stur = []
+                        proceso_vals_stur = []
+                        diario_vals_stur = []
+                        programa_vals_stur = []
+                        columna1_vals_stur = []
+
+                        prod_rows_stur = []
+                        for idx, row in app.df_prod_sal_turb.iterrows():
+                            cat = str(row.iloc[0]).strip()
+                            val = row.iloc[1]
+                            if not cat: continue
+                            if not any(c.isalpha() for c in cat):
+                                prod_rows_stur.append((cat, val))
+                            else:
+                                try:
+                                    if float(val) != 0: prod_rows_stur.append((cat, val))
+                                except: pass
+
+                        if len(prod_rows_stur) > 30: prod_rows_stur = prod_rows_stur[-30:]
+
+                        for i in range(len(prod_rows_stur)):
+                            categories_stur.append(prod_rows_stur[i][0])
+                            try: proceso_vals_stur.append(float(prod_rows_stur[i][1]))
+                            except: proceso_vals_stur.append(None)
+                            diario_vals_stur.append(None)
+                            programa_vals_stur.append(None)
+                            columna1_vals_stur.append(None)
+
+                        for i in range(31):
+                            categories_stur.append(str(i + 1))
+                            proceso_vals_stur.append(None)
+                            
+                            try: diario_vals_stur.append(float(app.df_data_sal_turb[snr_col_sal_turb].iloc[i]))
+                            except: diario_vals_stur.append(None)
+                            
+                            try: programa_vals_stur.append(float(app.df_snr_sal_turb.iloc[i, 0]))
+                            except: programa_vals_stur.append(None)
+                            
+                            try: columna1_vals_stur.append(float(app.df_snr_sal_turb.iloc[i, 1]))
+                            except: columna1_vals_stur.append(None)
+
+                        update_slide_chart(chart_sal_turb, categories_stur, proceso_vals_stur, diario_vals_stur, programa_vals_stur, columna1_vals_stur, wine_color, green_color)
+
+            # --- 28. PROCESAR DIAPOSITIVA DE COMBUSTOLEO SALINA CRUZ (DIAPOSITIVA 40) ---
+            if len(prs.slides) > 39 and app.df_data_sal_comb is not None and app.df_snr_sal_comb is not None and app.df_prod_sal_comb is not None:
+                slide_sal_comb = prs.slides[39]
+                chart_sal_comb = None
+                for shape in slide_sal_comb.shapes:
+                    if shape.has_chart:
+                        chart_sal_comb = shape.chart
+                        break
+                
+                if chart_sal_comb:
+                    snr_col_sal_comb = None
+                    for col in app.df_data_sal_comb.columns:
+                        if "SNR" in str(col).upper():
+                            snr_col_sal_comb = col
+                            break
+                    if not snr_col_sal_comb and len(app.df_data_sal_comb.columns) >= 2:
+                        snr_col_sal_comb = app.df_data_sal_comb.columns[1]
+
+                    if snr_col_sal_comb:
+                        categories_sco = []
+                        proceso_vals_sco = []
+                        diario_vals_sco = []
+                        programa_vals_sco = []
+                        columna1_vals_sco = []
+
+                        prod_rows_sco = []
+                        for idx, row in app.df_prod_sal_comb.iterrows():
+                            cat = str(row.iloc[0]).strip()
+                            val = row.iloc[1]
+                            if not cat: continue
+                            if not any(c.isalpha() for c in cat):
+                                prod_rows_sco.append((cat, val))
+                            else:
+                                try:
+                                    if float(val) != 0: prod_rows_sco.append((cat, val))
+                                except: pass
+
+                        if len(prod_rows_sco) > 30: prod_rows_sco = prod_rows_sco[-30:]
+
+                        for i in range(len(prod_rows_sco)):
+                            categories_sco.append(prod_rows_sco[i][0])
+                            try: proceso_vals_sco.append(float(prod_rows_sco[i][1]))
+                            except: proceso_vals_sco.append(None)
+                            diario_vals_sco.append(None)
+                            programa_vals_sco.append(None)
+                            columna1_vals_sco.append(None)
+
+                        for i in range(31):
+                            categories_sco.append(str(i + 1))
+                            proceso_vals_sco.append(None)
+                            
+                            try: diario_vals_sco.append(float(app.df_data_sal_comb[snr_col_sal_comb].iloc[i]))
+                            except: diario_vals_sco.append(None)
+                            
+                            try: programa_vals_sco.append(float(app.df_snr_sal_comb.iloc[i, 0]))
+                            except: programa_vals_sco.append(None)
+                            
+                            try: columna1_vals_sco.append(float(app.df_snr_sal_comb.iloc[i, 1]))
+                            except: columna1_vals_sco.append(None)
+
+                        update_slide_chart(chart_sal_comb, categories_sco, proceso_vals_sco, diario_vals_sco, programa_vals_sco, columna1_vals_sco, wine_color, green_color)
 
         prs.save(save_path)
 
