@@ -16,12 +16,14 @@ class ExcelViewerApp(ctk.CTk):
 
         self.title("Sistema de Proyección y Reportes de Refinerías")
         
-        # Center main window
-        width, height = 1500, 900
+        # Centrar ventana al 80% de la pantalla principal
+        self.update_idletasks()
         screen_w = self.winfo_screenwidth()
         screen_h = self.winfo_screenheight()
-        x = int((screen_w/2) - (width/2))
-        y = int((screen_h/2) - (height/2))
+        width = int(screen_w * 0.8)
+        height = int(screen_h * 0.8)
+        x = int((screen_w - width) / 2)
+        y = int((screen_h - height) / 2)
         self.geometry(f"{width}x{height}+{x}+{y}")
         
         # Configuración del tema
