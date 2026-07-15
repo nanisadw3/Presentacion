@@ -1618,8 +1618,8 @@ class ExcelViewerApp(ctk.CTk):
 
     def open_config_coords_dialog(self):
         dialog = ctk.CTkToplevel(self)
-        dialog.title("Configuración de Coordenadas de Excel")
-        dialog.geometry("520x460")
+        dialog.title("Configuración Visual de Coordenadas (Excel)")
+        dialog.geometry("620x560")
         dialog.resizable(False, False)
         dialog.transient(self)
         dialog.grab_set()
@@ -1631,18 +1631,20 @@ class ExcelViewerApp(ctk.CTk):
         y = self.winfo_y() + (self.winfo_height() - h) // 2
         dialog.geometry(f"+{x}+{y}")
 
-        title_lbl = ctk.CTkLabel(dialog, text="Mapeo de Celdas / Coordenadas de Excel", font=("Roboto", 16, "bold"), text_color="#3484F0")
+        # Título superior
+        title_lbl = ctk.CTkLabel(dialog, text="Mapeador de Celdas y Rangos de Excel", font=("Roboto", 16, "bold"), text_color="#3484F0")
         title_lbl.pack(pady=(15, 10))
 
+        # Selector de proceso
         proc_frame = ctk.CTkFrame(dialog, fg_color="transparent")
         proc_frame.pack(fill="x", padx=30, pady=5)
         
-        proc_lbl = ctk.CTkLabel(proc_frame, text="Selecciona el Proceso a Configurar:", font=("Roboto", 12, "bold"))
+        proc_lbl = ctk.CTkLabel(proc_frame, text="Proceso:", font=("Roboto", 12, "bold"))
         proc_lbl.pack(side="left", padx=(0, 10))
         
         specific_processes = [v for v in self.cb_proceso.cget("values") if " -" in v]
         
-        cb_proc = ctk.CTkComboBox(proc_frame, values=specific_processes, font=("Roboto", 12), state="readonly", width=220)
+        cb_proc = ctk.CTkComboBox(proc_frame, values=specific_processes, font=("Roboto", 12), state="readonly", width=300)
         cb_proc.pack(side="left")
         
         current_sel = self.cb_proceso.get()
@@ -1651,23 +1653,60 @@ class ExcelViewerApp(ctk.CTk):
         else:
             cb_proc.set(specific_processes[0])
 
-        inputs_frame = ctk.CTkFrame(dialog)
-        inputs_frame.pack(fill="both", expand=True, padx=30, pady=10)
+        # Contenedor de Pestañas (Tabview) para segmentar las tablas visualmente
+        tabview = ctk.CTkTabview(dialog, width=560, height=360)
+        tabview.pack(padx=30, pady=10, fill="both", expand=True)
+
+        tab_t1 = tabview.add("📊 T1 (Diaria)")
+        tab_t2 = tabview.add("📅 T2 (Programa)")
+        tab_t3 = tabview.add("📜 T3 (Histórica)")
 
         entries = {}
-        def create_field(parent, label_text, row, key):
-            lbl = ctk.CTkLabel(parent, text=label_text, font=("Roboto", 11, "bold"))
-            lbl.grid(row=row, column=0, sticky="w", padx=15, pady=8)
-            entry = ctk.CTkEntry(parent, width=120)
-            entry.grid(row=row, column=1, sticky="w", padx=15, pady=8)
-            entries[key] = entry
 
-        create_field(inputs_frame, "T1 (Diaria) - Rango de Filas (e.g. 21-51):", 0, "d_filas")
-        create_field(inputs_frame, "T1 (Diaria) - Letras de Columna (e.g. A-H o A,C):", 1, "d_cols")
-        create_field(inputs_frame, "T2 (Plan) - Rango de Filas (e.g. 74-104):", 2, "p_filas")
-        create_field(inputs_frame, "T2 (Plan) - Letras de Columna (e.g. AE-AF o BI):", 3, "p_cols")
-        create_field(inputs_frame, "T3 (Histórica) - Rango de Filas (e.g. 21-40):", 4, "h_filas")
-        create_field(inputs_frame, "T3 (Histórica) - Letras de Columna (e.g. AW-AX):", 5, "h_cols")
+        # ═══ Maquetación de la Pestaña 1 (Diaria) ═══
+        t1_info = ctk.CTkLabel(tab_t1, text="Configura las coordenadas para los datos de Producción Diaria.", font=("Roboto", 11, "italic"), text_color="#aaaaaa")
+        t1_info.pack(pady=(10, 15))
+        
+        t1_grid = ctk.CTkFrame(tab_t1, fg_color="transparent")
+        t1_grid.pack(pady=10)
+        
+        ctk.CTkLabel(t1_grid, text="Rango de Filas (e.g. 21-51):", font=("Roboto", 12, "bold")).grid(row=0, column=0, sticky="e", padx=10, pady=10)
+        entries["d_filas"] = ctk.CTkEntry(t1_grid, width=150, placeholder_text="Ej. 21-51")
+        entries["d_filas"].grid(row=0, column=1, padx=10, pady=10)
+        
+        ctk.CTkLabel(t1_grid, text="Letras de Columna (e.g. A-H o L,M):", font=("Roboto", 12, "bold")).grid(row=1, column=0, sticky="e", padx=10, pady=10)
+        entries["d_cols"] = ctk.CTkEntry(t1_grid, width=150, placeholder_text="Ej. L,M")
+        entries["d_cols"].grid(row=1, column=1, padx=10, pady=10)
+
+        # ═══ Maquetación de la Pestaña 2 (Programa) ═══
+        t2_info = ctk.CTkLabel(tab_t2, text="Configura las coordenadas para las metas de planeación (CMP/PODIM).", font=("Roboto", 11, "italic"), text_color="#aaaaaa")
+        t2_info.pack(pady=(10, 15))
+        
+        t2_grid = ctk.CTkFrame(tab_t2, fg_color="transparent")
+        t2_grid.pack(pady=10)
+        
+        ctk.CTkLabel(t2_grid, text="Rango de Filas (e.g. 74-104):", font=("Roboto", 12, "bold")).grid(row=0, column=0, sticky="e", padx=10, pady=10)
+        entries["p_filas"] = ctk.CTkEntry(t2_grid, width=150, placeholder_text="Ej. 74-104")
+        entries["p_filas"].grid(row=0, column=1, padx=10, pady=10)
+        
+        ctk.CTkLabel(t2_grid, text="Columna Programa (e.g. AE o BI):", font=("Roboto", 12, "bold")).grid(row=1, column=0, sticky="e", padx=10, pady=10)
+        entries["p_cols"] = ctk.CTkEntry(t2_grid, width=150, placeholder_text="Ej. BI")
+        entries["p_cols"].grid(row=1, column=1, padx=10, pady=10)
+
+        # ═══ Maquetación de la Pestaña 3 (Histórica) ═══
+        t3_info = ctk.CTkLabel(tab_t3, text="Configura las coordenadas para las fechas e históricos mensuales.", font=("Roboto", 11, "italic"), text_color="#aaaaaa")
+        t3_info.pack(pady=(10, 15))
+        
+        t3_grid = ctk.CTkFrame(tab_t3, fg_color="transparent")
+        t3_grid.pack(pady=10)
+        
+        ctk.CTkLabel(t3_grid, text="Rango de Filas (e.g. 21-40):", font=("Roboto", 12, "bold")).grid(row=0, column=0, sticky="e", padx=10, pady=10)
+        entries["h_filas"] = ctk.CTkEntry(t3_grid, width=150, placeholder_text="Ej. 21-40")
+        entries["h_filas"].grid(row=0, column=1, padx=10, pady=10)
+        
+        ctk.CTkLabel(t3_grid, text="Rango Columnas (e.g. AW-AX):", font=("Roboto", 12, "bold")).grid(row=1, column=0, sticky="e", padx=10, pady=10)
+        entries["h_cols"] = ctk.CTkEntry(t3_grid, width=150, placeholder_text="Ej. AW-AX")
+        entries["h_cols"].grid(row=1, column=1, padx=10, pady=10)
 
         def load_proc_coords(proceso_name):
             for e in entries.values():
