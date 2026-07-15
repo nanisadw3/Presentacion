@@ -1666,8 +1666,8 @@ class ExcelViewerApp(ctk.CTk):
         else:
             cb_proc.set(specific_processes[0])
 
-        # Contenedor principal de pestañas
-        tabview = ctk.CTkTabview(dialog, width=720, height=200, command=update_preview)
+        # Contenedor principal de pestañas (inicialmente sin command para evitar UnboundLocalError)
+        tabview = ctk.CTkTabview(dialog, width=720, height=200)
         tabview.pack(padx=30, pady=10, fill="x")
 
         tab_t1 = tabview.add("📊 T1 (Diaria)")
@@ -1832,6 +1832,9 @@ class ExcelViewerApp(ctk.CTk):
                 preview_label.configure(text=f"No se pudo generar la vista previa. Revisa la sintaxis de las coordenadas.\nDetalle: {str(e)}")
 
         cb_proc.configure(command=load_proc_coords)
+        
+        # Vincular la función de actualización de preview al tabview una vez definida
+        tabview.configure(command=update_preview)
         
         # Vincular cambios en las entradas para actualizar la vista previa en vivo
         for e in entries.values():
