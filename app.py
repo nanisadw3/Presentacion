@@ -14,6 +14,13 @@ class ExcelViewerApp(ctk.CTk):
     def __init__(self):
         super().__init__()
 
+    def report_callback_exception(self, exc, val, tb):
+        import traceback
+        from tkinter import messagebox
+        err_details = "".join(traceback.format_exception(exc, val, tb))
+        print(f"Error detectado en callback:\n{err_details}")
+        messagebox.showerror("Error Inesperado", f"Ocurrió un error inesperado en la aplicación:\n\n{val}\n\nDetalles:\n{err_details}")
+
         self.title("Sistema de Proyección y Reportes de Refinerías")
         
         # Centrar ventana al 80% de la pantalla principal
@@ -126,17 +133,43 @@ class ExcelViewerApp(ctk.CTk):
         self.scroll_frame.pack(fill="both", expand=True)
 
         # Función para enlazar y propagar el scroll del mousewheel/trackpad en laptops y ratones
+        import platform
+        _is_macos = platform.system() == "Darwin"
+        
         def _on_mousewheel(event):
-            # macOS y Windows usan MouseWheel. macOS puede enviar valores flotantes o pequeños
-            if event.num == 4 or event.delta > 0:
-                self.scroll_frame._parent_canvas.yview_scroll(-1, "units")
-            elif event.num == 5 or event.delta < 0:
-                self.scroll_frame._parent_canvas.yview_scroll(1, "units")
+            try:
+                canvas = self.scroll_frame._parent_canvas
+                if _is_macos:
+                    # macOS: delta ya viene en la dirección correcta
+                    # En algunos mouses/trackpads macOS, delta puede ser flotante o pequeño, por lo que usamos su signo
+                    if event.delta > 0:
+                        canvas.yview_scroll(-2, "units")
+                    elif event.delta < 0:
+                        canvas.yview_scroll(2, "units")
+                else:
+                    # Windows: delta suele ser +/- 120 o valores pequeños en trackpads de laptops
+                    if event.delta > 0:
+                        canvas.yview_scroll(-2, "units")
+                    elif event.delta < 0:
+                        canvas.yview_scroll(2, "units")
+            except Exception:
+                pass
+        
+        def _on_linux_scroll(event):
+            try:
+                canvas = self.scroll_frame._parent_canvas
+                if event.num == 4:
+                    canvas.yview_scroll(-2, "units")
+                elif event.num == 5:
+                    canvas.yview_scroll(2, "units")
+            except Exception:
+                pass
 
-        # Vincular eventos de scroll globales para que funcionen sobre cualquier widget interno (tablas, labels, etc.)
+        # Vincular eventos de scroll globales para que funcionen sobre cualquier widget interno
         self.bind_all("<MouseWheel>", _on_mousewheel)
-        self.bind_all("<Button-4>", _on_mousewheel)
-        self.bind_all("<Button-5>", _on_mousewheel)
+        # Linux usa Button-4/5 para scroll
+        self.bind_all("<Button-4>", _on_linux_scroll)
+        self.bind_all("<Button-5>", _on_linux_scroll)
 
         self.table = None
         self.df_data = None # Para la primera tabla
