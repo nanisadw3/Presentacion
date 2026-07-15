@@ -238,22 +238,23 @@ def load_data(app, file_path):
         num_dias_reales = len(df_data) if not df_data.empty else 31
 
         # --- 1.0 PROCESAR CRUDO CADEREYTA (Específico para Diapositiva 10) ---
+        r_d, c_d, r_s, c_s, r_h, c_h = get_coords("Cadereyta -Crudo", (20, 51), [0, 2], (73, 104), [60, 60], (20, 40), list(range(48, 50)))
         # Columnas A (0) y C (2), Filas 21-51
-        df_data_cad = df_sheet.iloc[20:51, [0, 2]].copy()
+        df_data_cad = df_sheet.iloc[r_d[0]:r_d[1], c_d].copy()
         df_data_cad.columns = ["Crudo", "Cadereyta"]
         df_data_cad = df_data_cad.dropna(how='all')
         df_data_cad = remove_decimals(df_data_cad)
         df_data_cad = filter_zero_rows(df_data_cad)
 
         # Programa: Columna BI (60) repetida, Filas 74-104
-        df_snr_cad = df_sheet.iloc[73:104, [60, 60]].copy()
+        df_snr_cad = df_sheet.iloc[r_s[0]:r_s[1], c_s].copy()
         df_snr_cad.columns = ["CMP", "PODIM"]
         df_snr_cad = df_snr_cad.dropna(how='all').dropna(axis=1, how='all')
         df_snr_cad = remove_decimals(df_snr_cad, skip_first=True)
         df_snr_cad_copy = df_snr_cad.copy()
         
         # Fechas: Cols AW-AX (48:50), Filas 21-40
-        df_prod_cad = df_sheet.iloc[20:40, 48:50].copy()
+        df_prod_cad = df_sheet.iloc[r_h[0]:r_h[1], c_h].copy()
         df_prod_cad.columns = ["Año/Mes", "Produccion"]
         df_prod_cad = df_prod_cad.dropna(how='all')
         df_prod_cad = remove_decimals(df_prod_cad, skip_last=True)
@@ -261,10 +262,11 @@ def load_data(app, file_path):
         df_prod_cad_copy = df_prod_cad.copy()
         
         # --- 1.1 PROCESAR GASOLINAS (Cadereyta) ---
+        r_d, c_d, r_s, c_s, r_h, c_h = get_coords("Cadereyta -Gasolinas", (21, 51), [11, 12], (73, 104), [70, 70], (20, 51), list(range(66, 68)))
         app.after(0, app.update_progress, 0.25, "Procesando Gasolinas Cadereyta...")
         headers_cad_gas = ["Cadereyta Gas - Día", "Cadereyta Gas - Producción"]
         # Leer Tabla 1 (Rows 22-51 -> index 21:51), Cols L y M (11, 12)
-        df_gas_cad = df_sheet.iloc[21:51, [11, 12]].copy()
+        df_gas_cad = df_sheet.iloc[r_d[0]:r_d[1], c_d].copy()
         df_gas_cad.columns = headers_cad_gas
         df_gas_cad = df_gas_cad.dropna(how='all')
         df_gas_cad = remove_decimals(df_gas_cad)
@@ -272,7 +274,7 @@ def load_data(app, file_path):
         df_data_cad_gas = df_gas_cad.copy()
 
         # Leer Tabla 2 (Programa, Rows 74-104 -> index 73:104), Col BS repetida (70, 70)
-        df_snr_cad_gas = df_sheet.iloc[73:104, [70, 70]].copy()
+        df_snr_cad_gas = df_sheet.iloc[r_s[0]:r_s[1], c_s].copy()
         df_snr_cad_gas = df_snr_cad_gas.dropna(how='all').dropna(axis=1, how='all')
         df_snr_cad_gas = remove_decimals(df_snr_cad_gas, skip_first=True)
         df_snr_cad_gas_copy = df_snr_cad_gas.copy()
@@ -280,7 +282,7 @@ def load_data(app, file_path):
         df_data_cad_gas = df_data_cad_gas.iloc[:num_dias_reales]
 
         # Leer Tabla 3 (Fecha y Producción Cadereyta Gas, Rows 21-51 -> index 20:51), Cols BO:BP (66:68)
-        df_prod_cad_gas_raw = df_sheet.iloc[20:51, 66:68].copy()
+        df_prod_cad_gas_raw = df_sheet.iloc[r_h[0]:r_h[1], c_h].copy()
         df_prod_cad_gas_raw = df_prod_cad_gas_raw.dropna(how='all')
         
         dic_idx_cad_gas = -1
@@ -301,10 +303,11 @@ def load_data(app, file_path):
         df_prod_cad_gas_copy = df_prod_cad_gas.copy()
 
         # --- 1.2 PROCESAR DIESEL (Cadereyta) ---
+        r_d, c_d, r_s, c_s, r_h, c_h = get_coords("Cadereyta -Diesel", (73, 104), [0, 1], (73, 104), [80, 80], (20, 40), list(range(84, 86)))
         app.after(0, app.update_progress, 0.3, "Procesando Diesel Cadereyta...")
         headers_cad_die = ["Cadereyta Die - Día", "Cadereyta Die - Producción"]
         # Leer Tabla 1 (Rows 74-104 -> index 73:104), Cols A y B (0, 1)
-        df_die_cad = df_sheet.iloc[73:104, [0, 1]].copy()
+        df_die_cad = df_sheet.iloc[r_d[0]:r_d[1], c_d].copy()
         df_die_cad.columns = headers_cad_die
         df_die_cad = df_die_cad.dropna(how='all')
         df_die_cad = remove_decimals(df_die_cad)
@@ -312,7 +315,7 @@ def load_data(app, file_path):
         df_data_cad_die = df_die_cad.copy()
 
         # Leer Tabla 2 (Programa, Rows 74-104 -> index 73:104), Col CC repetida (80, 80)
-        df_snr_cad_die = df_sheet.iloc[73:104, [80, 80]].copy()
+        df_snr_cad_die = df_sheet.iloc[r_s[0]:r_s[1], c_s].copy()
         df_snr_cad_die = df_snr_cad_die.dropna(how='all').dropna(axis=1, how='all')
         df_snr_cad_die = remove_decimals(df_snr_cad_die, skip_first=True)
         df_snr_cad_die_copy = df_snr_cad_die.copy()
@@ -320,7 +323,7 @@ def load_data(app, file_path):
         df_data_cad_die = df_data_cad_die.iloc[:num_dias_reales]
 
         # Leer Tabla 3 (Fecha y Producción Cadereyta Die, Rows 21-40 -> index 20:40), Cols CG:CH (84:86)
-        df_prod_cad_die_raw = df_sheet.iloc[20:40, 84:86].copy()
+        df_prod_cad_die_raw = df_sheet.iloc[r_h[0]:r_h[1], c_h].copy()
         df_prod_cad_die_raw = df_prod_cad_die_raw.dropna(how='all')
         
         dic_idx_cad_die = -1
@@ -341,22 +344,23 @@ def load_data(app, file_path):
         df_prod_cad_die_copy = df_prod_cad_die.copy()
 
         # --- 1.4 PROCESAR COMBUSTOLEO (Cadereyta) ---
+        r_d, c_d, r_s, c_s, r_h, c_h = get_coords("Cadereyta -Combustoleo", (158, 189), [18, 19], (73, 104), [98, 98], (157, 179), list(range(30, 32)))
         app.after(0, app.update_progress, 0.35, "Procesando Combustoleo Cadereyta...")
         headers_cad_comb = ["Cadereyta Comb - Día", "Cadereyta Comb - Producción"]
-        df_comb_cad = df_sheet.iloc[158:189, [18, 19]].copy()
+        df_comb_cad = df_sheet.iloc[r_d[0]:r_d[1], c_d].copy()
         df_comb_cad.columns = headers_cad_comb
         df_comb_cad = df_comb_cad.dropna(how='all')
         df_comb_cad = remove_decimals(df_comb_cad)
         df_comb_cad = filter_zero_rows(df_comb_cad)
         df_data_cad_comb = df_comb_cad.copy()
 
-        df_snr_cad_comb = df_sheet.iloc[73:104, [98, 98]].copy()
+        df_snr_cad_comb = df_sheet.iloc[r_s[0]:r_s[1], c_s].copy()
         df_snr_cad_comb = df_snr_cad_comb.dropna(how='all').dropna(axis=1, how='all')
         df_snr_cad_comb = remove_decimals(df_snr_cad_comb, skip_first=True)
         df_snr_cad_comb_copy = df_snr_cad_comb.copy()
         df_data_cad_comb = df_data_cad_comb.iloc[:num_dias_reales]
 
-        df_prod_cad_comb_raw = df_sheet.iloc[157:179, 30:32].copy()
+        df_prod_cad_comb_raw = df_sheet.iloc[r_h[0]:r_h[1], c_h].copy()
         df_prod_cad_comb_raw = df_prod_cad_comb_raw.dropna(how='all')
         
         dic_idx_cad_comb = -1
@@ -379,20 +383,21 @@ def load_data(app, file_path):
 
 
         # --- 1.5 PROCESAR CRUDO MADERO ---
+        r_d, c_d, r_s, c_s, r_h, c_h = get_coords("Madero -Crudo", (20, 51), [0, 3], (73, 104), [61, 61], (20, 40), list(range(50, 52)))
         app.after(0, app.update_progress, 0.36, "Procesando Crudo Madero...")
-        df_data_mad_crud = df_sheet.iloc[20:51, [0, 3]].copy()
+        df_data_mad_crud = df_sheet.iloc[r_d[0]:r_d[1], c_d].copy()
         df_data_mad_crud.columns = ["Crudo Día", "Madero Crudo"]
         df_data_mad_crud = df_data_mad_crud.dropna(how='all')
         df_data_mad_crud = remove_decimals(df_data_mad_crud)
         df_data_mad_crud = df_data_mad_crud.iloc[:num_dias_reales]
 
-        df_snr_mad_crud = df_sheet.iloc[73:104, [61, 61]].copy()
+        df_snr_mad_crud = df_sheet.iloc[r_s[0]:r_s[1], c_s].copy()
         df_snr_mad_crud.columns = ["CMP", "PODIM"]
         df_snr_mad_crud = df_snr_mad_crud.dropna(how='all').dropna(axis=1, how='all')
         df_snr_mad_crud = remove_decimals(df_snr_mad_crud, skip_first=True)
         df_snr_mad_crud_copy = df_snr_mad_crud.copy()
 
-        df_prod_mad_crud_raw = df_sheet.iloc[20:40, 50:52].copy()
+        df_prod_mad_crud_raw = df_sheet.iloc[r_h[0]:r_h[1], c_h].copy()
         df_prod_mad_crud_raw.columns = ["Año/Mes", "Produccion"]
         df_prod_mad_crud_raw = df_prod_mad_crud_raw.dropna(how='all')
 
@@ -414,20 +419,21 @@ def load_data(app, file_path):
         df_prod_mad_crud_copy = df_prod_mad_crud.copy()
 
         # --- 1.6 PROCESAR GASOLINAS MADERO ---
+        r_d, c_d, r_s, c_s, r_h, c_h = get_coords("Madero -Gasolinas", (20, 51), [11, 13], (73, 104), [71, 71], (20, 40), list(range(70, 72)))
         app.after(0, app.update_progress, 0.37, "Procesando Gasolinas Madero...")
-        df_data_mad_gas = df_sheet.iloc[20:51, [11, 13]].copy()
+        df_data_mad_gas = df_sheet.iloc[r_d[0]:r_d[1], c_d].copy()
         df_data_mad_gas.columns = ["Gas Día", "Madero Gas"]
         df_data_mad_gas = df_data_mad_gas.dropna(how='all')
         df_data_mad_gas = remove_decimals(df_data_mad_gas)
         df_data_mad_gas = df_data_mad_gas.iloc[:num_dias_reales]
 
-        df_snr_mad_gas = df_sheet.iloc[73:104, [71, 71]].copy()
+        df_snr_mad_gas = df_sheet.iloc[r_s[0]:r_s[1], c_s].copy()
         df_snr_mad_gas.columns = ["CMP", "PODIM"]
         df_snr_mad_gas = df_snr_mad_gas.dropna(how='all').dropna(axis=1, how='all')
         df_snr_mad_gas = remove_decimals(df_snr_mad_gas, skip_first=True)
         df_snr_mad_gas_copy = df_snr_mad_gas.copy()
 
-        df_prod_mad_gas_raw = df_sheet.iloc[20:40, 70:72].copy()
+        df_prod_mad_gas_raw = df_sheet.iloc[r_h[0]:r_h[1], c_h].copy()
         df_prod_mad_gas_raw.columns = ["Año/Mes", "Produccion"]
         df_prod_mad_gas_raw = df_prod_mad_gas_raw.dropna(how='all')
 
@@ -449,20 +455,21 @@ def load_data(app, file_path):
         df_prod_mad_gas_copy = df_prod_mad_gas.copy()
 
         # --- 1.7 PROCESAR DIESEL MADERO ---
+        r_d, c_d, r_s, c_s, r_h, c_h = get_coords("Madero -Diesel", (73, 104), [0, 2], (73, 104), [81, 81], (20, 40), list(range(86, 88)))
         app.after(0, app.update_progress, 0.38, "Procesando Diesel Madero...")
-        df_data_mad_die = df_sheet.iloc[73:104, [0, 2]].copy()
+        df_data_mad_die = df_sheet.iloc[r_d[0]:r_d[1], c_d].copy()
         df_data_mad_die.columns = ["Diesel Día", "Madero Die"]
         df_data_mad_die = df_data_mad_die.dropna(how='all')
         df_data_mad_die = remove_decimals(df_data_mad_die)
         df_data_mad_die = df_data_mad_die.iloc[:num_dias_reales]
 
-        df_snr_mad_die = df_sheet.iloc[73:104, [81, 81]].copy()
+        df_snr_mad_die = df_sheet.iloc[r_s[0]:r_s[1], c_s].copy()
         df_snr_mad_die.columns = ["CMP", "PODIM"]
         df_snr_mad_die = df_snr_mad_die.dropna(how='all').dropna(axis=1, how='all')
         df_snr_mad_die = remove_decimals(df_snr_mad_die, skip_first=True)
         df_snr_mad_die_copy = df_snr_mad_die.copy()
 
-        df_prod_mad_die_raw = df_sheet.iloc[20:40, 86:88].copy()
+        df_prod_mad_die_raw = df_sheet.iloc[r_h[0]:r_h[1], c_h].copy()
         df_prod_mad_die_raw.columns = ["Año/Mes", "Produccion"]
         df_prod_mad_die_raw = df_prod_mad_die_raw.dropna(how='all')
 
@@ -484,20 +491,21 @@ def load_data(app, file_path):
         df_prod_mad_die_copy = df_prod_mad_die.copy()
 
         # --- 1.8 PROCESAR TURBOSINA MADERO ---
+        r_d, c_d, r_s, c_s, r_h, c_h = get_coords("Madero -Turbosina", (73, 104), [11, 12], (73, 104), [90, 90], (20, 40), list(range(101, 103)))
         app.after(0, app.update_progress, 0.39, "Procesando Turbosina Madero...")
-        df_data_mad_turb = df_sheet.iloc[73:104, [11, 12]].copy()
+        df_data_mad_turb = df_sheet.iloc[r_d[0]:r_d[1], c_d].copy()
         df_data_mad_turb.columns = ["Turb Día", "Madero Turb"]
         df_data_mad_turb = df_data_mad_turb.dropna(how='all')
         df_data_mad_turb = remove_decimals(df_data_mad_turb)
         df_data_mad_turb = df_data_mad_turb.iloc[:num_dias_reales]
 
-        df_snr_mad_turb = df_sheet.iloc[73:104, [90, 90]].copy()
+        df_snr_mad_turb = df_sheet.iloc[r_s[0]:r_s[1], c_s].copy()
         df_snr_mad_turb.columns = ["CMP", "PODIM"]
         df_snr_mad_turb = df_snr_mad_turb.dropna(how='all').dropna(axis=1, how='all')
         df_snr_mad_turb = remove_decimals(df_snr_mad_turb, skip_first=True)
         df_snr_mad_turb_copy = df_snr_mad_turb.copy()
 
-        df_prod_mad_turb_raw = df_sheet.iloc[20:40, 101:103].copy()
+        df_prod_mad_turb_raw = df_sheet.iloc[r_h[0]:r_h[1], c_h].copy()
         df_prod_mad_turb_raw.columns = ["Año/Mes", "Produccion"]
         df_prod_mad_turb_raw = df_prod_mad_turb_raw.dropna(how='all')
 
@@ -519,20 +527,21 @@ def load_data(app, file_path):
         df_prod_mad_turb_copy = df_prod_mad_turb.copy()
 
         # --- 1.9 PROCESAR COMBUSTOLEO MADERO ---
+        r_d, c_d, r_s, c_s, r_h, c_h = get_coords("Madero -Combustoleo", (158, 189), [18, 20], (73, 104), [99, 99], (157, 179), list(range(36, 38)))
         app.after(0, app.update_progress, 0.40, "Procesando Combustoleo Madero...")
-        df_data_mad_comb = df_sheet.iloc[158:189, [18, 20]].copy()
+        df_data_mad_comb = df_sheet.iloc[r_d[0]:r_d[1], c_d].copy()
         df_data_mad_comb.columns = ["Comb Día", "Madero Comb"]
         df_data_mad_comb = df_data_mad_comb.dropna(how='all')
         df_data_mad_comb = remove_decimals(df_data_mad_comb)
         df_data_mad_comb = df_data_mad_comb.iloc[:num_dias_reales]
 
-        df_snr_mad_comb = df_sheet.iloc[73:104, [99, 99]].copy()
+        df_snr_mad_comb = df_sheet.iloc[r_s[0]:r_s[1], c_s].copy()
         df_snr_mad_comb.columns = ["CMP", "PODIM"]
         df_snr_mad_comb = df_snr_mad_comb.dropna(how='all').dropna(axis=1, how='all')
         df_snr_mad_comb = remove_decimals(df_snr_mad_comb, skip_first=True)
         df_snr_mad_comb_copy = df_snr_mad_comb.copy()
 
-        df_prod_mad_comb_raw = df_sheet.iloc[157:179, 36:38].copy()
+        df_prod_mad_comb_raw = df_sheet.iloc[r_h[0]:r_h[1], c_h].copy()
         df_prod_mad_comb_raw.columns = ["Año/Mes", "Produccion"]
         df_prod_mad_comb_raw = df_prod_mad_comb_raw.dropna(how='all')
 
@@ -554,20 +563,21 @@ def load_data(app, file_path):
         df_prod_mad_comb_copy = df_prod_mad_comb.copy()
 
         # --- 1.10 PROCESAR CRUDO MINATITLAN ---
+        r_d, c_d, r_s, c_s, r_h, c_h = get_coords("Minatitlan -Crudo", (20, 51), [0, 4], (73, 104), [62, 62], (20, 40), list(range(54, 56)))
         app.after(0, app.update_progress, 0.41, "Procesando Crudo Minatitlan...")
-        df_data_mina_crud = df_sheet.iloc[20:51, [0, 4]].copy()
+        df_data_mina_crud = df_sheet.iloc[r_d[0]:r_d[1], c_d].copy()
         df_data_mina_crud.columns = ["Crudo Día", "Minatitlan Crudo"]
         df_data_mina_crud = df_data_mina_crud.dropna(how='all')
         df_data_mina_crud = remove_decimals(df_data_mina_crud)
         df_data_mina_crud = df_data_mina_crud.iloc[:num_dias_reales]
 
-        df_snr_mina_crud = df_sheet.iloc[73:104, [62, 62]].copy()
+        df_snr_mina_crud = df_sheet.iloc[r_s[0]:r_s[1], c_s].copy()
         df_snr_mina_crud.columns = ["CMP", "PODIM"]
         df_snr_mina_crud = df_snr_mina_crud.dropna(how='all').dropna(axis=1, how='all')
         df_snr_mina_crud = remove_decimals(df_snr_mina_crud, skip_first=True)
         df_snr_mina_crud_copy = df_snr_mina_crud.copy()
 
-        df_prod_mina_crud_raw = df_sheet.iloc[20:40, 54:56].copy()
+        df_prod_mina_crud_raw = df_sheet.iloc[r_h[0]:r_h[1], c_h].copy()
         df_prod_mina_crud_raw.columns = ["Año/Mes", "Produccion"]
         df_prod_mina_crud_raw = df_prod_mina_crud_raw.dropna(how='all')
 
@@ -589,20 +599,21 @@ def load_data(app, file_path):
         df_prod_mina_crud_copy = df_prod_mina_crud.copy()
 
         # --- 1.11 PROCESAR GASOLINAS MINATITLAN ---
+        r_d, c_d, r_s, c_s, r_h, c_h = get_coords("Minatitlan -Gasolinas", (20, 51), [11, 14], (73, 104), [72, 72], (20, 40), list(range(72, 74)))
         app.after(0, app.update_progress, 0.42, "Procesando Gasolinas Minatitlan...")
-        df_data_mina_gas = df_sheet.iloc[20:51, [11, 14]].copy()
+        df_data_mina_gas = df_sheet.iloc[r_d[0]:r_d[1], c_d].copy()
         df_data_mina_gas.columns = ["Gas Día", "Minatitlan Gas"]
         df_data_mina_gas = df_data_mina_gas.dropna(how='all')
         df_data_mina_gas = remove_decimals(df_data_mina_gas)
         df_data_mina_gas = df_data_mina_gas.iloc[:num_dias_reales]
 
-        df_snr_mina_gas = df_sheet.iloc[73:104, [72, 72]].copy()
+        df_snr_mina_gas = df_sheet.iloc[r_s[0]:r_s[1], c_s].copy()
         df_snr_mina_gas.columns = ["CMP", "PODIM"]
         df_snr_mina_gas = df_snr_mina_gas.dropna(how='all').dropna(axis=1, how='all')
         df_snr_mina_gas = remove_decimals(df_snr_mina_gas, skip_first=True)
         df_snr_mina_gas_copy = df_snr_mina_gas.copy()
 
-        df_prod_mina_gas_raw = df_sheet.iloc[20:40, 72:74].copy()
+        df_prod_mina_gas_raw = df_sheet.iloc[r_h[0]:r_h[1], c_h].copy()
         df_prod_mina_gas_raw.columns = ["Año/Mes", "Produccion"]
         df_prod_mina_gas_raw = df_prod_mina_gas_raw.dropna(how='all')
 
@@ -624,20 +635,21 @@ def load_data(app, file_path):
         df_prod_mina_gas_copy = df_prod_mina_gas.copy()
 
         # --- 1.12 PROCESAR DIESEL MINATITLAN ---
+        r_d, c_d, r_s, c_s, r_h, c_h = get_coords("Minatitlan -Diesel", (73, 104), [0, 3], (73, 104), [82, 82], (20, 40), list(range(90, 92)))
         app.after(0, app.update_progress, 0.43, "Procesando Diesel Minatitlan...")
-        df_data_mina_die = df_sheet.iloc[73:104, [0, 3]].copy()
+        df_data_mina_die = df_sheet.iloc[r_d[0]:r_d[1], c_d].copy()
         df_data_mina_die.columns = ["Diesel Día", "Minatitlan Die"]
         df_data_mina_die = df_data_mina_die.dropna(how='all')
         df_data_mina_die = remove_decimals(df_data_mina_die)
         df_data_mina_die = df_data_mina_die.iloc[:num_dias_reales]
 
-        df_snr_mina_die = df_sheet.iloc[73:104, [82, 82]].copy()
+        df_snr_mina_die = df_sheet.iloc[r_s[0]:r_s[1], c_s].copy()
         df_snr_mina_die.columns = ["CMP", "PODIM"]
         df_snr_mina_die = df_snr_mina_die.dropna(how='all').dropna(axis=1, how='all')
         df_snr_mina_die = remove_decimals(df_snr_mina_die, skip_first=True)
         df_snr_mina_die_copy = df_snr_mina_die.copy()
 
-        df_prod_mina_die_raw = df_sheet.iloc[20:40, 90:92].copy()
+        df_prod_mina_die_raw = df_sheet.iloc[r_h[0]:r_h[1], c_h].copy()
         df_prod_mina_die_raw.columns = ["Año/Mes", "Produccion"]
         df_prod_mina_die_raw = df_prod_mina_die_raw.dropna(how='all')
 
@@ -659,20 +671,21 @@ def load_data(app, file_path):
         df_prod_mina_die_copy = df_prod_mina_die.copy()
 
         # --- 1.13 PROCESAR COMBUSTOLEO MINATITLAN ---
+        r_d, c_d, r_s, c_s, r_h, c_h = get_coords("Minatitlan -Combustoleo", (158, 189), [18, 21], (73, 104), [100, 100], (157, 179), list(range(39, 41)))
         app.after(0, app.update_progress, 0.44, "Procesando Combustoleo Minatitlan...")
-        df_data_mina_comb = df_sheet.iloc[158:189, [18, 21]].copy()
+        df_data_mina_comb = df_sheet.iloc[r_d[0]:r_d[1], c_d].copy()
         df_data_mina_comb.columns = ["Comb Día", "Minatitlan Comb"]
         df_data_mina_comb = df_data_mina_comb.dropna(how='all')
         df_data_mina_comb = remove_decimals(df_data_mina_comb)
         df_data_mina_comb = df_data_mina_comb.iloc[:num_dias_reales]
 
-        df_snr_mina_comb = df_sheet.iloc[73:104, [100, 100]].copy()
+        df_snr_mina_comb = df_sheet.iloc[r_s[0]:r_s[1], c_s].copy()
         df_snr_mina_comb.columns = ["CMP", "PODIM"]
         df_snr_mina_comb = df_snr_mina_comb.dropna(how='all').dropna(axis=1, how='all')
         df_snr_mina_comb = remove_decimals(df_snr_mina_comb, skip_first=True)
         df_snr_mina_comb_copy = df_snr_mina_comb.copy()
 
-        df_prod_mina_comb_raw = df_sheet.iloc[157:179, 39:41].copy()
+        df_prod_mina_comb_raw = df_sheet.iloc[r_h[0]:r_h[1], c_h].copy()
         df_prod_mina_comb_raw.columns = ["Año/Mes", "Produccion"]
         df_prod_mina_comb_raw = df_prod_mina_comb_raw.dropna(how='all')
 
@@ -694,20 +707,21 @@ def load_data(app, file_path):
         df_prod_mina_comb_copy = df_prod_mina_comb.copy()
 
         # --- 1.14 PROCESAR CRUDO SALAMANCA ---
+        r_d, c_d, r_s, c_s, r_h, c_h = get_coords("Salamanca -Crudo", (20, 51), [0, 5], (73, 104), [63, 63], (20, 40), list(range(56, 58)))
         app.after(0, app.update_progress, 0.45, "Procesando Crudo Salamanca...")
-        df_data_sala_crud = df_sheet.iloc[20:51, [0, 5]].copy()
+        df_data_sala_crud = df_sheet.iloc[r_d[0]:r_d[1], c_d].copy()
         df_data_sala_crud.columns = ["Crudo Día", "Salamanca Crudo"]
         df_data_sala_crud = df_data_sala_crud.dropna(how='all')
         df_data_sala_crud = remove_decimals(df_data_sala_crud)
         df_data_sala_crud = df_data_sala_crud.iloc[:num_dias_reales]
 
-        df_snr_sala_crud = df_sheet.iloc[73:104, [63, 63]].copy()
+        df_snr_sala_crud = df_sheet.iloc[r_s[0]:r_s[1], c_s].copy()
         df_snr_sala_crud.columns = ["CMP", "PODIM"]
         df_snr_sala_crud = df_snr_sala_crud.dropna(how='all').dropna(axis=1, how='all')
         df_snr_sala_crud = remove_decimals(df_snr_sala_crud, skip_first=True)
         df_snr_sala_crud_copy = df_snr_sala_crud.copy()
 
-        df_prod_sala_crud_raw = df_sheet.iloc[20:40, 56:58].copy()
+        df_prod_sala_crud_raw = df_sheet.iloc[r_h[0]:r_h[1], c_h].copy()
         df_prod_sala_crud_raw.columns = ["Año/Mes", "Produccion"]
         df_prod_sala_crud_raw = df_prod_sala_crud_raw.dropna(how='all')
 
@@ -729,20 +743,21 @@ def load_data(app, file_path):
         df_prod_sala_crud_copy = df_prod_sala_crud.copy()
 
         # --- 1.15 PROCESAR GASOLINAS SALAMANCA ---
+        r_d, c_d, r_s, c_s, r_h, c_h = get_coords("Salamanca -Gasolinas", (20, 51), [11, 15], (73, 104), [73, 73], (20, 40), list(range(74, 76)))
         app.after(0, app.update_progress, 0.46, "Procesando Gasolinas Salamanca...")
-        df_data_sala_gas = df_sheet.iloc[20:51, [11, 15]].copy()
+        df_data_sala_gas = df_sheet.iloc[r_d[0]:r_d[1], c_d].copy()
         df_data_sala_gas.columns = ["Gas Día", "Salamanca Gas"]
         df_data_sala_gas = df_data_sala_gas.dropna(how='all')
         df_data_sala_gas = remove_decimals(df_data_sala_gas)
         df_data_sala_gas = df_data_sala_gas.iloc[:num_dias_reales]
 
-        df_snr_sala_gas = df_sheet.iloc[73:104, [73, 73]].copy()
+        df_snr_sala_gas = df_sheet.iloc[r_s[0]:r_s[1], c_s].copy()
         df_snr_sala_gas.columns = ["CMP", "PODIM"]
         df_snr_sala_gas = df_snr_sala_gas.dropna(how='all').dropna(axis=1, how='all')
         df_snr_sala_gas = remove_decimals(df_snr_sala_gas, skip_first=True)
         df_snr_sala_gas_copy = df_snr_sala_gas.copy()
 
-        df_prod_sala_gas_raw = df_sheet.iloc[20:40, 74:76].copy()
+        df_prod_sala_gas_raw = df_sheet.iloc[r_h[0]:r_h[1], c_h].copy()
         df_prod_sala_gas_raw.columns = ["Año/Mes", "Produccion"]
         df_prod_sala_gas_raw = df_prod_sala_gas_raw.dropna(how='all')
 
@@ -764,20 +779,21 @@ def load_data(app, file_path):
         df_prod_sala_gas_copy = df_prod_sala_gas.copy()
 
         # --- 1.16 PROCESAR DIESEL SALAMANCA ---
+        r_d, c_d, r_s, c_s, r_h, c_h = get_coords("Salamanca -Diesel", (73, 104), [0, 4], (73, 104), [83, 83], (20, 40), list(range(92, 94)))
         app.after(0, app.update_progress, 0.47, "Procesando Diesel Salamanca...")
-        df_data_sala_die = df_sheet.iloc[73:104, [0, 4]].copy()
+        df_data_sala_die = df_sheet.iloc[r_d[0]:r_d[1], c_d].copy()
         df_data_sala_die.columns = ["Diesel Día", "Salamanca Die"]
         df_data_sala_die = df_data_sala_die.dropna(how='all')
         df_data_sala_die = remove_decimals(df_data_sala_die)
         df_data_sala_die = df_data_sala_die.iloc[:num_dias_reales]
 
-        df_snr_sala_die = df_sheet.iloc[73:104, [83, 83]].copy()
+        df_snr_sala_die = df_sheet.iloc[r_s[0]:r_s[1], c_s].copy()
         df_snr_sala_die.columns = ["CMP", "PODIM"]
         df_snr_sala_die = df_snr_sala_die.dropna(how='all').dropna(axis=1, how='all')
         df_snr_sala_die = remove_decimals(df_snr_sala_die, skip_first=True)
         df_snr_sala_die_copy = df_snr_sala_die.copy()
 
-        df_prod_sala_die_raw = df_sheet.iloc[20:40, 92:94].copy()
+        df_prod_sala_die_raw = df_sheet.iloc[r_h[0]:r_h[1], c_h].copy()
         df_prod_sala_die_raw.columns = ["Año/Mes", "Produccion"]
         df_prod_sala_die_raw = df_prod_sala_die_raw.dropna(how='all')
 
@@ -799,20 +815,21 @@ def load_data(app, file_path):
         df_prod_sala_die_copy = df_prod_sala_die.copy()
 
         # --- 1.17 PROCESAR TURBOSINA SALAMANCA ---
+        r_d, c_d, r_s, c_s, r_h, c_h = get_coords("Salamanca -Turbosina", (73, 104), [11, 13], (73, 104), [91, 91], (20, 40), list(range(103, 105)))
         app.after(0, app.update_progress, 0.48, "Procesando Turbosina Salamanca...")
-        df_data_sala_turb = df_sheet.iloc[73:104, [11, 13]].copy()
+        df_data_sala_turb = df_sheet.iloc[r_d[0]:r_d[1], c_d].copy()
         df_data_sala_turb.columns = ["Turb Día", "Salamanca Turb"]
         df_data_sala_turb = df_data_sala_turb.dropna(how='all')
         df_data_sala_turb = remove_decimals(df_data_sala_turb)
         df_data_sala_turb = df_data_sala_turb.iloc[:num_dias_reales]
 
-        df_snr_sala_turb = df_sheet.iloc[73:104, [91, 91]].copy()
+        df_snr_sala_turb = df_sheet.iloc[r_s[0]:r_s[1], c_s].copy()
         df_snr_sala_turb.columns = ["CMP", "PODIM"]
         df_snr_sala_turb = df_snr_sala_turb.dropna(how='all').dropna(axis=1, how='all')
         df_snr_sala_turb = remove_decimals(df_snr_sala_turb, skip_first=True)
         df_snr_sala_turb_copy = df_snr_sala_turb.copy()
 
-        df_prod_sala_turb_raw = df_sheet.iloc[20:40, 103:105].copy()
+        df_prod_sala_turb_raw = df_sheet.iloc[r_h[0]:r_h[1], c_h].copy()
         df_prod_sala_turb_raw.columns = ["Año/Mes", "Produccion"]
         df_prod_sala_turb_raw = df_prod_sala_turb_raw.dropna(how='all')
 
@@ -834,20 +851,21 @@ def load_data(app, file_path):
         df_prod_sala_turb_copy = df_prod_sala_turb.copy()
 
         # --- 1.18 PROCESAR COMBUSTOLEO SALAMANCA ---
+        r_d, c_d, r_s, c_s, r_h, c_h = get_coords("Salamanca -Combustoleo", (158, 189), [18, 22], (73, 104), [102, 102], (157, 179), list(range(42, 44)))
         app.after(0, app.update_progress, 0.49, "Procesando Combustoleo Salamanca...")
-        df_data_sala_comb = df_sheet.iloc[158:189, [18, 22]].copy()
+        df_data_sala_comb = df_sheet.iloc[r_d[0]:r_d[1], c_d].copy()
         df_data_sala_comb.columns = ["Comb Día", "Salamanca Comb"]
         df_data_sala_comb = df_data_sala_comb.dropna(how='all')
         df_data_sala_comb = remove_decimals(df_data_sala_comb)
         df_data_sala_comb = df_data_sala_comb.iloc[:num_dias_reales]
 
-        df_snr_sala_comb = df_sheet.iloc[73:104, [102, 102]].copy()
+        df_snr_sala_comb = df_sheet.iloc[r_s[0]:r_s[1], c_s].copy()
         df_snr_sala_comb.columns = ["CMP", "PODIM"]
         df_snr_sala_comb = df_snr_sala_comb.dropna(how='all').dropna(axis=1, how='all')
         df_snr_sala_comb = remove_decimals(df_snr_sala_comb, skip_first=True)
         df_snr_sala_comb_copy = df_snr_sala_comb.copy()
 
-        df_prod_sala_comb_raw = df_sheet.iloc[157:179, 42:44].copy()
+        df_prod_sala_comb_raw = df_sheet.iloc[r_h[0]:r_h[1], c_h].copy()
         df_prod_sala_comb_raw.columns = ["Año/Mes", "Produccion"]
         df_prod_sala_comb_raw = df_prod_sala_comb_raw.dropna(how='all')
 
@@ -869,20 +887,21 @@ def load_data(app, file_path):
         df_prod_sala_comb_copy = df_prod_sala_comb.copy()
 
         # --- 1.19 PROCESAR CRUDO SALINA CRUZ ---
+        r_d, c_d, r_s, c_s, r_h, c_h = get_coords("Salina Cruz -Crudo", (20, 51), [0, 6], (73, 104), [64, 64], (20, 40), list(range(60, 62)))
         app.after(0, app.update_progress, 0.50, "Procesando Crudo Salina Cruz...")
-        df_data_sal_crud = df_sheet.iloc[20:51, [0, 6]].copy()
+        df_data_sal_crud = df_sheet.iloc[r_d[0]:r_d[1], c_d].copy()
         df_data_sal_crud.columns = ["Crudo Día", "Salina Cruz Crudo"]
         df_data_sal_crud = df_data_sal_crud.dropna(how='all')
         df_data_sal_crud = remove_decimals(df_data_sal_crud)
         df_data_sal_crud = df_data_sal_crud.iloc[:num_dias_reales]
 
-        df_snr_sal_crud = df_sheet.iloc[73:104, [64, 64]].copy()
+        df_snr_sal_crud = df_sheet.iloc[r_s[0]:r_s[1], c_s].copy()
         df_snr_sal_crud.columns = ["CMP", "PODIM"]
         df_snr_sal_crud = df_snr_sal_crud.dropna(how='all').dropna(axis=1, how='all')
         df_snr_sal_crud = remove_decimals(df_snr_sal_crud, skip_first=True)
         df_snr_sal_crud_copy = df_snr_sal_crud.copy()
 
-        df_prod_sal_crud_raw = df_sheet.iloc[20:40, 60:62].copy()
+        df_prod_sal_crud_raw = df_sheet.iloc[r_h[0]:r_h[1], c_h].copy()
         df_prod_sal_crud_raw.columns = ["Año/Mes", "Produccion"]
         df_prod_sal_crud_raw = df_prod_sal_crud_raw.dropna(how='all')
 
@@ -904,20 +923,21 @@ def load_data(app, file_path):
         df_prod_sal_crud_copy = df_prod_sal_crud.copy()
 
         # --- 1.20 PROCESAR GASOLINAS SALINA CRUZ ---
+        r_d, c_d, r_s, c_s, r_h, c_h = get_coords("Salina Cruz -Gasolinas", (20, 51), [11, 16], (73, 104), [74, 74], (20, 40), list(range(76, 78)))
         app.after(0, app.update_progress, 0.51, "Procesando Gasolinas Salina Cruz...")
-        df_data_sal_gas = df_sheet.iloc[20:51, [11, 16]].copy()
+        df_data_sal_gas = df_sheet.iloc[r_d[0]:r_d[1], c_d].copy()
         df_data_sal_gas.columns = ["Gas Día", "Salina Cruz Gas"]
         df_data_sal_gas = df_data_sal_gas.dropna(how='all')
         df_data_sal_gas = remove_decimals(df_data_sal_gas)
         df_data_sal_gas = df_data_sal_gas.iloc[:num_dias_reales]
 
-        df_snr_sal_gas = df_sheet.iloc[73:104, [74, 74]].copy()
+        df_snr_sal_gas = df_sheet.iloc[r_s[0]:r_s[1], c_s].copy()
         df_snr_sal_gas.columns = ["CMP", "PODIM"]
         df_snr_sal_gas = df_snr_sal_gas.dropna(how='all').dropna(axis=1, how='all')
         df_snr_sal_gas = remove_decimals(df_snr_sal_gas, skip_first=True)
         df_snr_sal_gas_copy = df_snr_sal_gas.copy()
 
-        df_prod_sal_gas_raw = df_sheet.iloc[20:40, 76:78].copy()
+        df_prod_sal_gas_raw = df_sheet.iloc[r_h[0]:r_h[1], c_h].copy()
         df_prod_sal_gas_raw.columns = ["Año/Mes", "Produccion"]
         df_prod_sal_gas_raw = df_prod_sal_gas_raw.dropna(how='all')
 
@@ -939,20 +959,21 @@ def load_data(app, file_path):
         df_prod_sal_gas_copy = df_prod_sal_gas.copy()
 
         # --- 1.21 PROCESAR DIESEL SALINA CRUZ ---
+        r_d, c_d, r_s, c_s, r_h, c_h = get_coords("Salina Cruz -Diesel", (73, 104), [0, 5], (73, 104), [84, 84], (20, 40), list(range(94, 96)))
         app.after(0, app.update_progress, 0.52, "Procesando Diesel Salina Cruz...")
-        df_data_sal_die = df_sheet.iloc[73:104, [0, 5]].copy()
+        df_data_sal_die = df_sheet.iloc[r_d[0]:r_d[1], c_d].copy()
         df_data_sal_die.columns = ["Diesel Día", "Salina Cruz Die"]
         df_data_sal_die = df_data_sal_die.dropna(how='all')
         df_data_sal_die = remove_decimals(df_data_sal_die)
         df_data_sal_die = df_data_sal_die.iloc[:num_dias_reales]
 
-        df_snr_sal_die = df_sheet.iloc[73:104, [84, 84]].copy()
+        df_snr_sal_die = df_sheet.iloc[r_s[0]:r_s[1], c_s].copy()
         df_snr_sal_die.columns = ["CMP", "PODIM"]
         df_snr_sal_die = df_snr_sal_die.dropna(how='all').dropna(axis=1, how='all')
         df_snr_sal_die = remove_decimals(df_snr_sal_die, skip_first=True)
         df_snr_sal_die_copy = df_snr_sal_die.copy()
 
-        df_prod_sal_die_raw = df_sheet.iloc[20:40, 94:96].copy()
+        df_prod_sal_die_raw = df_sheet.iloc[r_h[0]:r_h[1], c_h].copy()
         df_prod_sal_die_raw.columns = ["Año/Mes", "Produccion"]
         df_prod_sal_die_raw = df_prod_sal_die_raw.dropna(how='all')
 
@@ -974,20 +995,21 @@ def load_data(app, file_path):
         df_prod_sal_die_copy = df_prod_sal_die.copy()
 
         # --- 1.22 PROCESAR TURBOSINA SALINA CRUZ ---
+        r_d, c_d, r_s, c_s, r_h, c_h = get_coords("Salina Cruz -Turbosina", (73, 104), [11, 12], (73, 104), [92, 92], (20, 40), list(range(105, 107)))
         app.after(0, app.update_progress, 0.53, "Procesando Turbosina Salina Cruz...")
-        df_data_sal_turb = df_sheet.iloc[73:104, [11, 12]].copy()
+        df_data_sal_turb = df_sheet.iloc[r_d[0]:r_d[1], c_d].copy()
         df_data_sal_turb.columns = ["Turb Día", "Salina Cruz Turb"]
         df_data_sal_turb = df_data_sal_turb.dropna(how='all')
         df_data_sal_turb = remove_decimals(df_data_sal_turb)
         df_data_sal_turb = df_data_sal_turb.iloc[:num_dias_reales]
 
-        df_snr_sal_turb = df_sheet.iloc[73:104, [92, 92]].copy()
+        df_snr_sal_turb = df_sheet.iloc[r_s[0]:r_s[1], c_s].copy()
         df_snr_sal_turb.columns = ["CMP", "PODIM"]
         df_snr_sal_turb = df_snr_sal_turb.dropna(how='all').dropna(axis=1, how='all')
         df_snr_sal_turb = remove_decimals(df_snr_sal_turb, skip_first=True)
         df_snr_sal_turb_copy = df_snr_sal_turb.copy()
 
-        df_prod_sal_turb_raw = df_sheet.iloc[20:40, 105:107].copy()
+        df_prod_sal_turb_raw = df_sheet.iloc[r_h[0]:r_h[1], c_h].copy()
         df_prod_sal_turb_raw.columns = ["Año/Mes", "Produccion"]
         df_prod_sal_turb_raw = df_prod_sal_turb_raw.dropna(how='all')
 
@@ -1009,20 +1031,21 @@ def load_data(app, file_path):
         df_prod_sal_turb_copy = df_prod_sal_turb.copy()
 
         # --- 1.23 PROCESAR COMBUSTOLEO SALINA CRUZ ---
+        r_d, c_d, r_s, c_s, r_h, c_h = get_coords("Salina Cruz -Combustoleo", (158, 189), [18, 23], (73, 104), [103, 103], (157, 179), list(range(45, 47)))
         app.after(0, app.update_progress, 0.54, "Procesando Combustoleo Salina Cruz...")
-        df_data_sal_comb = df_sheet.iloc[158:189, [18, 23]].copy()
+        df_data_sal_comb = df_sheet.iloc[r_d[0]:r_d[1], c_d].copy()
         df_data_sal_comb.columns = ["Comb Día", "Salina Cruz Comb"]
         df_data_sal_comb = df_data_sal_comb.dropna(how='all')
         df_data_sal_comb = remove_decimals(df_data_sal_comb)
         df_data_sal_comb = df_data_sal_comb.iloc[:num_dias_reales]
 
-        df_snr_sal_comb = df_sheet.iloc[73:104, [103, 103]].copy()
+        df_snr_sal_comb = df_sheet.iloc[r_s[0]:r_s[1], c_s].copy()
         df_snr_sal_comb.columns = ["CMP", "PODIM"]
         df_snr_sal_comb = df_snr_sal_comb.dropna(how='all').dropna(axis=1, how='all')
         df_snr_sal_comb = remove_decimals(df_snr_sal_comb, skip_first=True)
         df_snr_sal_comb_copy = df_snr_sal_comb.copy()
 
-        df_prod_sal_comb_raw = df_sheet.iloc[157:179, 45:47].copy()
+        df_prod_sal_comb_raw = df_sheet.iloc[r_h[0]:r_h[1], c_h].copy()
         df_prod_sal_comb_raw.columns = ["Año/Mes", "Produccion"]
         df_prod_sal_comb_raw = df_prod_sal_comb_raw.dropna(how='all')
 
@@ -1044,20 +1067,21 @@ def load_data(app, file_path):
         df_prod_sal_comb_copy = df_prod_sal_comb.copy()
 
         # --- 1.24 PROCESAR CRUDO TULA ---
+        r_d, c_d, r_s, c_s, r_h, c_h = get_coords("Tula -Crudo", (20, 51), [0, 7], (73, 104), [65, 65], (20, 40), list(range(62, 64)))
         app.after(0, app.update_progress, 0.55, "Procesando Crudo Tula...")
-        df_data_tula_crud = df_sheet.iloc[20:51, [0, 7]].copy()
+        df_data_tula_crud = df_sheet.iloc[r_d[0]:r_d[1], c_d].copy()
         df_data_tula_crud.columns = ["Crudo Día", "Tula Crudo"]
         df_data_tula_crud = df_data_tula_crud.dropna(how='all')
         df_data_tula_crud = remove_decimals(df_data_tula_crud)
         df_data_tula_crud = df_data_tula_crud.iloc[:num_dias_reales]
 
-        df_snr_tula_crud = df_sheet.iloc[73:104, [65, 65]].copy()
+        df_snr_tula_crud = df_sheet.iloc[r_s[0]:r_s[1], c_s].copy()
         df_snr_tula_crud.columns = ["CMP", "PODIM"]
         df_snr_tula_crud = df_snr_tula_crud.dropna(how='all').dropna(axis=1, how='all')
         df_snr_tula_crud = remove_decimals(df_snr_tula_crud, skip_first=True)
         df_snr_tula_crud_copy = df_snr_tula_crud.copy()
 
-        df_prod_tula_crud_raw = df_sheet.iloc[20:40, 62:64].copy()
+        df_prod_tula_crud_raw = df_sheet.iloc[r_h[0]:r_h[1], c_h].copy()
         df_prod_tula_crud_raw.columns = ["Año/Mes", "Produccion"]
         df_prod_tula_crud_raw = df_prod_tula_crud_raw.dropna(how='all')
 
@@ -1079,20 +1103,21 @@ def load_data(app, file_path):
         df_prod_tula_crud_copy = df_prod_tula_crud.copy()
 
         # --- 1.25 PROCESAR GASOLINAS TULA ---
+        r_d, c_d, r_s, c_s, r_h, c_h = get_coords("Tula -Gasolinas", (20, 51), [11, 17], (73, 104), [75, 75], (20, 40), list(range(80, 82)))
         app.after(0, app.update_progress, 0.56, "Procesando Gasolinas Tula...")
-        df_data_tula_gas = df_sheet.iloc[20:51, [11, 17]].copy()
+        df_data_tula_gas = df_sheet.iloc[r_d[0]:r_d[1], c_d].copy()
         df_data_tula_gas.columns = ["Gas Día", "Tula Gas"]
         df_data_tula_gas = df_data_tula_gas.dropna(how='all')
         df_data_tula_gas = remove_decimals(df_data_tula_gas)
         df_data_tula_gas = df_data_tula_gas.iloc[:num_dias_reales]
 
-        df_snr_tula_gas = df_sheet.iloc[73:104, [75, 75]].copy()
+        df_snr_tula_gas = df_sheet.iloc[r_s[0]:r_s[1], c_s].copy()
         df_snr_tula_gas.columns = ["CMP", "PODIM"]
         df_snr_tula_gas = df_snr_tula_gas.dropna(how='all').dropna(axis=1, how='all')
         df_snr_tula_gas = remove_decimals(df_snr_tula_gas, skip_first=True)
         df_snr_tula_gas_copy = df_snr_tula_gas.copy()
 
-        df_prod_tula_gas_raw = df_sheet.iloc[20:40, 80:82].copy()
+        df_prod_tula_gas_raw = df_sheet.iloc[r_h[0]:r_h[1], c_h].copy()
         df_prod_tula_gas_raw.columns = ["Año/Mes", "Produccion"]
         df_prod_tula_gas_raw = df_prod_tula_gas_raw.dropna(how='all')
 
@@ -1114,20 +1139,21 @@ def load_data(app, file_path):
         df_prod_tula_gas_copy = df_prod_tula_gas.copy()
 
         # --- 1.26 PROCESAR DIESEL TULA ---
+        r_d, c_d, r_s, c_s, r_h, c_h = get_coords("Tula -Diesel", (73, 104), [0, 6], (73, 104), [85, 85], (20, 40), list(range(97, 99)))
         app.after(0, app.update_progress, 0.57, "Procesando Diesel Tula...")
-        df_data_tula_die = df_sheet.iloc[73:104, [0, 6]].copy()
+        df_data_tula_die = df_sheet.iloc[r_d[0]:r_d[1], c_d].copy()
         df_data_tula_die.columns = ["Diesel Día", "Tula Die"]
         df_data_tula_die = df_data_tula_die.dropna(how='all')
         df_data_tula_die = remove_decimals(df_data_tula_die)
         df_data_tula_die = df_data_tula_die.iloc[:num_dias_reales]
 
-        df_snr_tula_die = df_sheet.iloc[73:104, [85, 85]].copy()
+        df_snr_tula_die = df_sheet.iloc[r_s[0]:r_s[1], c_s].copy()
         df_snr_tula_die.columns = ["CMP", "PODIM"]
         df_snr_tula_die = df_snr_tula_die.dropna(how='all').dropna(axis=1, how='all')
         df_snr_tula_die = remove_decimals(df_snr_tula_die, skip_first=True)
         df_snr_tula_die_copy = df_snr_tula_die.copy()
 
-        df_prod_tula_die_raw = df_sheet.iloc[20:40, 97:99].copy()
+        df_prod_tula_die_raw = df_sheet.iloc[r_h[0]:r_h[1], c_h].copy()
         df_prod_tula_die_raw.columns = ["Año/Mes", "Produccion"]
         df_prod_tula_die_raw = df_prod_tula_die_raw.dropna(how='all')
 
@@ -1149,20 +1175,21 @@ def load_data(app, file_path):
         df_prod_tula_die_copy = df_prod_tula_die.copy()
 
         # --- 1.27 PROCESAR TURBOSINA TULA ---
+        r_d, c_d, r_s, c_s, r_h, c_h = get_coords("Tula -Turbosina", (73, 104), [11, 15], (73, 104), [93, 93], (20, 40), list(range(107, 109)))
         app.after(0, app.update_progress, 0.58, "Procesando Turbosina Tula...")
-        df_data_tula_turb = df_sheet.iloc[73:104, [11, 15]].copy()
+        df_data_tula_turb = df_sheet.iloc[r_d[0]:r_d[1], c_d].copy()
         df_data_tula_turb.columns = ["Turb Día", "Tula Turb"]
         df_data_tula_turb = df_data_tula_turb.dropna(how='all')
         df_data_tula_turb = remove_decimals(df_data_tula_turb)
         df_data_tula_turb = df_data_tula_turb.iloc[:num_dias_reales]
 
-        df_snr_tula_turb = df_sheet.iloc[73:104, [93, 93]].copy()
+        df_snr_tula_turb = df_sheet.iloc[r_s[0]:r_s[1], c_s].copy()
         df_snr_tula_turb.columns = ["CMP", "PODIM"]
         df_snr_tula_turb = df_snr_tula_turb.dropna(how='all').dropna(axis=1, how='all')
         df_snr_tula_turb = remove_decimals(df_snr_tula_turb, skip_first=True)
         df_snr_tula_turb_copy = df_snr_tula_turb.copy()
 
-        df_prod_tula_turb_raw = df_sheet.iloc[20:40, 107:109].copy()
+        df_prod_tula_turb_raw = df_sheet.iloc[r_h[0]:r_h[1], c_h].copy()
         df_prod_tula_turb_raw.columns = ["Año/Mes", "Produccion"]
         df_prod_tula_turb_raw = df_prod_tula_turb_raw.dropna(how='all')
 
@@ -1184,20 +1211,21 @@ def load_data(app, file_path):
         df_prod_tula_turb_copy = df_prod_tula_turb.copy()
 
         # --- 1.28 PROCESAR COMBUSTOLEO TULA ---
+        r_d, c_d, r_s, c_s, r_h, c_h = get_coords("Tula -Combustoleo", (158, 189), [18, 24], (73, 104), [104, 104], (157, 179), list(range(48, 50)))
         app.after(0, app.update_progress, 0.59, "Procesando Combustoleo Tula...")
-        df_data_tula_comb = df_sheet.iloc[158:189, [18, 24]].copy()
+        df_data_tula_comb = df_sheet.iloc[r_d[0]:r_d[1], c_d].copy()
         df_data_tula_comb.columns = ["Comb Día", "Tula Comb"]
         df_data_tula_comb = df_data_tula_comb.dropna(how='all')
         df_data_tula_comb = remove_decimals(df_data_tula_comb)
         df_data_tula_comb = df_data_tula_comb.iloc[:num_dias_reales]
 
-        df_snr_tula_comb = df_sheet.iloc[73:104, [104, 104]].copy()
+        df_snr_tula_comb = df_sheet.iloc[r_s[0]:r_s[1], c_s].copy()
         df_snr_tula_comb.columns = ["CMP", "PODIM"]
         df_snr_tula_comb = df_snr_tula_comb.dropna(how='all').dropna(axis=1, how='all')
         df_snr_tula_comb = remove_decimals(df_snr_tula_comb, skip_first=True)
         df_snr_tula_comb_copy = df_snr_tula_comb.copy()
 
-        df_prod_tula_comb_raw = df_sheet.iloc[157:179, 48:50].copy()
+        df_prod_tula_comb_raw = df_sheet.iloc[r_h[0]:r_h[1], c_h].copy()
         df_prod_tula_comb_raw.columns = ["Año/Mes", "Produccion"]
         df_prod_tula_comb_raw = df_prod_tula_comb_raw.dropna(how='all')
 
@@ -1219,20 +1247,21 @@ def load_data(app, file_path):
         df_prod_tula_comb_copy = df_prod_tula_comb.copy()
 
         # --- 1.29 PROCESAR CRUDO OLMECA ---
+        r_d, c_d, r_s, c_s, r_h, c_h = get_coords("Olmeca -Crudo", (157, 188), [2, 3], (158, 189), [13, 13], (191, 206), [2, 3])
         app.after(0, app.update_progress, 0.60, "Procesando Crudo Olmeca...")
-        df_data_olme_crud = df_sheet.iloc[157:188, [2, 3]].copy()
+        df_data_olme_crud = df_sheet.iloc[r_d[0]:r_d[1], c_d].copy()
         df_data_olme_crud.columns = ["Crudo Día", "Olmeca Crudo"]
         df_data_olme_crud = df_data_olme_crud.dropna(how='all')
         df_data_olme_crud = remove_decimals(df_data_olme_crud)
         df_data_olme_crud = df_data_olme_crud.iloc[:num_dias_reales]
 
-        df_snr_olme_crud = df_sheet.iloc[158:189, [13, 13]].copy()
+        df_snr_olme_crud = df_sheet.iloc[r_s[0]:r_s[1], c_s].copy()
         df_snr_olme_crud.columns = ["CMP", "PODIM"]
         df_snr_olme_crud = df_snr_olme_crud.dropna(how='all').dropna(axis=1, how='all')
         df_snr_olme_crud = remove_decimals(df_snr_olme_crud, skip_first=True)
         df_snr_olme_crud_copy = df_snr_olme_crud.copy()
 
-        df_prod_olme_crud_raw = df_sheet.iloc[191:206, [2, 3]].copy()
+        df_prod_olme_crud_raw = df_sheet.iloc[r_h[0]:r_h[1], c_h].copy()
         df_prod_olme_crud_raw.columns = ["Año/Mes", "Produccion"]
         df_prod_olme_crud_raw = df_prod_olme_crud_raw.dropna(how='all')
 
@@ -1254,20 +1283,21 @@ def load_data(app, file_path):
         df_prod_olme_crud_copy = df_prod_olme_crud.copy()
 
         # --- 1.30 PROCESAR GASOLINAS OLMECA ---
+        r_d, c_d, r_s, c_s, r_h, c_h = get_coords("Olmeca -Gasolinas", (157, 188), [5, 6], (158, 189), [14, 14], (191, 206), [5, 6])
         app.after(0, app.update_progress, 0.61, "Procesando Gasolinas Olmeca...")
-        df_data_olme_gas = df_sheet.iloc[157:188, [5, 6]].copy()
+        df_data_olme_gas = df_sheet.iloc[r_d[0]:r_d[1], c_d].copy()
         df_data_olme_gas.columns = ["Gas Día", "Olmeca Gas"]
         df_data_olme_gas = df_data_olme_gas.dropna(how='all')
         df_data_olme_gas = remove_decimals(df_data_olme_gas)
         df_data_olme_gas = df_data_olme_gas.iloc[:num_dias_reales]
 
-        df_snr_olme_gas = df_sheet.iloc[158:189, [14, 14]].copy()
+        df_snr_olme_gas = df_sheet.iloc[r_s[0]:r_s[1], c_s].copy()
         df_snr_olme_gas.columns = ["CMP", "PODIM"]
         df_snr_olme_gas = df_snr_olme_gas.dropna(how='all').dropna(axis=1, how='all')
         df_snr_olme_gas = remove_decimals(df_snr_olme_gas, skip_first=True)
         df_snr_olme_gas_copy = df_snr_olme_gas.copy()
 
-        df_prod_olme_gas_raw = df_sheet.iloc[191:206, [5, 6]].copy()
+        df_prod_olme_gas_raw = df_sheet.iloc[r_h[0]:r_h[1], c_h].copy()
         df_prod_olme_gas_raw.columns = ["Año/Mes", "Produccion"]
         df_prod_olme_gas_raw = df_prod_olme_gas_raw.dropna(how='all')
 
@@ -1289,20 +1319,21 @@ def load_data(app, file_path):
         df_prod_olme_gas_copy = df_prod_olme_gas.copy()
 
         # --- 1.31 PROCESAR DIESEL OLMECA ---
+        r_d, c_d, r_s, c_s, r_h, c_h = get_coords("Olmeca -Diesel", (157, 188), [8, 9], (158, 189), [15, 15], (191, 206), [8, 9])
         app.after(0, app.update_progress, 0.62, "Procesando Diesel Olmeca...")
-        df_data_olme_die = df_sheet.iloc[157:188, [8, 9]].copy()
+        df_data_olme_die = df_sheet.iloc[r_d[0]:r_d[1], c_d].copy()
         df_data_olme_die.columns = ["Diesel Día", "Olmeca Die"]
         df_data_olme_die = df_data_olme_die.dropna(how='all')
         df_data_olme_die = remove_decimals(df_data_olme_die)
         df_data_olme_die = df_data_olme_die.iloc[:num_dias_reales]
 
-        df_snr_olme_die = df_sheet.iloc[158:189, [15, 15]].copy()
+        df_snr_olme_die = df_sheet.iloc[r_s[0]:r_s[1], c_s].copy()
         df_snr_olme_die.columns = ["CMP", "PODIM"]
         df_snr_olme_die = df_snr_olme_die.dropna(how='all').dropna(axis=1, how='all')
         df_snr_olme_die = remove_decimals(df_snr_olme_die, skip_first=True)
         df_snr_olme_die_copy = df_snr_olme_die.copy()
 
-        df_prod_olme_die_raw = df_sheet.iloc[191:206, [8, 9]].copy()
+        df_prod_olme_die_raw = df_sheet.iloc[r_h[0]:r_h[1], c_h].copy()
         df_prod_olme_die_raw.columns = ["Año/Mes", "Produccion"]
         df_prod_olme_die_raw = df_prod_olme_die_raw.dropna(how='all')
 

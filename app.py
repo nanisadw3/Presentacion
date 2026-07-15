@@ -75,6 +75,15 @@ class ExcelViewerApp(ctk.CTk):
                                           fg_color="#007bff", hover_color="#0056b3")
         self.btn_add_year.pack(pady=15, padx=10, side="left")
 
+        # Botón para configurar coordenadas de Excel
+        self.btn_config_coords = ctk.CTkButton(self.top_frame, 
+                                              text="Configurar Coordenadas", 
+                                              font=("Roboto", 14, "bold"),
+                                              command=self.open_config_coords_dialog,
+                                              height=40,
+                                              fg_color="#e0a800", hover_color="#c69500", text_color="black")
+        self.btn_config_coords.pack(pady=15, padx=10, side="left")
+
         # ComboBox para alternar visualización de procesos
         self.lbl_proceso = ctk.CTkLabel(self.top_frame, text="Proceso:", font=("Roboto", 14, "bold"))
         self.lbl_proceso.pack(pady=15, padx=(20, 5), side="left")
@@ -1317,6 +1326,7 @@ class ExcelViewerApp(ctk.CTk):
             header_color="#1f538d",
             colors=["#2a2a2a", "#242424"],
             hover_color="#3a3a3a",
+            command=lambda cell: self.on_table_clicked("diaria", cell),
         )
         self.table.pack(expand=True, fill="both", padx=10, pady=10)
 
@@ -1335,6 +1345,7 @@ class ExcelViewerApp(ctk.CTk):
             header_color="#1f538d",
             colors=["#2a2a2a", "#242424"],
             hover_color="#3a3a3a",
+            command=lambda cell: self.on_table_clicked("programa", cell),
         )
         self.table2.pack(expand=True, fill="both", padx=10, pady=10)
 
@@ -1353,6 +1364,7 @@ class ExcelViewerApp(ctk.CTk):
             header_color="#1f538d",
             colors=["#2a2a2a", "#242424"],
             hover_color="#3a3a3a",
+            command=lambda cell: self.on_table_clicked("historica", cell),
         )
         self.table3.pack(expand=True, fill="both", padx=10, pady=10)
 
@@ -1428,6 +1440,289 @@ class ExcelViewerApp(ctk.CTk):
             print(f"\n[!] ERROR EN HILO DE POWERPOINT:\n{err_msg}\n\nTRACEBACK:\n{error_details}")
             
         messagebox.showerror("Error", f"Ocurrió un error al procesar la presentación:\n{err_msg}")
+
+    def on_table_clicked(self, table_name, cell_data):
+        row = cell_data.get('row')
+        col = cell_data.get('column')
+        if row == 0 or row is None:
+            return
+            
+        selection = self.cb_proceso.get()
+        if table_name == "diaria":
+            headers = self.table.values[0]
+            col_name = headers[col]
+            row_data = self.table.values[row]
+            dia_key = str(row_data[0])
+            valor_actual = str(row_data[col])
+            
+            target_proceso = self.resolve_proceso_name(selection, col_name)
+            if target_proceso:
+                self.show_edit_delete_dialog(target_proceso, "diaria", dia_key, valor_actual)
+                
+        elif table_name == "programa":
+            headers = self.table2.values[0]
+            col_name = headers[col]
+            row_data = self.table2.values[row]
+            key = f"Row_{row - 1}_{col_name}"
+            valor_actual = str(row_data[col])
+            
+            self.show_edit_delete_dialog(selection, "programa", key, valor_actual)
+            
+        elif table_name == "historica":
+            row_data = self.table3.values[row]
+            period_key = str(row_data[0])
+            valor_actual = str(row_data[1])
+            
+            self.show_edit_delete_dialog(selection, "historica", period_key, valor_actual)
+
+    def resolve_proceso_name(self, selection, col_name):
+        if " -" in selection:
+            return selection
+        
+        refinery = col_name.split()[0].strip()
+        valid_refineries = ["Cadereyta", "Madero", "Minatitlan", "Salamanca", "Salina Cruz", "Tula", "Olmeca"]
+        
+        def norm(s):
+            return s.lower().replace("á","a").replace("é","e").replace("í","i").replace("ó","o").replace("ú","u").replace("ñ","n")
+            
+        ref_norm = norm(refinery)
+        matched_ref = None
+        for r in valid_refineries:
+            if norm(r) in ref_norm or ref_norm in norm(r):
+                matched_ref = r
+                break
+        
+        if matched_ref:
+            return f"{matched_ref} -{selection}"
+        return None
+
+    def show_edit_delete_dialog(self, proceso, tabla, clave, valor):
+        dialog = ctk.CTkToplevel(self)
+        dialog.title("Editar / Eliminar Valor")
+        dialog.geometry("420x260")
+        dialog.resizable(False, False)
+        dialog.transient(self)
+        dialog.grab_set()
+
+        dialog.update_idletasks()
+        w = dialog.winfo_width()
+        h = dialog.winfo_height()
+        x = self.winfo_x() + (self.winfo_width() - w) // 2
+        y = self.winfo_y() + (self.winfo_height() - h) // 2
+        dialog.geometry(f"+{x}+{y}")
+
+        type_lbl = ""
+        if tabla == "diaria": type_lbl = "Producción Diaria"
+        elif tabla == "programa": type_lbl = "Programa de Planificación"
+        elif tabla == "historica": type_lbl = "Fecha y Producción Histórica"
+
+        lbl = ctk.CTkLabel(dialog, text=f"Proceso: {proceso}\nTipo: {type_lbl}\nClave: {clave}", font=("Roboto", 13, "bold"))
+        lbl.pack(pady=15)
+
+        lbl_val = ctk.CTkLabel(dialog, text="Ingresa el valor deseado:", font=("Roboto", 12))
+        lbl_val.pack(pady=5)
+        
+        entry_val = ctk.CTkEntry(dialog, placeholder_text="Valor numérico", width=200)
+        entry_val.insert(0, valor)
+        entry_val.pack(pady=5)
+
+        def on_update():
+            val_str = entry_val.get().strip()
+            if not val_str:
+                messagebox.showerror("Error", "Debes ingresar un valor válido.", parent=dialog)
+                return
+            try:
+                nuevo_val = float(val_str)
+            except ValueError:
+                messagebox.showerror("Error", "El valor debe ser un número.", parent=dialog)
+                return
+            
+            import db_helper
+            if tabla == "historica":
+                parts = clave.split()
+                if len(parts) == 2:
+                    mes = parts[0].strip()
+                    anio = parts[1].strip()
+                else:
+                    mes = "AÑO"
+                    anio = clave.strip()
+                db_helper.save_extra_prod(proceso, anio, mes, nuevo_val)
+            else:
+                db_helper.save_modificacion(proceso, tabla, clave, nuevo_val)
+                
+            messagebox.showinfo("Éxito", "Valor actualizado correctamente.", parent=dialog)
+            dialog.destroy()
+            
+            if self.current_file_path:
+                self.set_loading_state(True, "Recargando datos...")
+                threading.Thread(target=self.async_load_data, args=(self.current_file_path,), daemon=True).start()
+
+        def on_restore():
+            if not messagebox.askyesno("Confirmar", "¿Restaurar al valor original del archivo Excel?", parent=dialog):
+                return
+            
+            import db_helper
+            if tabla == "historica":
+                parts = clave.split()
+                if len(parts) == 2:
+                    mes = parts[0].strip()
+                    anio = parts[1].strip()
+                else:
+                    mes = "AÑO"
+                    anio = clave.strip()
+                import sqlite3
+                conn = sqlite3.connect(db_helper.DB_PATH)
+                c = conn.cursor()
+                c.execute('DELETE FROM produccion_extra WHERE proceso=? AND anio=? AND mes=?', (proceso, anio, mes))
+                conn.commit()
+                conn.close()
+            else:
+                db_helper.delete_modificacion(proceso, tabla, clave)
+                
+            messagebox.showinfo("Éxito", "Valor restaurado al original.", parent=dialog)
+            dialog.destroy()
+            
+            if self.current_file_path:
+                self.set_loading_state(True, "Recargando datos...")
+                threading.Thread(target=self.async_load_data, args=(self.current_file_path,), daemon=True).start()
+
+        btn_frame = ctk.CTkFrame(dialog, fg_color="transparent")
+        btn_frame.pack(pady=20)
+
+        btn_act = ctk.CTkButton(btn_frame, text="Actualizar", command=on_update, width=120, fg_color="#24a0ed", hover_color="#0080ff")
+        btn_act.pack(side="left", padx=10)
+
+        btn_rst = ctk.CTkButton(btn_frame, text="Restaurar Original", command=on_restore, width=130, fg_color="#e0a800", hover_color="#c69500", text_color="black")
+        btn_rst.pack(side="left", padx=10)
+
+    def open_config_coords_dialog(self):
+        dialog = ctk.CTkToplevel(self)
+        dialog.title("Configuración de Coordenadas de Excel")
+        dialog.geometry("520x460")
+        dialog.resizable(False, False)
+        dialog.transient(self)
+        dialog.grab_set()
+
+        dialog.update_idletasks()
+        w = dialog.winfo_width()
+        h = dialog.winfo_height()
+        x = self.winfo_x() + (self.winfo_width() - w) // 2
+        y = self.winfo_y() + (self.winfo_height() - h) // 2
+        dialog.geometry(f"+{x}+{y}")
+
+        title_lbl = ctk.CTkLabel(dialog, text="Mapeo de Celdas / Coordenadas de Excel", font=("Roboto", 16, "bold"), text_color="#3484F0")
+        title_lbl.pack(pady=(15, 10))
+
+        proc_frame = ctk.CTkFrame(dialog, fg_color="transparent")
+        proc_frame.pack(fill="x", padx=30, pady=5)
+        
+        proc_lbl = ctk.CTkLabel(proc_frame, text="Selecciona el Proceso a Configurar:", font=("Roboto", 12, "bold"))
+        proc_lbl.pack(side="left", padx=(0, 10))
+        
+        specific_processes = [v for v in self.cb_proceso.cget("values") if " -" in v]
+        
+        cb_proc = ctk.CTkComboBox(proc_frame, values=specific_processes, font=("Roboto", 12), state="readonly", width=220)
+        cb_proc.pack(side="left")
+        
+        current_sel = self.cb_proceso.get()
+        if current_sel in specific_processes:
+            cb_proc.set(current_sel)
+        else:
+            cb_proc.set(specific_processes[0])
+
+        inputs_frame = ctk.CTkFrame(dialog)
+        inputs_frame.pack(fill="both", expand=True, padx=30, pady=10)
+
+        entries = {}
+        def create_field(parent, label_text, row, key):
+            lbl = ctk.CTkLabel(parent, text=label_text, font=("Roboto", 11, "bold"))
+            lbl.grid(row=row, column=0, sticky="w", padx=15, pady=8)
+            entry = ctk.CTkEntry(parent, width=120)
+            entry.grid(row=row, column=1, sticky="w", padx=15, pady=8)
+            entries[key] = entry
+
+        create_field(inputs_frame, "T1 (Diaria) - Rango de Filas (e.g. 21-51):", 0, "d_filas")
+        create_field(inputs_frame, "T1 (Diaria) - Letras de Columna (e.g. A-H o A,C):", 1, "d_cols")
+        create_field(inputs_frame, "T2 (Plan) - Rango de Filas (e.g. 74-104):", 2, "p_filas")
+        create_field(inputs_frame, "T2 (Plan) - Letras de Columna (e.g. AE-AF o BI):", 3, "p_cols")
+        create_field(inputs_frame, "T3 (Histórica) - Rango de Filas (e.g. 21-40):", 4, "h_filas")
+        create_field(inputs_frame, "T3 (Histórica) - Letras de Columna (e.g. AW-AX):", 5, "h_cols")
+
+        def load_proc_coords(proceso_name):
+            for e in entries.values():
+                e.delete(0, "end")
+                
+            import db_helper
+            coords = db_helper.get_coordenadas_override(proceso_name)
+            if coords:
+                entries["d_filas"].insert(0, coords.get("diaria_filas") or "")
+                entries["d_cols"].insert(0, coords.get("diaria_cols") or "")
+                entries["p_filas"].insert(0, coords.get("programa_filas") or "")
+                entries["p_cols"].insert(0, coords.get("programa_cols") or "")
+                entries["h_filas"].insert(0, coords.get("historica_filas") or "")
+                entries["h_cols"].insert(0, coords.get("historica_cols") or "")
+            else:
+                entries["d_filas"].configure(placeholder_text="Por defecto Excel")
+                entries["d_cols"].configure(placeholder_text="Por defecto Excel")
+                entries["p_filas"].configure(placeholder_text="Por defecto Excel")
+                entries["p_cols"].configure(placeholder_text="Por defecto Excel")
+                entries["h_filas"].configure(placeholder_text="Por defecto Excel")
+                entries["h_cols"].configure(placeholder_text="Por defecto Excel")
+
+        cb_proc.configure(command=load_proc_coords)
+        load_proc_coords(cb_proc.get())
+
+        def on_save():
+            proceso_sel = cb_proc.get()
+            d_f = entries["d_filas"].get().strip()
+            d_c = entries["d_cols"].get().strip()
+            p_f = entries["p_filas"].get().strip()
+            p_c = entries["p_cols"].get().strip()
+            h_f = entries["h_filas"].get().strip()
+            h_c = entries["h_cols"].get().strip()
+
+            def is_valid_range(r_str):
+                if not r_str: return True
+                return "-" in r_str and len(r_str.split("-")) == 2 and all(x.isdigit() for x in r_str.replace(" ", "").split("-"))
+
+            if not all(is_valid_range(r) for r in [d_f, p_f, h_f]):
+                messagebox.showerror("Error de Formato", "Los rangos de filas deben tener el formato 'Inicio-Fin' (ej. 21-51).", parent=dialog)
+                return
+
+            import db_helper
+            db_helper.save_coordenadas_override(proceso_sel, d_f, d_c, p_f, p_c, h_f, h_c)
+            messagebox.showinfo("Éxito", f"Coordenadas para '{proceso_sel}' guardadas en base de datos.", parent=dialog)
+            dialog.destroy()
+
+            if self.current_file_path:
+                self.set_loading_state(True, "Recargando datos del Excel con nuevas coordenadas...")
+                threading.Thread(target=self.async_load_data, args=(self.current_file_path,), daemon=True).start()
+
+        def on_restore_default():
+            proceso_sel = cb_proc.get()
+            if not messagebox.askyesno("Confirmar", f"¿Deseas eliminar la configuración personalizada de '{proceso_sel}' y volver a las coordenadas por defecto del Excel?", parent=dialog):
+                return
+            
+            import db_helper
+            db_helper.delete_coordenadas_override(proceso_sel)
+            messagebox.showinfo("Éxito", f"Configuración de '{proceso_sel}' restaurada a valores por defecto.", parent=dialog)
+            dialog.destroy()
+
+            if self.current_file_path:
+                self.set_loading_state(True, "Recargando datos del Excel con coordenadas por defecto...")
+                threading.Thread(target=self.async_load_data, args=(self.current_file_path,), daemon=True).start()
+
+        btn_frame = ctk.CTkFrame(dialog, fg_color="transparent")
+        btn_frame.pack(fill="x", padx=30, pady=15)
+
+        btn_save = ctk.CTkButton(btn_frame, text="Guardar Cambios", command=on_save, width=160, fg_color="#28a745", hover_color="#218838")
+        btn_save.pack(side="left", padx=10)
+
+        btn_restore = ctk.CTkButton(btn_frame, text="Restaurar Defectos", command=on_restore_default, width=160, fg_color="#6c757d", hover_color="#5a6268")
+        btn_restore.pack(side="left", padx=10)
+
+        btn_cancel = ctk.CTkButton(btn_frame, text="Cancelar", command=dialog.destroy, width=100, fg_color="#dc3545", hover_color="#c82333")
+        btn_cancel.pack(side="right", padx=10)
 
 if __name__ == "__main__":
     import signal
