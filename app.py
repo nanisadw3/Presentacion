@@ -1725,10 +1725,13 @@ class ExcelViewerApp(ctk.CTk):
         preview_frame = ctk.CTkFrame(dialog)
         preview_frame.pack(fill="both", expand=True, padx=30, pady=10)
         
-        preview_title = ctk.CTkLabel(preview_frame, text="🔍 Vista Previa del Excel (Primeras 5 Filas del Rango)", font=("Roboto", 11, "bold"), text_color="#3484F0")
-        preview_title.pack(pady=(5, 2))
+        preview_header = ctk.CTkFrame(preview_frame, fg_color="transparent")
+        preview_header.pack(fill="x", padx=10, pady=(5, 2))
         
-        preview_label = ctk.CTkLabel(preview_frame, text="Ningún archivo cargado para previsualizar.", font=("Courier New", 11), justify="left", anchor="nw")
+        preview_title = ctk.CTkLabel(preview_header, text="🔍 Vista Previa del Excel (Primeras 5 Filas)", font=("Roboto", 11, "bold"), text_color="#3484F0")
+        preview_title.pack(side="left")
+        
+        preview_label = ctk.CTkLabel(preview_frame, text="Presiona 'Generar Vista Previa' para ver los datos del rango seleccionado.", font=("Courier New", 11), justify="left", anchor="nw")
         preview_label.pack(fill="both", expand=True, padx=15, pady=5)
 
         # Cargar valores actuales en las entradas al cambiar el proceso
@@ -1753,17 +1756,19 @@ class ExcelViewerApp(ctk.CTk):
                 entries["h_filas"].configure(placeholder_text="Defecto Excel")
                 entries["h_cols"].configure(placeholder_text="Defecto Excel")
             
-            update_preview()
+            preview_label.configure(text="Presiona 'Generar Vista Previa' para ver los datos del rango seleccionado.")
 
-        # Función para actualizar la vista previa de los datos
-        def update_preview(*args):
+        # Función para actualizar la vista previa de los datos (solo bajo demanda)
+        def update_preview():
             if not self.current_file_path:
                 preview_label.configure(text="Sube un archivo de Excel primero para ver una vista previa.")
                 return
 
+            preview_label.configure(text="Cargando vista previa...")
+            dialog.update_idletasks()
+
             try:
                 import pandas as pd
-                # Cargar la hoja
                 xls = pd.ExcelFile(self.current_file_path)
                 sheet_to_use = None
                 for sheet in xls.sheet_names:
@@ -1776,7 +1781,6 @@ class ExcelViewerApp(ctk.CTk):
                 
                 df_sheet = pd.read_excel(self.current_file_path, sheet_name=sheet_to_use, header=None)
 
-                # Obtener la pestaña activa
                 active_tab = tabview.get()
                 prefix = "d_"
                 if "Programa" in active_tab:
@@ -1784,11 +1788,9 @@ class ExcelViewerApp(ctk.CTk):
                 elif "Histórica" in active_tab:
                     prefix = "h_"
                 
-                # Intentar leer los rangos configurados en el cuadro
                 rows_input = entries[f"{prefix}filas"].get().strip()
                 cols_input = entries[f"{prefix}cols"].get().strip()
                 
-                # Si están vacíos, buscar en overrides del proceso actual para mostrarlo, si no decir por defecto
                 if not rows_input or not cols_input:
                     import db_helper
                     override = db_helper.get_coordenadas_override(cb_proc.get())
@@ -1797,15 +1799,13 @@ class ExcelViewerApp(ctk.CTk):
                         cols_input = cols_input or override.get(f"{prefix}cols")
 
                 if not rows_input or not cols_input:
-                    preview_label.configure(text="Usando coordenadas preestablecidas de Excel.\nGuarda una configuración personalizada para previsualizar aquí.")
+                    preview_label.configure(text="Usando coordenadas preestablecidas de Excel.\nEscribe columnas y filas personalizadas para previsualizar aquí.")
                     return
 
-                # Convertir a índices
                 parts = rows_input.split("-")
                 r_start = int(parts[0]) - 1
                 r_end = int(parts[1])
                 
-                # Columnas
                 cols_str = cols_input.replace(" ", "")
                 def col_to_num(col_str):
                     col_str = col_str.upper().strip()
@@ -1823,23 +1823,16 @@ class ExcelViewerApp(ctk.CTk):
                 else:
                     c_indices = [col_to_num(cols_str)]
                 
-                # Obtener muestra
                 df_slice = df_sheet.iloc[r_start:r_end, c_indices].head(5)
-                # Formatear salida de texto
                 text_out = df_slice.to_string(index=True, header=False)
-                preview_label.configure(text=f"Fila original del Excel (Renglones/Columnas):\n\n{text_out}")
+                preview_label.configure(text=f"Pestaña activa: {active_tab}  |  Cols: {cols_input}  |  Filas: {rows_input}\n\n{text_out}")
             except Exception as e:
-                preview_label.configure(text=f"No se pudo generar la vista previa. Revisa la sintaxis de las coordenadas.\nDetalle: {str(e)}")
+                preview_label.configure(text=f"No se pudo generar la vista previa.\nRevisa la sintaxis de las coordenadas.\n\nDetalle: {str(e)}")
+
+        btn_preview = ctk.CTkButton(preview_header, text="Generar Vista Previa", command=update_preview, width=170, height=28, font=("Roboto", 11, "bold"), fg_color="#17a2b8", hover_color="#138496")
+        btn_preview.pack(side="right")
 
         cb_proc.configure(command=load_proc_coords)
-        
-        # Vincular la función de actualización de preview al tabview una vez definida
-        tabview.configure(command=update_preview)
-        
-        # Vincular cambios en las entradas para actualizar la vista previa en vivo
-        for e in entries.values():
-            e.bind("<KeyRelease>", update_preview)
-            
         load_proc_coords(cb_proc.get())
 
         def on_save():
