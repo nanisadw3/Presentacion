@@ -14,10 +14,10 @@ class ExcelViewerApp(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        self.title("Visor de Excel (Nativo de CustomTkinter)")
+        self.title("Sistema de Proyección y Reportes de Refinerías")
         
         # Center main window
-        width, height = 1500, 850
+        width, height = 1500, 900
         screen_w = self.winfo_screenwidth()
         screen_h = self.winfo_screenheight()
         x = int((screen_w/2) - (width/2))
@@ -28,74 +28,95 @@ class ExcelViewerApp(ctk.CTk):
         ctk.set_appearance_mode("Dark")
         ctk.set_default_color_theme("blue")
 
-        # Contenedor principal
+        # ═══ Contenedor principal ═══
         self.main_frame = ctk.CTkFrame(self, fg_color="transparent")
-        self.main_frame.pack(fill="both", expand=True, padx=20, pady=20)
+        self.main_frame.pack(fill="both", expand=True, padx=15, pady=(10, 5))
 
-        # Header Frame
-        self.top_frame = ctk.CTkFrame(self.main_frame, corner_radius=10)
-        self.top_frame.pack(fill="x", pady=(0, 20))
+        # ═══ FILA 1: Archivo + Estado ═══
+        self.row1_frame = ctk.CTkFrame(self.main_frame, corner_radius=10)
+        self.row1_frame.pack(fill="x", pady=(0, 8))
 
-        self.btn_buscar = ctk.CTkButton(self.top_frame, 
-                                        text="Buscar Archivo Excel", 
-                                        font=("Roboto", 14, "bold"),
+        self.btn_buscar = ctk.CTkButton(self.row1_frame, 
+                                        text="📂  Cargar Excel", 
+                                        font=("Roboto", 13, "bold"),
                                         command=self.load_excel,
-                                        height=40)
-        self.btn_buscar.pack(pady=15, padx=20, side="left")
+                                        height=36, width=150,
+                                        corner_radius=8)
+        self.btn_buscar.pack(pady=10, padx=(15, 8), side="left")
 
-        self.lbl_file = ctk.CTkLabel(self.top_frame, 
-                                     text="Ningún archivo seleccionado",
-                                     font=("Roboto", 14))
-        self.lbl_file.pack(pady=15, padx=20, side="left")
+        self.lbl_file = ctk.CTkLabel(self.row1_frame, 
+                                     text="Sin archivo cargado",
+                                     font=("Roboto", 12),
+                                     text_color="#888888")
+        self.lbl_file.pack(pady=10, padx=10, side="left", fill="x", expand=True)
 
-        # Botón para guardar las tablas en la Base de Datos SQLite
-        self.btn_guardar = ctk.CTkButton(self.top_frame, 
-                                        text="Guardar en Base de Datos", 
-                                        font=("Roboto", 14, "bold"),
-                                        command=self.save_to_database,
-                                        height=40,
-                                        fg_color="#28a745", hover_color="#218838")
-        self.btn_guardar.pack(pady=15, padx=10, side="left")
+        # Separador visual
+        sep1 = ctk.CTkFrame(self.row1_frame, width=2, height=26, fg_color="#444444")
+        sep1.pack(side="left", padx=8, pady=10)
 
-        # Botón para mandar la información a PowerPoint
-        self.btn_powerpoint = ctk.CTkButton(self.top_frame, 
-                                            text="Mandar a PowerPoint", 
-                                            font=("Roboto", 14, "bold"),
-                                            command=self.send_to_powerpoint,
-                                            height=40,
-                                            fg_color="#8b5cf6", hover_color="#7c3aed")
-        self.btn_powerpoint.pack(pady=15, padx=10, side="left")
-
-        # Botón para agregar años manualmente a la BD
-        self.btn_add_year = ctk.CTkButton(self.top_frame, 
-                                          text="Agregar Año Extra", 
-                                          font=("Roboto", 14, "bold"),
-                                          command=self.open_add_year_dialog,
-                                          height=40,
-                                          fg_color="#007bff", hover_color="#0056b3")
-        self.btn_add_year.pack(pady=15, padx=10, side="left")
-
-        # Botón para configurar coordenadas de Excel
-        self.btn_config_coords = ctk.CTkButton(self.top_frame, 
-                                              text="Configurar Coordenadas", 
-                                              font=("Roboto", 14, "bold"),
-                                              command=self.open_config_coords_dialog,
-                                              height=40,
-                                              fg_color="#e0a800", hover_color="#c69500", text_color="black")
-        self.btn_config_coords.pack(pady=15, padx=10, side="left")
-
-        # ComboBox para alternar visualización de procesos
-        self.lbl_proceso = ctk.CTkLabel(self.top_frame, text="Proceso:", font=("Roboto", 14, "bold"))
-        self.lbl_proceso.pack(pady=15, padx=(20, 5), side="left")
+        # Selector de proceso
+        self.lbl_proceso = ctk.CTkLabel(self.row1_frame, text="Proceso:", font=("Roboto", 12, "bold"))
+        self.lbl_proceso.pack(pady=10, padx=(8, 4), side="left")
         
-        self.cb_proceso = ctk.CTkComboBox(self.top_frame, 
-                                            values=["Crudo", "Gasolinas", "Diesel", "Turbosina", "Asfalto", "Combustoleo", "Cadereyta -Crudo", "Cadereyta -Gasolinas", "Cadereyta -Diesel", "Cadereyta -Combustoleo", "Madero -Crudo", "Madero -Gasolinas", "Madero -Diesel", "Madero -Turbosina", "Madero -Combustoleo", "Minatitlan -Crudo", "Minatitlan -Gasolinas", "Minatitlan -Diesel", "Minatitlan -Combustoleo", "Salamanca -Crudo", "Salamanca -Gasolinas", "Salamanca -Diesel", "Salamanca -Turbosina", "Salamanca -Combustoleo", "Salina Cruz -Crudo", "Salina Cruz -Gasolinas", "Salina Cruz -Diesel", "Salina Cruz -Turbosina", "Salina Cruz -Combustoleo", "Tula -Crudo", "Tula -Gasolinas", "Tula -Diesel", "Tula -Turbosina", "Tula -Combustoleo", "Olmeca -Crudo", "Olmeca -Gasolinas", "Olmeca -Diesel"],
-                                            font=("Roboto", 14),
+        self.cb_proceso = ctk.CTkComboBox(self.row1_frame, 
+                                            values=["Crudo", "Gasolinas", "Diesel", "Turbosina", "Asfalto", "Combustoleo",
+                                                    "Cadereyta -Crudo", "Cadereyta -Gasolinas", "Cadereyta -Diesel", "Cadereyta -Combustoleo",
+                                                    "Madero -Crudo", "Madero -Gasolinas", "Madero -Diesel", "Madero -Turbosina", "Madero -Combustoleo",
+                                                    "Minatitlan -Crudo", "Minatitlan -Gasolinas", "Minatitlan -Diesel", "Minatitlan -Combustoleo",
+                                                    "Salamanca -Crudo", "Salamanca -Gasolinas", "Salamanca -Diesel", "Salamanca -Turbosina", "Salamanca -Combustoleo",
+                                                    "Salina Cruz -Crudo", "Salina Cruz -Gasolinas", "Salina Cruz -Diesel", "Salina Cruz -Turbosina", "Salina Cruz -Combustoleo",
+                                                    "Tula -Crudo", "Tula -Gasolinas", "Tula -Diesel", "Tula -Turbosina", "Tula -Combustoleo",
+                                                    "Olmeca -Crudo", "Olmeca -Gasolinas", "Olmeca -Diesel"],
+                                            font=("Roboto", 12),
                                             command=self.on_proceso_changed,
                                             state="readonly",
-                                            width=150)
-        self.cb_proceso.pack(pady=15, padx=5, side="left")
+                                            width=200,
+                                            corner_radius=8)
+        self.cb_proceso.pack(pady=10, padx=(4, 15), side="left")
         self.cb_proceso.set("Crudo")
+
+        # ═══ FILA 2: Herramientas ═══
+        self.row2_frame = ctk.CTkFrame(self.main_frame, corner_radius=10, fg_color="#1a1a2e")
+        self.row2_frame.pack(fill="x", pady=(0, 10))
+
+        lbl_tools = ctk.CTkLabel(self.row2_frame, text="Herramientas:", font=("Roboto", 11, "bold"), text_color="#777777")
+        lbl_tools.pack(pady=8, padx=15, side="left")
+
+        self.btn_powerpoint = ctk.CTkButton(self.row2_frame, 
+                                            text="📊  Exportar a PowerPoint", 
+                                            font=("Roboto", 12, "bold"),
+                                            command=self.send_to_powerpoint,
+                                            height=32, width=195,
+                                            corner_radius=8,
+                                            fg_color="#8b5cf6", hover_color="#7c3aed")
+        self.btn_powerpoint.pack(pady=8, padx=6, side="left")
+
+        self.btn_guardar = ctk.CTkButton(self.row2_frame, 
+                                        text="💾  Guardar en BD", 
+                                        font=("Roboto", 12, "bold"),
+                                        command=self.save_to_database,
+                                        height=32, width=160,
+                                        corner_radius=8,
+                                        fg_color="#28a745", hover_color="#218838")
+        self.btn_guardar.pack(pady=8, padx=6, side="left")
+
+        self.btn_add_year = ctk.CTkButton(self.row2_frame, 
+                                          text="📅  Agregar Año Extra", 
+                                          font=("Roboto", 12, "bold"),
+                                          command=self.open_add_year_dialog,
+                                          height=32, width=175,
+                                          corner_radius=8,
+                                          fg_color="#0d6efd", hover_color="#0b5ed7")
+        self.btn_add_year.pack(pady=8, padx=6, side="left")
+
+        self.btn_config_coords = ctk.CTkButton(self.row2_frame, 
+                                              text="⚙  Coordenadas Excel", 
+                                              font=("Roboto", 12, "bold"),
+                                              command=self.open_config_coords_dialog,
+                                              height=32, width=185,
+                                              corner_radius=8,
+                                              fg_color="#6c757d", hover_color="#5a6268")
+        self.btn_config_coords.pack(pady=8, padx=6, side="left")
 
 
         # Scrollable Frame para contener la tabla
@@ -339,7 +360,7 @@ class ExcelViewerApp(ctk.CTk):
         self.default_pptx_dir = check_and_get_dir(path_pptx_preferida)
 
         # Barra de progreso (inicialmente oculta)
-        self.progress_bar = ctk.CTkProgressBar(self.top_frame, width=200)
+        self.progress_bar = ctk.CTkProgressBar(self.row1_frame, width=200)
         self.progress_bar.set(0.0)
 
     def set_loading_state(self, is_loading, loading_text=""):
