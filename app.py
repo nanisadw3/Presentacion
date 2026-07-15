@@ -39,7 +39,7 @@ class ExcelViewerApp(ctk.CTk):
         self.row1_frame.pack(fill="x", pady=(0, 8))
 
         self.btn_buscar = ctk.CTkButton(self.row1_frame, 
-                                        text="📂  Cargar Excel", 
+                                        text="Cargar Excel", 
                                         font=("Roboto", 13, "bold"),
                                         command=self.load_excel,
                                         height=36, width=150,
@@ -85,7 +85,7 @@ class ExcelViewerApp(ctk.CTk):
         lbl_tools.pack(pady=8, padx=15, side="left")
 
         self.btn_powerpoint = ctk.CTkButton(self.row2_frame, 
-                                            text="📊  Exportar a PowerPoint", 
+                                            text="Exportar a PowerPoint", 
                                             font=("Roboto", 12, "bold"),
                                             command=self.send_to_powerpoint,
                                             height=32, width=195,
@@ -94,7 +94,7 @@ class ExcelViewerApp(ctk.CTk):
         self.btn_powerpoint.pack(pady=8, padx=6, side="left")
 
         self.btn_guardar = ctk.CTkButton(self.row2_frame, 
-                                        text="💾  Guardar en BD", 
+                                        text="Guardar en BD", 
                                         font=("Roboto", 12, "bold"),
                                         command=self.save_to_database,
                                         height=32, width=160,
@@ -103,7 +103,7 @@ class ExcelViewerApp(ctk.CTk):
         self.btn_guardar.pack(pady=8, padx=6, side="left")
 
         self.btn_add_year = ctk.CTkButton(self.row2_frame, 
-                                          text="📅  Agregar Año Extra", 
+                                          text="Agregar Año Extra", 
                                           font=("Roboto", 12, "bold"),
                                           command=self.open_add_year_dialog,
                                           height=32, width=175,
@@ -112,7 +112,7 @@ class ExcelViewerApp(ctk.CTk):
         self.btn_add_year.pack(pady=8, padx=6, side="left")
 
         self.btn_config_coords = ctk.CTkButton(self.row2_frame, 
-                                              text="⚙  Coordenadas Excel", 
+                                              text="Coordenadas Excel", 
                                               font=("Roboto", 12, "bold"),
                                               command=self.open_config_coords_dialog,
                                               height=32, width=185,
@@ -1705,9 +1705,9 @@ class ExcelViewerApp(ctk.CTk):
         tabview = ctk.CTkTabview(dialog, width=720, height=200)
         tabview.pack(padx=30, pady=10, fill="x")
 
-        tab_t1 = tabview.add("📊 T1 (Diaria)")
-        tab_t2 = tabview.add("📅 T2 (Programa)")
-        tab_t3 = tabview.add("📜 T3 (Histórica)")
+        tab_t1 = tabview.add("T1 (Diaria)")
+        tab_t2 = tabview.add("T2 (Programa)")
+        tab_t3 = tabview.add("T3 (Histórica)")
 
         entries = {}
 
@@ -1763,7 +1763,7 @@ class ExcelViewerApp(ctk.CTk):
         preview_header = ctk.CTkFrame(preview_frame, fg_color="transparent")
         preview_header.pack(fill="x", padx=10, pady=(5, 2))
         
-        preview_title = ctk.CTkLabel(preview_header, text="🔍 Vista Previa del Excel (Primeras 5 Filas)", font=("Roboto", 11, "bold"), text_color="#3484F0")
+        preview_title = ctk.CTkLabel(preview_header, text="Vista Previa del Excel (Primeras 5 Filas)", font=("Roboto", 11, "bold"), text_color="#3484F0")
         preview_title.pack(side="left")
         
         preview_label = ctk.CTkLabel(preview_frame, text="Presiona 'Generar Vista Previa' para ver los datos del rango seleccionado.", font=("Courier New", 11), justify="left", anchor="nw")
