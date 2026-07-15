@@ -41,14 +41,14 @@ def update_slide_chart(chart, categories, proceso_vals, diario_vals, programa_va
         
         # Buscar el último mes con producción real en la nueva lista de categorías
         last_month_idx = -1
-        for i in range(17):
-            if i < len(categories):
-                cat = categories[i]
-                val = proceso_vals[i]
-                # Si es un mes (contiene letras)
-                if any(c.isalpha() for c in cat):
-                    if val is not None and val != 0:
-                        last_month_idx = i
+        limit_idx = min(17, len(categories))
+        for i in range(limit_idx):
+            cat = categories[i]
+            val = proceso_vals[i]
+            # Si es un mes (contiene letras)
+            if any(c.isalpha() for c in cat):
+                if val is not None and val != 0:
+                    last_month_idx = i
 
         # Eliminar TODOS los formatos específicos de puntos (<c:dPt>)
         # Esto obliga a que todas las barras hereden el color gris por defecto de la serie
@@ -67,7 +67,7 @@ def update_slide_chart(chart, categories, proceso_vals, diario_vals, programa_va
         from pptx.dml.color import RGBColor
         gray_color = RGBColor(192, 192, 192)
 
-        # Pintar todas las barras
+        # Pintar todas las barras y formatear sus etiquetas de datos
         for p_idx in range(min(17, len(series.points))):
             try:
                 cat = categories[p_idx]
@@ -86,6 +86,11 @@ def update_slide_chart(chart, categories, proceso_vals, diario_vals, programa_va
                             pass
                     else:
                         fill.fore_color.rgb = green_color
+                        try:
+                            point.data_label.font.size = Pt(9)
+                            point.data_label.font.bold = False
+                        except Exception:
+                            pass
                         
                     # Limpiar modificadores de color
                     try:
@@ -98,8 +103,13 @@ def update_slide_chart(chart, categories, proceso_vals, diario_vals, programa_va
                     except Exception:
                         pass
                 else:
-                    # Si es un año, aplicamos el gris explícitamente
+                    # Si es un año, aplicamos el gris explícitamente y reseteamos fuente
                     fill.fore_color.rgb = gray_color
+                    try:
+                        point.data_label.font.size = Pt(9)
+                        point.data_label.font.bold = False
+                    except Exception:
+                        pass
                     
             except Exception:
                 pass
