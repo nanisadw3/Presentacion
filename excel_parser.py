@@ -109,6 +109,8 @@ def load_data(app, file_path):
                         headers.append(str(int(round(float(val)))))
                     except:
                         headers.append(str(val))
+            return headers
+
         def col_to_num(col_str):
             col_str = col_str.upper().strip()
             num = 0
