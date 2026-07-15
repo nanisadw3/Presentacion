@@ -111,8 +111,8 @@ def export_to_pptx(app, file_path, save_path):
         from pptx.dml.color import RGBColor
 
         prs = Presentation(file_path)
-        if len(prs.slides) < 47:
-            raise ValueError("La presentación debe tener al menos 47 diapositivas (incluyendo las de Madero, Minatitlán, Salamanca, Salina Cruz y Tula).")
+        if len(prs.slides) < 52:
+            raise ValueError("La presentación debe tener al menos 52 diapositivas (incluyendo las de Madero, Minatitlán, Salamanca, Salina Cruz, Tula y Olmeca).")
  
         # --- 1. PROCESAR DIAPOSITIVA DE CRUDO (DIAPOSITIVA 2) ---
         slide = prs.slides[1]
@@ -2403,6 +2403,192 @@ def export_to_pptx(app, file_path, save_path):
                             except: columna1_vals_sco.append(None)
 
                         update_slide_chart(chart_tula_comb, categories_sco, proceso_vals_sco, diario_vals_sco, programa_vals_sco, columna1_vals_sco, wine_color, green_color)
+
+            # --- 34. PROCESAR DIAPOSITIVA DE CRUDO OLMECA (DIAPOSITIVA 50) ---
+            if len(prs.slides) > 49 and app.df_data_olme_crud is not None and app.df_snr_olme_crud is not None and app.df_prod_olme_crud is not None:
+                slide_olme_crud = prs.slides[49]
+                chart_olme_crud = None
+                for shape in slide_olme_crud.shapes:
+                    if shape.has_chart:
+                        chart_olme_crud = shape.chart
+                        break
+                
+                if chart_olme_crud:
+                    snr_col_olme_crud = None
+                    for col in app.df_data_olme_crud.columns:
+                        if "SNR" in str(col).upper():
+                            snr_col_olme_crud = col
+                            break
+                    if not snr_col_olme_crud and len(app.df_data_olme_crud.columns) >= 2:
+                        snr_col_olme_crud = app.df_data_olme_crud.columns[1]
+
+                    if snr_col_olme_crud:
+                        categories_sc = []
+                        proceso_vals_sc = []
+                        diario_vals_sc = []
+                        programa_vals_sc = []
+                        columna1_vals_sc = []
+
+                        prod_rows_sc = []
+                        for idx, row in app.df_prod_olme_crud.iterrows():
+                            cat = str(row.iloc[0]).strip()
+                            val = row.iloc[1]
+                            if not cat: continue
+                            if not any(c.isalpha() for c in cat):
+                                prod_rows_sc.append((cat, val))
+                            else:
+                                try:
+                                    if float(val) != 0: prod_rows_sc.append((cat, val))
+                                except: pass
+
+                        if len(prod_rows_sc) > 30: prod_rows_sc = prod_rows_sc[-30:]
+
+                        for i in range(len(prod_rows_sc)):
+                            categories_sc.append(prod_rows_sc[i][0])
+                            try: proceso_vals_sc.append(float(prod_rows_sc[i][1]))
+                            except: proceso_vals_sc.append(None)
+                            diario_vals_sc.append(None)
+                            programa_vals_sc.append(None)
+                            columna1_vals_sc.append(None)
+
+                        for i in range(31):
+                            categories_sc.append(str(i + 1))
+                            proceso_vals_sc.append(None)
+                            
+                            try: diario_vals_sc.append(float(app.df_data_olme_crud[snr_col_olme_crud].iloc[i]))
+                            except: diario_vals_sc.append(None)
+                            
+                            try: programa_vals_sc.append(float(app.df_snr_olme_crud.iloc[i, 0]))
+                            except: programa_vals_sc.append(None)
+                            
+                            try: columna1_vals_sc.append(float(app.df_snr_olme_crud.iloc[i, 1]))
+                            except: columna1_vals_sc.append(None)
+
+                        update_slide_chart(chart_olme_crud, categories_sc, proceso_vals_sc, diario_vals_sc, programa_vals_sc, columna1_vals_sc, wine_color, green_color)
+
+            # --- 35. PROCESAR DIAPOSITIVA DE GASOLINAS OLMECA (DIAPOSITIVA 51) ---
+            if len(prs.slides) > 50 and app.df_data_olme_gas is not None and app.df_snr_olme_gas is not None and app.df_prod_olme_gas is not None:
+                slide_olme_gas = prs.slides[50]
+                chart_olme_gas = None
+                for shape in slide_olme_gas.shapes:
+                    if shape.has_chart:
+                        chart_olme_gas = shape.chart
+                        break
+                
+                if chart_olme_gas:
+                    snr_col_olme_gas = None
+                    for col in app.df_data_olme_gas.columns:
+                        if "SNR" in str(col).upper():
+                            snr_col_olme_gas = col
+                            break
+                    if not snr_col_olme_gas and len(app.df_data_olme_gas.columns) >= 2:
+                        snr_col_olme_gas = app.df_data_olme_gas.columns[1]
+
+                    if snr_col_olme_gas:
+                        categories_sg = []
+                        proceso_vals_sg = []
+                        diario_vals_sg = []
+                        programa_vals_sg = []
+                        columna1_vals_sg = []
+
+                        prod_rows_sg = []
+                        for idx, row in app.df_prod_olme_gas.iterrows():
+                            cat = str(row.iloc[0]).strip()
+                            val = row.iloc[1]
+                            if not cat: continue
+                            if not any(c.isalpha() for c in cat):
+                                prod_rows_sg.append((cat, val))
+                            else:
+                                try:
+                                    if float(val) != 0: prod_rows_sg.append((cat, val))
+                                except: pass
+
+                        if len(prod_rows_sg) > 30: prod_rows_sg = prod_rows_sg[-30:]
+
+                        for i in range(len(prod_rows_sg)):
+                            categories_sg.append(prod_rows_sg[i][0])
+                            try: proceso_vals_sg.append(float(prod_rows_sg[i][1]))
+                            except: proceso_vals_sg.append(None)
+                            diario_vals_sg.append(None)
+                            programa_vals_sg.append(None)
+                            columna1_vals_sg.append(None)
+
+                        for i in range(31):
+                            categories_sg.append(str(i + 1))
+                            proceso_vals_sg.append(None)
+                            
+                            try: diario_vals_sg.append(float(app.df_data_olme_gas[snr_col_olme_gas].iloc[i]))
+                            except: diario_vals_sg.append(None)
+                            
+                            try: programa_vals_sg.append(float(app.df_snr_olme_gas.iloc[i, 0]))
+                            except: programa_vals_sg.append(None)
+                            
+                            try: columna1_vals_sg.append(float(app.df_snr_olme_gas.iloc[i, 1]))
+                            except: columna1_vals_sg.append(None)
+
+                        update_slide_chart(chart_olme_gas, categories_sg, proceso_vals_sg, diario_vals_sg, programa_vals_sg, columna1_vals_sg, wine_color, green_color)
+
+            # --- 36. PROCESAR DIAPOSITIVA DE DIESEL OLMECA (DIAPOSITIVA 52) ---
+            if len(prs.slides) > 51 and app.df_data_olme_die is not None and app.df_snr_olme_die is not None and app.df_prod_olme_die is not None:
+                slide_olme_die = prs.slides[51]
+                chart_olme_die = None
+                for shape in slide_olme_die.shapes:
+                    if shape.has_chart:
+                        chart_olme_die = shape.chart
+                        break
+                
+                if chart_olme_die:
+                    snr_col_olme_die = None
+                    for col in app.df_data_olme_die.columns:
+                        if "SNR" in str(col).upper():
+                            snr_col_olme_die = col
+                            break
+                    if not snr_col_olme_die and len(app.df_data_olme_die.columns) >= 2:
+                        snr_col_olme_die = app.df_data_olme_die.columns[1]
+
+                    if snr_col_olme_die:
+                        categories_sd = []
+                        proceso_vals_sd = []
+                        diario_vals_sd = []
+                        programa_vals_sd = []
+                        columna1_vals_sd = []
+
+                        prod_rows_sd = []
+                        for idx, row in app.df_prod_olme_die.iterrows():
+                            cat = str(row.iloc[0]).strip()
+                            val = row.iloc[1]
+                            if not cat: continue
+                            if not any(c.isalpha() for c in cat):
+                                prod_rows_sd.append((cat, val))
+                            else:
+                                try:
+                                    if float(val) != 0: prod_rows_sd.append((cat, val))
+                                except: pass
+
+                        if len(prod_rows_sd) > 30: prod_rows_sd = prod_rows_sd[-30:]
+
+                        for i in range(len(prod_rows_sd)):
+                            categories_sd.append(prod_rows_sd[i][0])
+                            try: proceso_vals_sd.append(float(prod_rows_sd[i][1]))
+                            except: proceso_vals_sd.append(None)
+                            diario_vals_sd.append(None)
+                            programa_vals_sd.append(None)
+                            columna1_vals_sd.append(None)
+
+                        for i in range(31):
+                            categories_sd.append(str(i + 1))
+                            proceso_vals_sd.append(None)
+                            
+                            try: diario_vals_sd.append(float(app.df_data_olme_die[snr_col_olme_die].iloc[i]))
+                            except: diario_vals_sd.append(None)
+                            
+                            try: programa_vals_sd.append(float(app.df_snr_olme_die.iloc[i, 0]))
+                            except: programa_vals_sd.append(None)
+                            
+                            try: columna1_vals_sd.append(float(app.df_snr_olme_die.iloc[i, 1]))
+                            except: columna1_vals_sd.append(None)
+
+                        update_slide_chart(chart_olme_die, categories_sd, proceso_vals_sd, diario_vals_sd, programa_vals_sd, columna1_vals_sd, wine_color, green_color)
 
         prs.save(save_path)
 

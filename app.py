@@ -80,7 +80,7 @@ class ExcelViewerApp(ctk.CTk):
         self.lbl_proceso.pack(pady=15, padx=(20, 5), side="left")
         
         self.cb_proceso = ctk.CTkComboBox(self.top_frame, 
-                                            values=["Crudo", "Gasolinas", "Diesel", "Turbosina", "Asfalto", "Combustoleo", "Cadereyta -Crudo", "Cadereyta -Gasolinas", "Cadereyta -Diesel", "Cadereyta -Combustoleo", "Madero -Crudo", "Madero -Gasolinas", "Madero -Diesel", "Madero -Turbosina", "Madero -Combustoleo", "Minatitlan -Crudo", "Minatitlan -Gasolinas", "Minatitlan -Diesel", "Minatitlan -Combustoleo", "Salamanca -Crudo", "Salamanca -Gasolinas", "Salamanca -Diesel", "Salamanca -Turbosina", "Salamanca -Combustoleo", "Salina Cruz -Crudo", "Salina Cruz -Gasolinas", "Salina Cruz -Diesel", "Salina Cruz -Turbosina", "Salina Cruz -Combustoleo", "Tula -Crudo", "Tula -Gasolinas", "Tula -Diesel", "Tula -Turbosina", "Tula -Combustoleo"],
+                                            values=["Crudo", "Gasolinas", "Diesel", "Turbosina", "Asfalto", "Combustoleo", "Cadereyta -Crudo", "Cadereyta -Gasolinas", "Cadereyta -Diesel", "Cadereyta -Combustoleo", "Madero -Crudo", "Madero -Gasolinas", "Madero -Diesel", "Madero -Turbosina", "Madero -Combustoleo", "Minatitlan -Crudo", "Minatitlan -Gasolinas", "Minatitlan -Diesel", "Minatitlan -Combustoleo", "Salamanca -Crudo", "Salamanca -Gasolinas", "Salamanca -Diesel", "Salamanca -Turbosina", "Salamanca -Combustoleo", "Salina Cruz -Crudo", "Salina Cruz -Gasolinas", "Salina Cruz -Diesel", "Salina Cruz -Turbosina", "Salina Cruz -Combustoleo", "Tula -Crudo", "Tula -Gasolinas", "Tula -Diesel", "Tula -Turbosina", "Tula -Combustoleo", "Olmeca -Crudo", "Olmeca -Gasolinas", "Olmeca -Diesel"],
                                             font=("Roboto", 14),
                                             command=self.on_proceso_changed,
                                             state="readonly",
@@ -275,6 +275,24 @@ class ExcelViewerApp(ctk.CTk):
         self.df_snr_tula_comb = None
         self.df_prod_tula_comb = None
         self.df_sim_tula_comb = None
+
+        # Datos de Olmeca -Crudo
+        self.df_data_olme_crud = None
+        self.df_snr_olme_crud = None
+        self.df_prod_olme_crud = None
+        self.df_sim_olme_crud = None
+
+        # Datos de Olmeca -Gasolinas
+        self.df_data_olme_gas = None
+        self.df_snr_olme_gas = None
+        self.df_prod_olme_gas = None
+        self.df_sim_olme_gas = None
+
+        # Datos de Olmeca -Diesel
+        self.df_data_olme_die = None
+        self.df_snr_olme_die = None
+        self.df_prod_olme_die = None
+        self.df_sim_olme_die = None
  
         # Datos de Turbosina
         self.df_data_turbosina = None
@@ -332,7 +350,7 @@ class ExcelViewerApp(ctk.CTk):
 
         lbl_proceso = ctk.CTkLabel(dialog, text="Proceso:", font=("Roboto", 14, "bold"))
         lbl_proceso.pack(pady=(10, 0))
-        opciones_procesos = ["Crudo", "Gasolinas", "Diesel", "Turbosina", "Asfalto", "Combustoleo", "Cadereyta -Crudo", "Cadereyta -Gasolinas", "Cadereyta -Diesel", "Cadereyta -Combustoleo", "Madero -Crudo", "Madero -Gasolinas", "Madero -Diesel", "Madero -Turbosina", "Madero -Combustoleo", "Minatitlan -Crudo", "Minatitlan -Gasolinas", "Minatitlan -Diesel", "Minatitlan -Combustoleo", "Salamanca -Crudo", "Salamanca -Gasolinas", "Salamanca -Diesel", "Salamanca -Turbosina", "Salamanca -Combustoleo", "Salina Cruz -Crudo", "Salina Cruz -Gasolinas", "Salina Cruz -Diesel", "Salina Cruz -Turbosina", "Salina Cruz -Combustoleo", "Tula -Crudo", "Tula -Gasolinas", "Tula -Diesel", "Tula -Turbosina", "Tula -Combustoleo"]
+        opciones_procesos = ["Crudo", "Gasolinas", "Diesel", "Turbosina", "Asfalto", "Combustoleo", "Cadereyta -Crudo", "Cadereyta -Gasolinas", "Cadereyta -Diesel", "Cadereyta -Combustoleo", "Madero -Crudo", "Madero -Gasolinas", "Madero -Diesel", "Madero -Turbosina", "Madero -Combustoleo", "Minatitlan -Crudo", "Minatitlan -Gasolinas", "Minatitlan -Diesel", "Minatitlan -Combustoleo", "Salamanca -Crudo", "Salamanca -Gasolinas", "Salamanca -Diesel", "Salamanca -Turbosina", "Salamanca -Combustoleo", "Salina Cruz -Crudo", "Salina Cruz -Gasolinas", "Salina Cruz -Diesel", "Salina Cruz -Turbosina", "Salina Cruz -Combustoleo", "Tula -Crudo", "Tula -Gasolinas", "Tula -Diesel", "Tula -Turbosina", "Tula -Combustoleo", "Olmeca -Crudo", "Olmeca -Gasolinas", "Olmeca -Diesel"]
         combo_proceso = ctk.CTkComboBox(dialog, values=opciones_procesos, width=250)
         combo_proceso.pack(pady=(5, 10))
 
@@ -680,6 +698,24 @@ class ExcelViewerApp(ctk.CTk):
                 save_df(getattr(self, 'df_prod_tula_comb', None), 'tula_combustoleo_produccion')
                 save_df(getattr(self, 'df_sim_tula_comb', None), 'tula_combustoleo_simulacion_anual')
 
+                # Guardar datos de Olmeca - Crudo
+                save_df(getattr(self, 'df_data_olme_crud', None), 'olmeca_crudo_tabla_principal')
+                save_df(getattr(self, 'df_snr_olme_crud', None), 'olmeca_crudo_programa_snr')
+                save_df(getattr(self, 'df_prod_olme_crud', None), 'olmeca_crudo_produccion')
+                save_df(getattr(self, 'df_sim_olme_crud', None), 'olmeca_crudo_simulacion_anual')
+
+                # Guardar datos de Olmeca - Gasolinas
+                save_df(getattr(self, 'df_data_olme_gas', None), 'olmeca_gasolinas_tabla_principal')
+                save_df(getattr(self, 'df_snr_olme_gas', None), 'olmeca_gasolinas_programa_snr')
+                save_df(getattr(self, 'df_prod_olme_gas', None), 'olmeca_gasolinas_produccion')
+                save_df(getattr(self, 'df_sim_olme_gas', None), 'olmeca_gasolinas_simulacion_anual')
+
+                # Guardar datos de Olmeca - Diesel
+                save_df(getattr(self, 'df_data_olme_die', None), 'olmeca_diesel_tabla_principal')
+                save_df(getattr(self, 'df_snr_olme_die', None), 'olmeca_diesel_programa_snr')
+                save_df(getattr(self, 'df_prod_olme_die', None), 'olmeca_diesel_produccion')
+                save_df(getattr(self, 'df_sim_olme_die', None), 'olmeca_diesel_simulacion_anual')
+
                 conn.commit()
                 conn.close()
                 messagebox.showinfo("Éxito", f"¡Los datos de todos los procesos han sido guardados en la base de datos!\n\nRuta:\n{db_path}")
@@ -735,7 +771,10 @@ class ExcelViewerApp(ctk.CTk):
                             df_data_tula_gas=None, df_snr_tula_gas=None, df_prod_tula_gas=None, df_sim_tula_gas=None,
                             df_data_tula_die=None, df_snr_tula_die=None, df_prod_tula_die=None, df_sim_tula_die=None,
                             df_data_tula_turb=None, df_snr_tula_turb=None, df_prod_tula_turb=None, df_sim_tula_turb=None,
-                            df_data_tula_comb=None, df_snr_tula_comb=None, df_prod_tula_comb=None, df_sim_tula_comb=None):
+                            df_data_tula_comb=None, df_snr_tula_comb=None, df_prod_tula_comb=None, df_sim_tula_comb=None,
+                            df_data_olme_crud=None, df_snr_olme_crud=None, df_prod_olme_crud=None, df_sim_olme_crud=None,
+                            df_data_olme_gas=None, df_snr_olme_gas=None, df_prod_olme_gas=None, df_sim_olme_gas=None,
+                            df_data_olme_die=None, df_snr_olme_die=None, df_prod_olme_die=None, df_sim_olme_die=None):
         self.df_data = df_data
 
         self.df_snr = df_snr
@@ -907,6 +946,21 @@ class ExcelViewerApp(ctk.CTk):
         self.df_snr_tula_comb = df_snr_tula_comb
         self.df_prod_tula_comb = df_prod_tula_comb
         self.df_sim_tula_comb = df_sim_tula_comb
+
+        self.df_data_olme_crud = df_data_olme_crud
+        self.df_snr_olme_crud = df_snr_olme_crud
+        self.df_prod_olme_crud = df_prod_olme_crud
+        self.df_sim_olme_crud = df_sim_olme_crud
+
+        self.df_data_olme_gas = df_data_olme_gas
+        self.df_snr_olme_gas = df_snr_olme_gas
+        self.df_prod_olme_gas = df_prod_olme_gas
+        self.df_sim_olme_gas = df_sim_olme_gas
+
+        self.df_data_olme_die = df_data_olme_die
+        self.df_snr_olme_die = df_snr_olme_die
+        self.df_prod_olme_die = df_prod_olme_die
+        self.df_sim_olme_die = df_sim_olme_die
 
         # Mostrar las tablas correspondientes a la selección actual del ComboBox
         self.show_proceso_tables(self.cb_proceso.get())
@@ -1181,6 +1235,27 @@ class ExcelViewerApp(ctk.CTk):
             df_sim = self.df_sim_tula_comb
             lbl2_txt = "Programa de Combustoleo Tula (Col DA x2, Filas 74-104)"
             lbl3_txt = "Fecha y Producción de Combustoleo Tula (AW-AX, Filas 158-179)"
+        elif selection == "Olmeca -Crudo":
+            df_data = self.df_data_olme_crud
+            df_snr = self.df_snr_olme_crud
+            df_prod = self.df_prod_olme_crud
+            df_sim = self.df_sim_olme_crud
+            lbl2_txt = "Programa de Crudo Olmeca (Col N x2, Filas 159-189)"
+            lbl3_txt = "Fecha y Producción de Crudo Olmeca (C-D, Filas 192-206)"
+        elif selection == "Olmeca -Gasolinas":
+            df_data = self.df_data_olme_gas
+            df_snr = self.df_snr_olme_gas
+            df_prod = self.df_prod_olme_gas
+            df_sim = self.df_sim_olme_gas
+            lbl2_txt = "Programa de Gasolinas Olmeca (Col O x2, Filas 159-189)"
+            lbl3_txt = "Fecha y Producción de Gasolinas Olmeca (F-G, Filas 192-206)"
+        elif selection == "Olmeca -Diesel":
+            df_data = self.df_data_olme_die
+            df_snr = self.df_snr_olme_die
+            df_prod = self.df_prod_olme_die
+            df_sim = self.df_sim_olme_die
+            lbl2_txt = "Programa de Diesel Olmeca (Col P x2, Filas 159-189)"
+            lbl3_txt = "Fecha y Producción de Diesel Olmeca (I-J, Filas 192-206)"
 
         if df_data is None or df_snr is None or df_prod is None:
             return

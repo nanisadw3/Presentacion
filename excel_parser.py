@@ -1218,6 +1218,111 @@ def load_data(app, file_path):
         df_prod_tula_comb = merge_extra_prod("Tula -Combustoleo", df_prod_tula_comb)
         df_prod_tula_comb_copy = df_prod_tula_comb.copy()
 
+        # --- 1.29 PROCESAR CRUDO OLMECA ---
+        app.after(0, app.update_progress, 0.60, "Procesando Crudo Olmeca...")
+        df_data_olme_crud = df_sheet.iloc[157:188, [2, 3]].copy()
+        df_data_olme_crud.columns = ["Crudo Día", "Olmeca Crudo"]
+        df_data_olme_crud = df_data_olme_crud.dropna(how='all')
+        df_data_olme_crud = remove_decimals(df_data_olme_crud)
+        df_data_olme_crud = df_data_olme_crud.iloc[:num_dias_reales]
+
+        df_snr_olme_crud = df_sheet.iloc[158:189, [13, 13]].copy()
+        df_snr_olme_crud.columns = ["CMP", "PODIM"]
+        df_snr_olme_crud = df_snr_olme_crud.dropna(how='all').dropna(axis=1, how='all')
+        df_snr_olme_crud = remove_decimals(df_snr_olme_crud, skip_first=True)
+        df_snr_olme_crud_copy = df_snr_olme_crud.copy()
+
+        df_prod_olme_crud_raw = df_sheet.iloc[191:206, [2, 3]].copy()
+        df_prod_olme_crud_raw.columns = ["Año/Mes", "Produccion"]
+        df_prod_olme_crud_raw = df_prod_olme_crud_raw.dropna(how='all')
+
+        dic_idx_olme_crud = -1
+        for idx, row in df_prod_olme_crud_raw.iterrows():
+            val = str(row.iloc[0]).strip().lower()
+            if "dic" in val or "diciembre" in val:
+                dic_idx_olme_crud = idx - 191
+                break
+
+        if dic_idx_olme_crud != -1:
+            df_prod_olme_crud = df_prod_olme_crud_raw.iloc[:dic_idx_olme_crud + 1]
+        else:
+            df_prod_olme_crud = df_prod_olme_crud_raw.iloc[:15]
+
+        df_prod_olme_crud = df_prod_olme_crud.dropna(axis=1, how='all')
+        df_prod_olme_crud = remove_decimals(df_prod_olme_crud, skip_last=True)
+        df_prod_olme_crud = merge_extra_prod("Olmeca -Crudo", df_prod_olme_crud)
+        df_prod_olme_crud_copy = df_prod_olme_crud.copy()
+
+        # --- 1.30 PROCESAR GASOLINAS OLMECA ---
+        app.after(0, app.update_progress, 0.61, "Procesando Gasolinas Olmeca...")
+        df_data_olme_gas = df_sheet.iloc[157:188, [5, 6]].copy()
+        df_data_olme_gas.columns = ["Gas Día", "Olmeca Gas"]
+        df_data_olme_gas = df_data_olme_gas.dropna(how='all')
+        df_data_olme_gas = remove_decimals(df_data_olme_gas)
+        df_data_olme_gas = df_data_olme_gas.iloc[:num_dias_reales]
+
+        df_snr_olme_gas = df_sheet.iloc[158:189, [14, 14]].copy()
+        df_snr_olme_gas.columns = ["CMP", "PODIM"]
+        df_snr_olme_gas = df_snr_olme_gas.dropna(how='all').dropna(axis=1, how='all')
+        df_snr_olme_gas = remove_decimals(df_snr_olme_gas, skip_first=True)
+        df_snr_olme_gas_copy = df_snr_olme_gas.copy()
+
+        df_prod_olme_gas_raw = df_sheet.iloc[191:206, [5, 6]].copy()
+        df_prod_olme_gas_raw.columns = ["Año/Mes", "Produccion"]
+        df_prod_olme_gas_raw = df_prod_olme_gas_raw.dropna(how='all')
+
+        dic_idx_olme_gas = -1
+        for idx, row in df_prod_olme_gas_raw.iterrows():
+            val = str(row.iloc[0]).strip().lower()
+            if "dic" in val or "diciembre" in val:
+                dic_idx_olme_gas = idx - 191
+                break
+
+        if dic_idx_olme_gas != -1:
+            df_prod_olme_gas = df_prod_olme_gas_raw.iloc[:dic_idx_olme_gas + 1]
+        else:
+            df_prod_olme_gas = df_prod_olme_gas_raw.iloc[:15]
+
+        df_prod_olme_gas = df_prod_olme_gas.dropna(axis=1, how='all')
+        df_prod_olme_gas = remove_decimals(df_prod_olme_gas, skip_last=True)
+        df_prod_olme_gas = merge_extra_prod("Olmeca -Gasolinas", df_prod_olme_gas)
+        df_prod_olme_gas_copy = df_prod_olme_gas.copy()
+
+        # --- 1.31 PROCESAR DIESEL OLMECA ---
+        app.after(0, app.update_progress, 0.62, "Procesando Diesel Olmeca...")
+        df_data_olme_die = df_sheet.iloc[157:188, [8, 9]].copy()
+        df_data_olme_die.columns = ["Diesel Día", "Olmeca Die"]
+        df_data_olme_die = df_data_olme_die.dropna(how='all')
+        df_data_olme_die = remove_decimals(df_data_olme_die)
+        df_data_olme_die = df_data_olme_die.iloc[:num_dias_reales]
+
+        df_snr_olme_die = df_sheet.iloc[158:189, [15, 15]].copy()
+        df_snr_olme_die.columns = ["CMP", "PODIM"]
+        df_snr_olme_die = df_snr_olme_die.dropna(how='all').dropna(axis=1, how='all')
+        df_snr_olme_die = remove_decimals(df_snr_olme_die, skip_first=True)
+        df_snr_olme_die_copy = df_snr_olme_die.copy()
+
+        df_prod_olme_die_raw = df_sheet.iloc[191:206, [8, 9]].copy()
+        df_prod_olme_die_raw.columns = ["Año/Mes", "Produccion"]
+        df_prod_olme_die_raw = df_prod_olme_die_raw.dropna(how='all')
+
+        dic_idx_olme_die = -1
+        for idx, row in df_prod_olme_die_raw.iterrows():
+            val = str(row.iloc[0]).strip().lower()
+            if "dic" in val or "diciembre" in val:
+                dic_idx_olme_die = idx - 191
+                break
+
+        if dic_idx_olme_die != -1:
+            df_prod_olme_die = df_prod_olme_die_raw.iloc[:dic_idx_olme_die + 1]
+        else:
+            df_prod_olme_die = df_prod_olme_die_raw.iloc[:15]
+
+        df_prod_olme_die = df_prod_olme_die.dropna(axis=1, how='all')
+        df_prod_olme_die = remove_decimals(df_prod_olme_die, skip_last=True)
+        df_prod_olme_die = merge_extra_prod("Olmeca -Diesel", df_prod_olme_die)
+        df_prod_olme_die_copy = df_prod_olme_die.copy()
+
         # --- 2. PROCESAR GASOLINAS ---
         app.after(0, app.update_progress, 0.35, "Procesando Gasolinas...")
         # Leer fila 1 (index 0) para encabezados, Cols L:S (11:19)
@@ -2263,6 +2368,75 @@ def load_data(app, file_path):
         sim_data_tula_comb.append(["TOTALES", "---", f"Días pasados: {days_passed}", f"Suma: {int(suma_total_tula_comb)} | Prom: {promedio_tula_comb:.2f}"])
         df_sim_tula_comb = pd.DataFrame(sim_data_tula_comb, columns=["Mes", "Producción", "Días", "Total (Prod x Días)"])
 
+        # 33. Simulación Olmeca Crudo
+        prod_dict_olme_crud = {m: 0.0 for m in meses_nombres}
+        for idx, row_data in df_prod_olme_crud.iterrows():
+            val_anio = str(row_data.iloc[0]).strip().lower()
+            val_prod = row_data.iloc[1]
+            try: p = float(val_prod)
+            except: p = 0.0
+            for i, (m_largo, m_corto) in enumerate(zip(meses_nombres, meses_cortos)):
+                if m_largo.lower() in val_anio or m_corto.lower() in val_anio:
+                    prod_dict_olme_crud[meses_nombres[i]] += p
+                    break
+        sim_data_olme_crud = []
+        suma_total_olme_crud = 0.0
+        for i, mes in enumerate(meses_nombres):
+            dias = dias_por_mes[i]
+            prod = prod_dict_olme_crud[mes]
+            total = prod * dias
+            suma_total_olme_crud += total
+            sim_data_olme_crud.append([mes, int(prod), dias, int(total)])
+        promedio_olme_crud = suma_total_olme_crud / days_passed if days_passed > 0 else 0
+        sim_data_olme_crud.append(["TOTALES", "---", f"Días pasados: {days_passed}", f"Suma: {int(suma_total_olme_crud)} | Prom: {promedio_olme_crud:.2f}"])
+        df_sim_olme_crud = pd.DataFrame(sim_data_olme_crud, columns=["Mes", "Producción", "Días", "Total (Prod x Días)"])
+
+        # 34. Simulación Olmeca Gasolinas
+        prod_dict_olme_gas = {m: 0.0 for m in meses_nombres}
+        for idx, row_data in df_prod_olme_gas.iterrows():
+            val_anio = str(row_data.iloc[0]).strip().lower()
+            val_prod = row_data.iloc[1]
+            try: p = float(val_prod)
+            except: p = 0.0
+            for i, (m_largo, m_corto) in enumerate(zip(meses_nombres, meses_cortos)):
+                if m_largo.lower() in val_anio or m_corto.lower() in val_anio:
+                    prod_dict_olme_gas[meses_nombres[i]] += p
+                    break
+        sim_data_olme_gas = []
+        suma_total_olme_gas = 0.0
+        for i, mes in enumerate(meses_nombres):
+            dias = dias_por_mes[i]
+            prod = prod_dict_olme_gas[mes]
+            total = prod * dias
+            suma_total_olme_gas += total
+            sim_data_olme_gas.append([mes, int(prod), dias, int(total)])
+        promedio_olme_gas = suma_total_olme_gas / days_passed if days_passed > 0 else 0
+        sim_data_olme_gas.append(["TOTALES", "---", f"Días pasados: {days_passed}", f"Suma: {int(suma_total_olme_gas)} | Prom: {promedio_olme_gas:.2f}"])
+        df_sim_olme_gas = pd.DataFrame(sim_data_olme_gas, columns=["Mes", "Producción", "Días", "Total (Prod x Días)"])
+
+        # 35. Simulación Olmeca Diesel
+        prod_dict_olme_die = {m: 0.0 for m in meses_nombres}
+        for idx, row_data in df_prod_olme_die.iterrows():
+            val_anio = str(row_data.iloc[0]).strip().lower()
+            val_prod = row_data.iloc[1]
+            try: p = float(val_prod)
+            except: p = 0.0
+            for i, (m_largo, m_corto) in enumerate(zip(meses_nombres, meses_cortos)):
+                if m_largo.lower() in val_anio or m_corto.lower() in val_anio:
+                    prod_dict_olme_die[meses_nombres[i]] += p
+                    break
+        sim_data_olme_die = []
+        suma_total_olme_die = 0.0
+        for i, mes in enumerate(meses_nombres):
+            dias = dias_por_mes[i]
+            prod = prod_dict_olme_die[mes]
+            total = prod * dias
+            suma_total_olme_die += total
+            sim_data_olme_die.append([mes, int(prod), dias, int(total)])
+        promedio_olme_die = suma_total_olme_die / days_passed if days_passed > 0 else 0
+        sim_data_olme_die.append(["TOTALES", "---", f"Días pasados: {days_passed}", f"Suma: {int(suma_total_olme_die)} | Prom: {promedio_olme_die:.2f}"])
+        df_sim_olme_die = pd.DataFrame(sim_data_olme_die, columns=["Mes", "Producción", "Días", "Total (Prod x Días)"])
+
         app.after(0, app.update_progress, 0.97, "Finalizando...")
 
         # Pasar datos a la interfaz (main thread)
@@ -2299,7 +2473,10 @@ def load_data(app, file_path):
                    df_data_tula_gas, df_snr_tula_gas_copy, df_prod_tula_gas_copy, df_sim_tula_gas,
                    df_data_tula_die, df_snr_tula_die_copy, df_prod_tula_die_copy, df_sim_tula_die,
                    df_data_tula_turb, df_snr_tula_turb_copy, df_prod_tula_turb_copy, df_sim_tula_turb,
-                   df_data_tula_comb, df_snr_tula_comb_copy, df_prod_tula_comb_copy, df_sim_tula_comb)
+                   df_data_tula_comb, df_snr_tula_comb_copy, df_prod_tula_comb_copy, df_sim_tula_comb,
+                   df_data_olme_crud, df_snr_olme_crud_copy, df_prod_olme_crud_copy, df_sim_olme_crud,
+                   df_data_olme_gas, df_snr_olme_gas_copy, df_prod_olme_gas_copy, df_sim_olme_gas,
+                   df_data_olme_die, df_snr_olme_die_copy, df_prod_olme_die_copy, df_sim_olme_die)
 
     except Exception as e:
         err_details = traceback.format_exc()
