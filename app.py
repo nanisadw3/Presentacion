@@ -14,13 +14,6 @@ class ExcelViewerApp(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-    def report_callback_exception(self, exc, val, tb):
-        import traceback
-        from tkinter import messagebox
-        err_details = "".join(traceback.format_exception(exc, val, tb))
-        print(f"Error detectado en callback:\n{err_details}")
-        messagebox.showerror("Error Inesperado", f"Ocurrió un error inesperado en la aplicación:\n\n{val}\n\nDetalles:\n{err_details}")
-
         self.title("Sistema de Proyección y Reportes de Refinerías")
         
         # Centrar ventana al 80% de la pantalla principal
@@ -410,6 +403,13 @@ class ExcelViewerApp(ctk.CTk):
         # Barra de progreso (inicialmente oculta)
         self.progress_bar = ctk.CTkProgressBar(self.row1_frame, width=200)
         self.progress_bar.set(0.0)
+
+    def report_callback_exception(self, exc, val, tb):
+        import traceback
+        from tkinter import messagebox
+        err_details = "".join(traceback.format_exception(exc, val, tb))
+        print(f"Error detectado en callback:\n{err_details}")
+        messagebox.showerror("Error Inesperado", f"Ocurrió un error inesperado en la aplicación:\n\n{val}\n\nDetalles:\n{err_details}")
 
     def set_loading_state(self, is_loading, loading_text=""):
         if is_loading:
