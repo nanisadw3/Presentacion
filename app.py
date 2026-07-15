@@ -301,15 +301,33 @@ class ExcelViewerApp(ctk.CTk):
         self.df_prod_turbosina = None
         self.df_sim_turbosina = None
 
-        # Definir directorio por defecto (con fallback si no existe el de descargas)
+        # Definir directorios por defecto con sus respectivas rutas preferidas y fallback
+        path_excel_preferida = "/mnt/d/Datos_Perfil/400131/OneDrive - PETROLEOS MEXICANOS/Disco D/Margen 2026"
+        path_pptx_preferida = "/mnt/d/Datos_Perfil/400131/Downloads"
         downloads_path = os.path.join(os.path.expanduser("~"), "Downloads")
-        wsl_path = "/mnt/c/Users/10900096799/Downloads"
-        if os.path.exists(downloads_path):
-            self.default_dir = downloads_path
-        elif os.path.exists(wsl_path):
-            self.default_dir = wsl_path
-        else:
-            self.default_dir = os.path.dirname(os.path.abspath(__file__))
+        app_dir = os.path.dirname(os.path.abspath(__file__))
+
+        def check_and_get_dir(preferred_path):
+            # 1. Probar ruta preferida tal cual (funciona en Linux/WSL/Docker)
+            if os.path.exists(preferred_path):
+                return preferred_path
+            # 2. Si estamos en Windows, traducir formato /mnt/d/... a D:\...
+            if os.name == 'nt' and preferred_path.startswith('/mnt/'):
+                parts = preferred_path.split('/')
+                if len(parts) >= 3:
+                    drive = parts[2].upper() + ':'
+                    remaining = '\\'.join(parts[3:])
+                    win_path = drive + '\\' + remaining
+                    if os.path.exists(win_path):
+                        return win_path
+            # 3. Fallback: carpeta de Downloads del usuario
+            if os.path.exists(downloads_path):
+                return downloads_path
+            # 4. Fallback final: directorio donde corre la app
+            return app_dir
+
+        self.default_excel_dir = check_and_get_dir(path_excel_preferida)
+        self.default_pptx_dir = check_and_get_dir(path_pptx_preferida)
 
         # Barra de progreso (inicialmente oculta)
         self.progress_bar = ctk.CTkProgressBar(self.top_frame, width=200)
@@ -438,7 +456,7 @@ class ExcelViewerApp(ctk.CTk):
 
         db_path = filedialog.asksaveasfilename(
             title="Crear o seleccionar Base de Datos SQLite",
-            initialdir=self.default_dir,
+            initialdir=self.default_excel_dir,
             initialfile="datos_extraidos.db",
             defaultextension=".db",
             filetypes=[("SQLite Database", "*.db *.sqlite")]
@@ -725,7 +743,7 @@ class ExcelViewerApp(ctk.CTk):
     def load_excel(self):
         file_path = filedialog.askopenfilename(
             title="Seleccionar archivo Excel",
-            initialdir=self.default_dir,
+            initialdir=self.default_excel_dir,
             filetypes=[("Archivos de Excel", "*.xlsx *.xls *.xlsm")]
         )
 
@@ -1374,14 +1392,14 @@ class ExcelViewerApp(ctk.CTk):
 
         file_path = filedialog.askopenfilename(
             title="Seleccionar plantilla PowerPoint",
-            initialdir=self.default_dir,
+            initialdir=self.default_pptx_dir,
             filetypes=[("Archivos PowerPoint", "*.pptx")]
         )
 
         if file_path:
             save_path = filedialog.asksaveasfilename(
                 title="Guardar presentación actualizada",
-                initialdir=self.default_dir,
+                initialdir=self.default_pptx_dir,
                 initialfile="Proceso y Producciones_Actualizado.pptx",
                 defaultextension=".pptx",
                 filetypes=[("Archivos PowerPoint", "*.pptx")]
