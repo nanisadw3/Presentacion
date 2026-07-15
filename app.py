@@ -123,6 +123,19 @@ class ExcelViewerApp(ctk.CTk):
         self.scroll_frame = ctk.CTkScrollableFrame(self.main_frame, corner_radius=10)
         self.scroll_frame.pack(fill="both", expand=True)
 
+        # Función para enlazar y propagar el scroll del mousewheel/trackpad en laptops y ratones
+        def _on_mousewheel(event):
+            # macOS y Windows usan MouseWheel. macOS puede enviar valores flotantes o pequeños
+            if event.num == 4 or event.delta > 0:
+                self.scroll_frame._parent_canvas.yview_scroll(-1, "units")
+            elif event.num == 5 or event.delta < 0:
+                self.scroll_frame._parent_canvas.yview_scroll(1, "units")
+
+        # Vincular eventos de scroll globales para que funcionen sobre cualquier widget interno (tablas, labels, etc.)
+        self.bind_all("<MouseWheel>", _on_mousewheel)
+        self.bind_all("<Button-4>", _on_mousewheel)
+        self.bind_all("<Button-5>", _on_mousewheel)
+
         self.table = None
         self.df_data = None # Para la primera tabla
         self.df_snr = None  # Para la segunda tabla (AE-AF)
