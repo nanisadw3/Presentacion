@@ -1619,7 +1619,7 @@ class ExcelViewerApp(ctk.CTk):
     def open_config_coords_dialog(self):
         dialog = ctk.CTkToplevel(self)
         dialog.title("Configuración Visual de Coordenadas (Excel)")
-        dialog.geometry("620x560")
+        dialog.geometry("780x620")
         dialog.resizable(False, False)
         dialog.transient(self)
         dialog.grab_set()
@@ -1653,9 +1653,9 @@ class ExcelViewerApp(ctk.CTk):
         else:
             cb_proc.set(specific_processes[0])
 
-        # Contenedor de Pestañas (Tabview) para segmentar las tablas visualmente
-        tabview = ctk.CTkTabview(dialog, width=560, height=360)
-        tabview.pack(padx=30, pady=10, fill="both", expand=True)
+        # Contenedor principal de pestañas
+        tabview = ctk.CTkTabview(dialog, width=720, height=200, command=update_preview)
+        tabview.pack(padx=30, pady=10, fill="x")
 
         tab_t1 = tabview.add("📊 T1 (Diaria)")
         tab_t2 = tabview.add("📅 T2 (Programa)")
@@ -1665,49 +1665,60 @@ class ExcelViewerApp(ctk.CTk):
 
         # ═══ Maquetación de la Pestaña 1 (Diaria) ═══
         t1_info = ctk.CTkLabel(tab_t1, text="Configura las coordenadas para los datos de Producción Diaria.", font=("Roboto", 11, "italic"), text_color="#aaaaaa")
-        t1_info.pack(pady=(10, 15))
+        t1_info.pack(pady=(5, 5))
         
         t1_grid = ctk.CTkFrame(tab_t1, fg_color="transparent")
-        t1_grid.pack(pady=10)
+        t1_grid.pack(pady=5)
         
-        ctk.CTkLabel(t1_grid, text="Rango de Filas (e.g. 21-51):", font=("Roboto", 12, "bold")).grid(row=0, column=0, sticky="e", padx=10, pady=10)
-        entries["d_filas"] = ctk.CTkEntry(t1_grid, width=150, placeholder_text="Ej. 21-51")
-        entries["d_filas"].grid(row=0, column=1, padx=10, pady=10)
+        ctk.CTkLabel(t1_grid, text="Letras de Columna (e.g. A-H o L,M):", font=("Roboto", 12, "bold")).grid(row=0, column=0, sticky="e", padx=10, pady=5)
+        entries["d_cols"] = ctk.CTkEntry(t1_grid, width=120, placeholder_text="Ej. L,M")
+        entries["d_cols"].grid(row=0, column=1, padx=10, pady=5)
         
-        ctk.CTkLabel(t1_grid, text="Letras de Columna (e.g. A-H o L,M):", font=("Roboto", 12, "bold")).grid(row=1, column=0, sticky="e", padx=10, pady=10)
-        entries["d_cols"] = ctk.CTkEntry(t1_grid, width=150, placeholder_text="Ej. L,M")
-        entries["d_cols"].grid(row=1, column=1, padx=10, pady=10)
+        ctk.CTkLabel(t1_grid, text="Rango de Filas (e.g. 21-51):", font=("Roboto", 12, "bold")).grid(row=0, column=2, sticky="e", padx=10, pady=5)
+        entries["d_filas"] = ctk.CTkEntry(t1_grid, width=120, placeholder_text="Ej. 21-51")
+        entries["d_filas"].grid(row=0, column=3, padx=10, pady=5)
 
         # ═══ Maquetación de la Pestaña 2 (Programa) ═══
         t2_info = ctk.CTkLabel(tab_t2, text="Configura las coordenadas para las metas de planeación (CMP/PODIM).", font=("Roboto", 11, "italic"), text_color="#aaaaaa")
-        t2_info.pack(pady=(10, 15))
+        t2_info.pack(pady=(5, 5))
         
         t2_grid = ctk.CTkFrame(tab_t2, fg_color="transparent")
-        t2_grid.pack(pady=10)
+        t2_grid.pack(pady=5)
         
-        ctk.CTkLabel(t2_grid, text="Rango de Filas (e.g. 74-104):", font=("Roboto", 12, "bold")).grid(row=0, column=0, sticky="e", padx=10, pady=10)
-        entries["p_filas"] = ctk.CTkEntry(t2_grid, width=150, placeholder_text="Ej. 74-104")
-        entries["p_filas"].grid(row=0, column=1, padx=10, pady=10)
+        ctk.CTkLabel(t2_grid, text="Columna Programa (e.g. AE o BI):", font=("Roboto", 12, "bold")).grid(row=0, column=0, sticky="e", padx=10, pady=5)
+        entries["p_cols"] = ctk.CTkEntry(t2_grid, width=120, placeholder_text="Ej. BI")
+        entries["p_cols"].grid(row=0, column=1, padx=10, pady=5)
         
-        ctk.CTkLabel(t2_grid, text="Columna Programa (e.g. AE o BI):", font=("Roboto", 12, "bold")).grid(row=1, column=0, sticky="e", padx=10, pady=10)
-        entries["p_cols"] = ctk.CTkEntry(t2_grid, width=150, placeholder_text="Ej. BI")
-        entries["p_cols"].grid(row=1, column=1, padx=10, pady=10)
+        ctk.CTkLabel(t2_grid, text="Rango de Filas (e.g. 74-104):", font=("Roboto", 12, "bold")).grid(row=0, column=2, sticky="e", padx=10, pady=5)
+        entries["p_filas"] = ctk.CTkEntry(t2_grid, width=120, placeholder_text="Ej. 74-104")
+        entries["p_filas"].grid(row=0, column=3, padx=10, pady=5)
 
         # ═══ Maquetación de la Pestaña 3 (Histórica) ═══
         t3_info = ctk.CTkLabel(tab_t3, text="Configura las coordenadas para las fechas e históricos mensuales.", font=("Roboto", 11, "italic"), text_color="#aaaaaa")
-        t3_info.pack(pady=(10, 15))
+        t3_info.pack(pady=(5, 5))
         
         t3_grid = ctk.CTkFrame(tab_t3, fg_color="transparent")
-        t3_grid.pack(pady=10)
+        t3_grid.pack(pady=5)
         
-        ctk.CTkLabel(t3_grid, text="Rango de Filas (e.g. 21-40):", font=("Roboto", 12, "bold")).grid(row=0, column=0, sticky="e", padx=10, pady=10)
-        entries["h_filas"] = ctk.CTkEntry(t3_grid, width=150, placeholder_text="Ej. 21-40")
-        entries["h_filas"].grid(row=0, column=1, padx=10, pady=10)
+        ctk.CTkLabel(t3_grid, text="Rango Columnas (e.g. AW-AX):", font=("Roboto", 12, "bold")).grid(row=0, column=0, sticky="e", padx=10, pady=5)
+        entries["h_cols"] = ctk.CTkEntry(t3_grid, width=120, placeholder_text="Ej. AW-AX")
+        entries["h_cols"].grid(row=0, column=1, padx=10, pady=5)
         
-        ctk.CTkLabel(t3_grid, text="Rango Columnas (e.g. AW-AX):", font=("Roboto", 12, "bold")).grid(row=1, column=0, sticky="e", padx=10, pady=10)
-        entries["h_cols"] = ctk.CTkEntry(t3_grid, width=150, placeholder_text="Ej. AW-AX")
-        entries["h_cols"].grid(row=1, column=1, padx=10, pady=10)
+        ctk.CTkLabel(t3_grid, text="Rango de Filas (e.g. 21-40):", font=("Roboto", 12, "bold")).grid(row=0, column=2, sticky="e", padx=10, pady=5)
+        entries["h_filas"] = ctk.CTkEntry(t3_grid, width=120, placeholder_text="Ej. 21-40")
+        entries["h_filas"].grid(row=0, column=3, padx=10, pady=5)
 
+        # ═══ Vista Previa de Datos ═══
+        preview_frame = ctk.CTkFrame(dialog)
+        preview_frame.pack(fill="both", expand=True, padx=30, pady=10)
+        
+        preview_title = ctk.CTkLabel(preview_frame, text="🔍 Vista Previa del Excel (Primeras 5 Filas del Rango)", font=("Roboto", 11, "bold"), text_color="#3484F0")
+        preview_title.pack(pady=(5, 2))
+        
+        preview_label = ctk.CTkLabel(preview_frame, text="Ningún archivo cargado para previsualizar.", font=("Courier New", 11), justify="left", anchor="nw")
+        preview_label.pack(fill="both", expand=True, padx=15, pady=5)
+
+        # Cargar valores actuales en las entradas al cambiar el proceso
         def load_proc_coords(proceso_name):
             for e in entries.values():
                 e.delete(0, "end")
@@ -1722,14 +1733,97 @@ class ExcelViewerApp(ctk.CTk):
                 entries["h_filas"].insert(0, coords.get("historica_filas") or "")
                 entries["h_cols"].insert(0, coords.get("historica_cols") or "")
             else:
-                entries["d_filas"].configure(placeholder_text="Por defecto Excel")
-                entries["d_cols"].configure(placeholder_text="Por defecto Excel")
-                entries["p_filas"].configure(placeholder_text="Por defecto Excel")
-                entries["p_cols"].configure(placeholder_text="Por defecto Excel")
-                entries["h_filas"].configure(placeholder_text="Por defecto Excel")
-                entries["h_cols"].configure(placeholder_text="Por defecto Excel")
+                entries["d_filas"].configure(placeholder_text="Defecto Excel")
+                entries["d_cols"].configure(placeholder_text="Defecto Excel")
+                entries["p_filas"].configure(placeholder_text="Defecto Excel")
+                entries["p_cols"].configure(placeholder_text="Defecto Excel")
+                entries["h_filas"].configure(placeholder_text="Defecto Excel")
+                entries["h_cols"].configure(placeholder_text="Defecto Excel")
+            
+            update_preview()
+
+        # Función para actualizar la vista previa de los datos
+        def update_preview(*args):
+            if not self.current_file_path:
+                preview_label.configure(text="Sube un archivo de Excel primero para ver una vista previa.")
+                return
+
+            try:
+                import pandas as pd
+                # Cargar la hoja
+                xls = pd.ExcelFile(self.current_file_path)
+                sheet_to_use = None
+                for sheet in xls.sheet_names:
+                    normalizado = sheet.lower().replace(" ", "").replace("_", "")
+                    if "enviocalculopromedio" in normalizado or "enviocalculo" in normalizado:
+                        sheet_to_use = sheet
+                        break
+                if not sheet_to_use:
+                    sheet_to_use = xls.sheet_names[0]
+                
+                df_sheet = pd.read_excel(self.current_file_path, sheet_name=sheet_to_use, header=None)
+
+                # Obtener la pestaña activa
+                active_tab = tabview.get()
+                prefix = "d_"
+                if "Programa" in active_tab:
+                    prefix = "p_"
+                elif "Histórica" in active_tab:
+                    prefix = "h_"
+                
+                # Intentar leer los rangos configurados en el cuadro
+                rows_input = entries[f"{prefix}filas"].get().strip()
+                cols_input = entries[f"{prefix}cols"].get().strip()
+                
+                # Si están vacíos, buscar en overrides del proceso actual para mostrarlo, si no decir por defecto
+                if not rows_input or not cols_input:
+                    import db_helper
+                    override = db_helper.get_coordenadas_override(cb_proc.get())
+                    if override:
+                        rows_input = rows_input or override.get(f"{prefix}filas")
+                        cols_input = cols_input or override.get(f"{prefix}cols")
+
+                if not rows_input or not cols_input:
+                    preview_label.configure(text="Usando coordenadas preestablecidas de Excel.\nGuarda una configuración personalizada para previsualizar aquí.")
+                    return
+
+                # Convertir a índices
+                parts = rows_input.split("-")
+                r_start = int(parts[0]) - 1
+                r_end = int(parts[1])
+                
+                # Columnas
+                cols_str = cols_input.replace(" ", "")
+                def col_to_num(col_str):
+                    col_str = col_str.upper().strip()
+                    num = 0
+                    for c in col_str:
+                        if 'A' <= c <= 'Z':
+                            num = num * 26 + (ord(c) - ord('A') + 1)
+                    return num - 1
+                
+                if "-" in cols_str:
+                    col_parts = cols_str.split("-")
+                    c_indices = list(range(col_to_num(col_parts[0]), col_to_num(col_parts[1]) + 1))
+                elif "," in cols_str:
+                    c_indices = [col_to_num(x) for x in cols_str.split(",")]
+                else:
+                    c_indices = [col_to_num(cols_str)]
+                
+                # Obtener muestra
+                df_slice = df_sheet.iloc[r_start:r_end, c_indices].head(5)
+                # Formatear salida de texto
+                text_out = df_slice.to_string(index=True, header=False)
+                preview_label.configure(text=f"Fila original del Excel (Renglones/Columnas):\n\n{text_out}")
+            except Exception as e:
+                preview_label.configure(text=f"No se pudo generar la vista previa. Revisa la sintaxis de las coordenadas.\nDetalle: {str(e)}")
 
         cb_proc.configure(command=load_proc_coords)
+        
+        # Vincular cambios en las entradas para actualizar la vista previa en vivo
+        for e in entries.values():
+            e.bind("<KeyRelease>", update_preview)
+            
         load_proc_coords(cb_proc.get())
 
         def on_save():
