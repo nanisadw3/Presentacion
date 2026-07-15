@@ -109,7 +109,59 @@ def load_data(app, file_path):
                         headers.append(str(int(round(float(val)))))
                     except:
                         headers.append(str(val))
-            return headers
+        def col_to_num(col_str):
+            col_str = col_str.upper().strip()
+            num = 0
+            for c in col_str:
+                if 'A' <= c <= 'Z':
+                    num = num * 26 + (ord(c) - ord('A') + 1)
+            return num - 1
+
+        def parse_cols(cols_str):
+            if not cols_str: return []
+            cols_str = str(cols_str).replace(" ", "")
+            if "-" in cols_str:
+                parts = cols_str.split("-")
+                start = col_to_num(parts[0])
+                end = col_to_num(parts[1])
+                return list(range(start, end + 1))
+            elif "," in cols_str:
+                parts = cols_str.split(",")
+                return [col_to_num(p) for p in parts]
+            else:
+                return [col_to_num(cols_str)]
+
+        def parse_rows(rows_str):
+            if not rows_str: return (0, 0)
+            parts = str(rows_str).replace(" ", "").split("-")
+            start = int(parts[0]) - 1
+            end = int(parts[1])
+            return start, end
+
+        def get_coords(proceso_name, d_rows_d, d_cols_d, d_rows_s, d_cols_s, d_rows_h, d_cols_h):
+            import db_helper
+            override = db_helper.get_coordenadas_override(proceso_name)
+            if override:
+                try:
+                    rows_d = parse_rows(override["diaria_filas"]) if override["diaria_filas"] else d_rows_d
+                    cols_d = parse_cols(override["diaria_cols"]) if override["diaria_cols"] else d_cols_d
+                    if len(cols_d) == 1 and 0 not in cols_d:
+                        cols_d = [0] + cols_d
+                    
+                    rows_s = parse_rows(override["programa_filas"]) if override["programa_filas"] else d_rows_s
+                    cols_s = parse_cols(override["programa_cols"]) if override["programa_cols"] else d_cols_s
+                    if len(cols_s) == 1:
+                        cols_s = cols_s * 2
+                    
+                    rows_h = parse_rows(override["historica_filas"]) if override["historica_filas"] else d_rows_h
+                    cols_h = parse_cols(override["historica_cols"]) if override["historica_cols"] else d_cols_h
+                    if len(cols_h) == 1:
+                        cols_h = [max(0, cols_h[0] - 1)] + cols_h
+                    
+                    return rows_d, cols_d, rows_s, cols_s, rows_h, cols_h
+                except Exception as e:
+                    print(f"Error parsing coordinates overrides for {proceso_name}: {e}")
+            return d_rows_d, d_cols_d, d_rows_s, d_cols_s, d_rows_h, d_cols_h
 
         def merge_extra_prod(proceso_name, df_prod_current):
             extra_rows = db_helper.get_extra_prod(proceso_name)
