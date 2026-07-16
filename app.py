@@ -10,6 +10,58 @@ import traceback
 from termcolor import colored
 import db_helper
 
+class LoadingOverlay(ctk.CTkFrame):
+    def __init__(self, parent):
+        # Fondo oscuro/gris para atenuar la pantalla principal
+        super().__init__(parent, fg_color=("#505050", "#0a0a0a"))
+        self.parent = parent
+        
+        # Tarjeta central
+        self.card = ctk.CTkFrame(self, fg_color=("#ffffff", "#1e1e1e"), corner_radius=15, width=220, height=180)
+        self.card.place(relx=0.5, rely=0.5, anchor="center")
+        self.card.pack_propagate(False) # No achicar
+        
+        # Canvas del Spinner
+        self.canvas = ctk.CTkCanvas(self.card, width=60, height=60, bg="#ffffff", highlightthickness=0)
+        self.canvas.pack(pady=(25, 10))
+        
+        # Label de texto
+        self.lbl_text = ctk.CTkLabel(self.card, text="Cargando...", font=("Roboto", 13, "bold"), text_color=("#333333", "#ffffff"))
+        self.lbl_text.pack(pady=(5, 10))
+        
+        self.angle = 0
+        self.animating = False
+        
+    def start(self, text="Cargando..."):
+        self.lbl_text.configure(text=text)
+        # Adaptar color del canvas al tema actual
+        bg_color = "#1e1e1e" if ctk.get_appearance_mode() == "Dark" else "#ffffff"
+        self.canvas.configure(bg=bg_color)
+        
+        self.place(relx=0, rely=0, relwidth=1, relheight=1)
+        self.lift() # Asegurar que esté encima de todo
+        self.animating = True
+        self.animate()
+        
+    def stop(self):
+        self.animating = False
+        self.place_forget()
+        
+    def animate(self):
+        if not self.animating:
+            return
+        self.canvas.delete("all")
+        # Color del spinner: azul moderno
+        color = "#3484F0"
+        bg_theme = ctk.get_appearance_mode()
+        canvas_bg = "#1e1e1e" if bg_theme == "Dark" else "#ffffff"
+        self.canvas.configure(bg=canvas_bg)
+        
+        # Dibujar arco giratorio
+        self.canvas.create_arc(8, 8, 52, 52, start=self.angle, extent=280, width=5, outline=color, style="arc")
+        self.angle = (self.angle - 10) % 360
+        self.after(30, self.animate)
+
 class ExcelViewerApp(ctk.CTk):
     def __init__(self):
         super().__init__()
@@ -409,6 +461,9 @@ class ExcelViewerApp(ctk.CTk):
         self.progress_bar = ctk.CTkProgressBar(self.row1_frame, width=200)
         self.progress_bar.set(0.0)
 
+        # Inicializar overlay de carga
+        self.loading_overlay = LoadingOverlay(self)
+
     def report_callback_exception(self, exc, val, tb):
         import traceback
         from tkinter import messagebox
@@ -422,19 +477,18 @@ class ExcelViewerApp(ctk.CTk):
             self.btn_buscar.configure(state="disabled")
             self.btn_guardar.configure(state="disabled")
             self.btn_powerpoint.configure(state="disabled")
-            self.progress_bar.pack(pady=15, padx=20, side="left")
-            self.progress_bar.configure(mode="indeterminate")
-            self.progress_bar.start()
+            self.loading_overlay.start(loading_text)
         else:
             self.btn_buscar.configure(state="normal")
             self.btn_guardar.configure(state="normal")
             self.btn_powerpoint.configure(state="normal")
-            self.progress_bar.stop()
-            self.progress_bar.pack_forget()
+            self.loading_overlay.stop()
 
     def update_progress(self, val, text_msg=None):
         if text_msg is not None:
             self.lbl_file.configure(text=text_msg)
+            if hasattr(self, 'loading_overlay') and self.loading_overlay is not None:
+                self.loading_overlay.lbl_text.configure(text=text_msg)
 
     def open_add_year_dialog(self):
         dialog = ctk.CTkToplevel(self)
