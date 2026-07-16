@@ -1902,24 +1902,38 @@ class ExcelViewerApp(ctk.CTk):
             messagebox.showerror("Error", "Primero debes buscar un archivo Excel para extraer los datos.")
             return
 
-        file_path = filedialog.askopenfilename(
-            title="Seleccionar plantilla PowerPoint",
+        app_dir = os.path.dirname(os.path.abspath(__file__))
+        file_path = os.path.join(app_dir, "Proceso y Producciones 01-08 Julio 2026.pptx")
+
+        if not os.path.exists(file_path):
+            alternative_path = os.path.join(self.default_pptx_dir, "Proceso y Producciones 01-08 Julio 2026.pptx")
+            if os.path.exists(alternative_path):
+                file_path = alternative_path
+            else:
+                # Si de plano no existe, permitimos seleccionarlo manualmente como fallback
+                messagebox.showwarning(
+                    "Plantilla Predeterminada No Encontrada", 
+                    f"No se encontró 'Proceso y Producciones 01-08 Julio 2026.pptx' en:\n{file_path}\n\nPor favor, selecciónala manualmente."
+                )
+                file_path = filedialog.askopenfilename(
+                    title="Seleccionar plantilla PowerPoint",
+                    initialdir=self.default_pptx_dir,
+                    filetypes=[("Archivos PowerPoint", "*.pptx")]
+                )
+                if not file_path:
+                    return
+
+        save_path = filedialog.asksaveasfilename(
+            title="Guardar presentación actualizada",
             initialdir=self.default_pptx_dir,
+            initialfile="Proceso y Producciones_Actualizado.pptx",
+            defaultextension=".pptx",
             filetypes=[("Archivos PowerPoint", "*.pptx")]
         )
 
-        if file_path:
-            save_path = filedialog.asksaveasfilename(
-                title="Guardar presentación actualizada",
-                initialdir=self.default_pptx_dir,
-                initialfile="Proceso y Producciones_Actualizado.pptx",
-                defaultextension=".pptx",
-                filetypes=[("Archivos PowerPoint", "*.pptx")]
-            )
-
-            if save_path:
-                self.set_loading_state(True, "Inyectando datos a PowerPoint...")
-                threading.Thread(target=self.async_send_to_pptx, args=(file_path, save_path), daemon=True).start()
+        if save_path:
+            self.set_loading_state(True, "Inyectando datos a PowerPoint...")
+            threading.Thread(target=self.async_send_to_pptx, args=(file_path, save_path), daemon=True).start()
 
     def async_send_to_pptx(self, file_path, save_path):
         import pptx_exporter
