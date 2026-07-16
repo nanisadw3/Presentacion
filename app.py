@@ -1668,105 +1668,185 @@ class ExcelViewerApp(ctk.CTk):
             
         messagebox.showerror("Error Detallado", f"Ocurrió un error al leer el archivo:\n{err_msg}\n\nDetalles técnicos:\n{error_details}")
 
+    def get_dataframes_for_process(self, selection):
+        if selection == "Crudo":
+            return self.df_data, self.df_snr, self.df_prod, self.df_sim
+        elif selection == "Gasolinas":
+            return self.df_data_gasolinas, self.df_snr_gasolinas, self.df_prod_gasolinas, self.df_sim_gasolinas
+        elif selection == "Diesel":
+            return self.df_data_diesel, self.df_snr_diesel, self.df_prod_diesel, self.df_sim_diesel
+        elif selection == "Turbosina":
+            return self.df_data_turbosina, self.df_snr_turbosina, self.df_prod_turbosina, self.df_sim_turbosina
+        elif selection == "Asfalto":
+            return self.df_data_asfalto, self.df_snr_asfalto, self.df_prod_asfalto, self.df_sim_asfalto
+        elif selection == "Combustoleo":
+            return self.df_data_combustoleo, self.df_snr_combustoleo, self.df_prod_combustoleo, self.df_sim_combustoleo
+            
+        elif selection == "Cadereyta -Crudo":
+            return self.df_data_cad, self.df_snr_cad, self.df_prod_cad, self.df_sim_cad
+        elif selection == "Cadereyta -Gasolinas":
+            return self.df_data_cad_gas, self.df_snr_cad_gas, self.df_prod_cad_gas, self.df_sim_cad_gas
+        elif selection == "Cadereyta -Diesel":
+            return self.df_data_cad_die, self.df_snr_cad_die, self.df_prod_cad_die, self.df_sim_cad_die
+        elif selection == "Cadereyta -Combustoleo":
+            return self.df_data_cad_comb, self.df_snr_cad_comb, self.df_prod_cad_comb, self.df_sim_cad_comb
+            
+        elif selection == "Madero -Crudo":
+            return self.df_data_mad_crud, self.df_snr_mad_crud, self.df_prod_mad_crud, self.df_sim_mad_crud
+        elif selection == "Madero -Gasolinas":
+            return self.df_data_mad_gas, self.df_snr_mad_gas, self.df_prod_mad_gas, self.df_sim_mad_gas
+        elif selection == "Madero -Diesel":
+            return self.df_data_mad_die, self.df_snr_mad_die, self.df_prod_mad_die, self.df_sim_mad_die
+        elif selection == "Madero -Turbosina":
+            return self.df_data_mad_turb, self.df_snr_mad_turb, self.df_prod_mad_turb, self.df_sim_mad_turb
+        elif selection == "Madero -Combustoleo":
+            return self.df_data_mad_comb, self.df_snr_mad_comb, self.df_prod_mad_comb, self.df_sim_mad_comb
+            
+        elif selection == "Minatitlan -Crudo":
+            return self.df_data_mina_crud, self.df_snr_mina_crud, self.df_prod_mina_crud, self.df_sim_mina_crud
+        elif selection == "Minatitlan -Gasolinas":
+            return self.df_data_mina_gas, self.df_snr_mina_gas, self.df_prod_mina_gas, self.df_sim_mina_gas
+        elif selection == "Minatitlan -Diesel":
+            return self.df_data_mina_die, self.df_snr_mina_die, self.df_prod_mina_die, self.df_sim_mina_die
+        elif selection == "Minatitlan -Combustoleo":
+            return self.df_data_mina_comb, self.df_snr_mina_comb, self.df_prod_mina_comb, self.df_sim_mina_comb
+            
+        elif selection == "Salamanca -Crudo":
+            return self.df_data_sala_crud, self.df_snr_sala_crud, self.df_prod_sala_crud, self.df_sim_sala_crud
+        elif selection == "Salamanca -Gasolinas":
+            return self.df_data_sala_gas, self.df_snr_sala_gas, self.df_prod_sala_gas, self.df_sim_sala_gas
+        elif selection == "Salamanca -Diesel":
+            return self.df_data_sala_die, self.df_snr_sala_die, self.df_prod_sala_die, self.df_sim_sala_die
+        elif selection == "Salamanca -Turbosina":
+            return self.df_data_sala_turb, self.df_snr_sala_turb, self.df_prod_sala_turb, self.df_sim_sala_turb
+        elif selection == "Salamanca -Combustoleo":
+            return self.df_data_sala_comb, self.df_snr_sala_comb, self.df_prod_sala_comb, self.df_sim_sala_comb
+            
+        elif selection == "Salina Cruz -Crudo":
+            return self.df_data_sal_crud, self.df_snr_sal_crud, self.df_prod_sal_crud, self.df_sim_sal_crud
+        elif selection == "Salina Cruz -Gasolinas":
+            return self.df_data_sal_gas, self.df_snr_sal_gas, self.df_prod_sal_gas, self.df_sim_sal_gas
+        elif selection == "Salina Cruz -Diesel":
+            return self.df_data_sal_die, self.df_snr_sal_die, self.df_prod_sal_die, self.df_sim_sal_die
+        elif selection == "Salina Cruz -Turbosina":
+            return self.df_data_sal_turb, self.df_snr_sal_turb, self.df_prod_sal_turb, self.df_sim_sal_turb
+        elif selection == "Salina Cruz -Combustoleo":
+            return self.df_data_sal_comb, self.df_snr_sal_comb, self.df_prod_sal_comb, self.df_sim_sal_comb
+            
+        elif selection == "Tula -Crudo":
+            return self.df_data_tula_crud, self.df_snr_tula_crud, self.df_prod_tula_crud, self.df_sim_tula_crud
+        elif selection == "Tula -Gasolinas":
+            return self.df_data_tula_gas, self.df_snr_tula_gas, self.df_prod_tula_gas, self.df_sim_tula_gas
+        elif selection == "Tula -Diesel":
+            return self.df_data_tula_die, self.df_snr_tula_die, self.df_prod_tula_die, self.df_sim_tula_die
+        elif selection == "Tula -Turbosina":
+            return self.df_data_tula_turb, self.df_snr_tula_turb, self.df_prod_tula_turb, self.df_sim_tula_turb
+        elif selection == "Tula -Combustoleo":
+            return self.df_data_tula_comb, self.df_snr_tula_comb, self.df_prod_tula_comb, self.df_sim_tula_comb
+            
+        elif selection == "Olmeca -Crudo":
+            return self.df_data_olme_crud, self.df_snr_olme_crud, self.df_prod_olme_crud, self.df_sim_olme_crud
+        elif selection == "Olmeca -Gasolinas":
+            return self.df_data_olme_gas, self.df_snr_olme_gas, self.df_prod_olme_gas, self.df_sim_olme_gas
+        elif selection == "Olmeca -Diesel":
+            return self.df_data_olme_die, self.df_snr_olme_die, self.df_prod_olme_die, self.df_sim_olme_die
+            
+        return None, None, None, None
+
     def export_to_excel(self):
         if self.df_data is None or self.df_snr is None or self.df_prod is None:
             messagebox.showerror("Error", "Primero debes buscar un archivo Excel para extraer los datos.")
             return
 
-        selection = self.cb_proceso.get()
         save_path = filedialog.asksaveasfilename(
-            title="Guardar reporte Excel",
+            title="Guardar Reporte Maestro de Excel",
             initialdir=self.default_pptx_dir,
-            initialfile=f"Reporte_{selection.replace(' ', '')}.xlsx",
+            initialfile="Reporte_Maestro_Proyecciones.xlsx",
             defaultextension=".xlsx",
             filetypes=[("Archivos Excel", "*.xlsx")]
         )
 
         if save_path:
-            self.set_loading_state(True, "Exportando tablas a Excel...")
-            threading.Thread(target=self.async_export_to_excel, args=(save_path, selection), daemon=True).start()
+            self.set_loading_state(True, "Exportando todas las tablas a Excel...")
+            threading.Thread(target=self.async_export_to_excel, args=(save_path,), daemon=True).start()
 
-    def async_export_to_excel(self, save_path, selection):
+    def async_export_to_excel(self, save_path):
         try:
             import openpyxl
-            from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+            from openpyxl.styles import Font, Border, Side
             from openpyxl.utils import get_column_letter
 
-            # 1. Obtener valores de las tablas desde la GUI
-            # Tabla 1
-            t1_vals = self.table.values
-            df1 = pd.DataFrame(t1_vals[1:], columns=t1_vals[0])
-            
-            # Tabla 2
-            t2_vals = self.table2.values
-            df2 = pd.DataFrame(t2_vals[1:], columns=t2_vals[0])
-            
-            # Tabla 3
-            t3_vals = self.table3.values
-            df3 = pd.DataFrame(t3_vals[1:], columns=t3_vals[0])
-            
-            # Tabla 4 (opcional)
-            df4 = None
-            if hasattr(self, 'table4') and self.table4 is not None:
-                t4_vals = self.table4.values
-                df4 = pd.DataFrame(t4_vals[1:], columns=t4_vals[0])
+            opciones_procesos = [
+                "Crudo", "Gasolinas", "Diesel", "Turbosina", "Asfalto", "Combustoleo", 
+                "Cadereyta -Crudo", "Cadereyta -Gasolinas", "Cadereyta -Diesel", "Cadereyta -Combustoleo", 
+                "Madero -Crudo", "Madero -Gasolinas", "Madero -Diesel", "Madero -Turbosina", "Madero -Combustoleo", 
+                "Minatitlan -Crudo", "Minatitlan -Gasolinas", "Minatitlan -Diesel", "Minatitlan -Combustoleo", 
+                "Salamanca -Crudo", "Salamanca -Gasolinas", "Salamanca -Diesel", "Salamanca -Turbosina", "Salamanca -Combustoleo", 
+                "Salina Cruz -Crudo", "Salina Cruz -Gasolinas", "Salina Cruz -Diesel", "Salina Cruz -Turbosina", "Salina Cruz -Combustoleo", 
+                "Tula -Crudo", "Tula -Gasolinas", "Tula -Diesel", "Tula -Turbosina", "Tula -Combustoleo", 
+                "Olmeca -Crudo", "Olmeca -Gasolinas", "Olmeca -Diesel"
+            ]
 
-            # 2. Escribir a Excel con formato elegante
             with pd.ExcelWriter(save_path, engine='openpyxl') as writer:
-                sheet_name = "Reporte"
-                
-                # Escribir dataframes
-                row_offset = 2
-                df1.to_excel(writer, sheet_name=sheet_name, startrow=row_offset, index=False)
-                
-                row_offset += len(df1) + 4
-                df2.to_excel(writer, sheet_name=sheet_name, startrow=row_offset, index=False)
-                
-                row_offset += len(df2) + 4
-                df3.to_excel(writer, sheet_name=sheet_name, startrow=row_offset, index=False)
-                
-                if df4 is not None:
-                    row_offset += len(df3) + 4
-                    df4.to_excel(writer, sheet_name=sheet_name, startrow=row_offset, index=False)
-                
-                # Formatear la hoja
-                worksheet = writer.sheets[sheet_name]
-                
-                # Título Principal
-                worksheet.cell(row=1, column=1, value=f"REPORTE DE PROYECCIÓN Y PRODUCCIÓN - {selection}")
-                worksheet.cell(row=1, column=1).font = Font(name="Segoe UI", size=15, bold=True, color="1F497D")
-                
-                # Subtítulos
-                subtitles = [
-                    (2, "Tabla 1: Producción Diaria"),
-                    (len(df1) + 6, "Tabla 2: Programa de Producción (SNR)"),
-                    (len(df1) + len(df2) + 10, "Tabla 3: Fecha y Producción Histórica")
-                ]
-                if df4 is not None:
-                    subtitles.append((len(df1) + len(df2) + len(df3) + 14, "Tabla 4: Simulación de Producción Anual"))
-                
-                for r, text in subtitles:
-                    worksheet.cell(row=r, column=1, value=text)
-                    worksheet.cell(row=r, column=1).font = Font(name="Segoe UI", size=12, bold=True, color="595959")
-                
-                # Ajustar anchos y formato de bordes
-                thin_side = Side(border_style="thin", color="D3D3D3")
-                border = Border(left=thin_side, right=thin_side, top=thin_side, bottom=thin_side)
-                
-                for row in worksheet.iter_rows(min_row=3, max_row=worksheet.max_row, min_col=1, max_col=worksheet.max_column):
-                    for cell in row:
-                        if cell.value is not None:
-                            cell.font = Font(name="Segoe UI", size=10)
-                            cell.border = border
-                
-                # Ajustar anchos de columnas
-                for col in worksheet.columns:
-                    max_len = 0
-                    col_letter = get_column_letter(col[0].column)
-                    for cell in col:
-                        if cell.value is not None:
-                            max_len = max(max_len, len(str(cell.value)))
-                    worksheet.column_dimensions[col_letter].width = max(max_len + 4, 12)
+                for proc in opciones_procesos:
+                    df1, df2, df3, df4 = self.get_dataframes_for_process(proc)
+                    if df1 is None or df1.empty:
+                        continue
+                    
+                    # Nombre de hoja sanitizado (máx 31 caracteres, sin '/' ni caracteres prohibidos)
+                    sheet_name = proc[:31].replace("/", "-")
+                    
+                    row_offset = 2
+                    df1.to_excel(writer, sheet_name=sheet_name, startrow=row_offset, index=False)
+                    
+                    row_offset += len(df1) + 4
+                    df2.to_excel(writer, sheet_name=sheet_name, startrow=row_offset, index=False)
+                    
+                    row_offset += len(df2) + 4
+                    df3.to_excel(writer, sheet_name=sheet_name, startrow=row_offset, index=False)
+                    
+                    if df4 is not None and not df4.empty:
+                        row_offset += len(df3) + 4
+                        df4.to_excel(writer, sheet_name=sheet_name, startrow=row_offset, index=False)
+                    
+                    # Formatear la hoja
+                    worksheet = writer.sheets[sheet_name]
+                    
+                    # Título Principal
+                    worksheet.cell(row=1, column=1, value=f"REPORTE DE PROYECCIÓN Y PRODUCCIÓN - {proc.upper()}")
+                    worksheet.cell(row=1, column=1).font = Font(name="Segoe UI", size=15, bold=True, color="1F497D")
+                    
+                    # Subtítulos
+                    subtitles = [
+                        (2, "Tabla 1: Producción Diaria"),
+                        (len(df1) + 6, "Tabla 2: Programa de Producción (SNR)"),
+                        (len(df1) + len(df2) + 10, "Tabla 3: Fecha y Producción Histórica")
+                    ]
+                    if df4 is not None and not df4.empty:
+                        subtitles.append((len(df1) + len(df2) + len(df3) + 14, "Tabla 4: Simulación de Producción Anual"))
+                    
+                    for r, text in subtitles:
+                        worksheet.cell(row=r, column=1, value=text)
+                        worksheet.cell(row=r, column=1).font = Font(name="Segoe UI", size=12, bold=True, color="595959")
+                    
+                    # Bordes y fuentes
+                    thin_side = Side(border_style="thin", color="D3D3D3")
+                    border = Border(left=thin_side, right=thin_side, top=thin_side, bottom=thin_side)
+                    
+                    for row in worksheet.iter_rows(min_row=3, max_row=worksheet.max_row, min_col=1, max_col=worksheet.max_column):
+                        for cell in row:
+                            if cell.value is not None:
+                                cell.font = Font(name="Segoe UI", size=10)
+                                cell.border = border
+                    
+                    # Autoajustar columnas
+                    for col in worksheet.columns:
+                        max_len = 0
+                        col_letter = get_column_letter(col[0].column)
+                        for cell in col:
+                            if cell.value is not None:
+                                max_len = max(max_len, len(str(cell.value)))
+                        worksheet.column_dimensions[col_letter].width = max(max_len + 4, 12)
             
             self.after(0, self.on_export_excel_success, save_path)
         except Exception as e:
