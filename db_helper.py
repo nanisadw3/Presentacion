@@ -78,7 +78,7 @@ def get_modificaciones(proceso):
     rows = c.fetchall()
     conn.close()
     
-    mods = {"diaria": {}, "programa": {}, "historica": {}}
+    mods = {"diaria": {}, "programa": {}, "historica": {}, "simulacion": {}}
     for r in rows:
         t, cl, v = r
         if t in mods:

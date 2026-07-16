@@ -1452,6 +1452,7 @@ class ExcelViewerApp(ctk.CTk):
                 header_color="#1f538d",
                 colors=["#2a2a2a", "#242424"],
                 hover_color="#3a3a3a",
+                command=lambda cell: self.on_table_clicked("simulacion", cell),
             )
             self.table4.pack(expand=True, fill="both", padx=10, pady=20)
 
@@ -1544,6 +1545,32 @@ class ExcelViewerApp(ctk.CTk):
             
             self.show_edit_delete_dialog(selection, "historica", period_key, valor_actual)
 
+        elif table_name == "simulacion":
+            if not self.table4 or not hasattr(self, 'table4'):
+                return
+            row_data = self.table4.values[row]
+            mes = str(row_data[0]).strip()
+            
+            if mes == "TOTALES":
+                messagebox.showwarning("No modificable", "La fila de totales no se puede modificar.")
+                return
+                
+            headers = self.table4.values[0]
+            col_name = headers[col]
+            
+            if col_name == "Mes":
+                messagebox.showwarning("No modificable", "El mes no se puede modificar.")
+                return
+            elif col_name == "Total (Prod x Días)":
+                messagebox.showwarning("No modificable", "El resultado de la multiplicación no se puede modificar directamente.")
+                return
+                
+            valor_actual = str(row_data[col])
+            suffix = "Prod" if col_name == "Producción" else "Dias"
+            clave = f"Sim_{mes}_{suffix}"
+            
+            self.show_edit_delete_dialog(selection, "simulacion", clave, valor_actual)
+
     def resolve_proceso_name(self, selection, col_name):
         if " -" in selection:
             return selection
@@ -1584,8 +1611,15 @@ class ExcelViewerApp(ctk.CTk):
         if tabla == "diaria": type_lbl = "Producción Diaria"
         elif tabla == "programa": type_lbl = "Programa de Planificación"
         elif tabla == "historica": type_lbl = "Fecha y Producción Histórica"
+        elif tabla == "simulacion": type_lbl = "Simulación Anual"
 
-        lbl = ctk.CTkLabel(dialog, text=f"Proceso: {proceso}\nTipo: {type_lbl}\nClave: {clave}", font=("Roboto", 13, "bold"))
+        display_clave = clave
+        if clave.startswith("Sim_"):
+            parts = clave.split("_")
+            if len(parts) == 3:
+                display_clave = f"Mes: {parts[1]} | Parámetro: {'Producción' if parts[2] == 'Prod' else 'Días'}"
+
+        lbl = ctk.CTkLabel(dialog, text=f"Proceso: {proceso}\nTipo: {type_lbl}\n{display_clave}", font=("Roboto", 13, "bold"))
         lbl.pack(pady=15)
 
         lbl_val = ctk.CTkLabel(dialog, text="Ingresa el valor deseado:", font=("Roboto", 12))

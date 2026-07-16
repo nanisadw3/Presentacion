@@ -1619,11 +1619,21 @@ def load_data(app, file_path):
         from datetime import datetime
         now = datetime.now()
         current_year = now.year
-        days_passed = now.timetuple().tm_yday
-
+        
         meses_nombres = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
         meses_cortos = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
-        dias_por_mes = [calendar.monthrange(current_year, m)[1] for m in range(1, 13)]
+        
+        # Días por mes dinámicos: días reales para meses pasados, días transcurridos menos uno para el mes actual, y 0 para meses futuros
+        dias_por_mes = []
+        for m in range(1, 13):
+            if m < now.month:
+                dias_por_mes.append(calendar.monthrange(current_year, m)[1])
+            elif m == now.month:
+                dias_por_mes.append(max(0, now.day - 1))
+            else:
+                dias_por_mes.append(0)
+
+        days_passed = sum(dias_por_mes)
 
         # 1. Simulación Crudo
         prod_dict = {m: 0.0 for m in meses_nombres}
@@ -2521,6 +2531,120 @@ def load_data(app, file_path):
         promedio_olme_die = suma_total_olme_die / days_passed if days_passed > 0 else 0
         sim_data_olme_die.append(["TOTALES", "---", f"Días pasados: {days_passed}", f"Suma: {int(suma_total_olme_die)} | Prom: {promedio_olme_die:.2f}"])
         df_sim_olme_die = pd.DataFrame(sim_data_olme_die, columns=["Mes", "Producción", "Días", "Total (Prod x Días)"])
+
+        def post_process_sim_and_prod(proceso_name, df_sim_val, df_prod_val):
+            if df_sim_val is None or df_sim_val.empty:
+                return df_sim_val, df_prod_val
+            import db_helper
+            mods = db_helper.get_modificaciones(proceso_name)
+            sim_mods = mods.get("simulacion", {})
+            
+            rows_sim = df_sim_val.to_numpy().tolist()
+            for idx in range(12):
+                if idx >= len(rows_sim) - 1:
+                    break
+                row = rows_sim[idx]
+                mes = str(row[0]).strip()
+                prod_key = f"Sim_{mes}_Prod"
+                dias_key = f"Sim_{mes}_Dias"
+                prod_val = row[1]
+                dias_val = row[2]
+                if prod_key in sim_mods:
+                    try: prod_val = int(round(float(sim_mods[prod_key])))
+                    except: pass
+                if dias_key in sim_mods:
+                    try: dias_val = int(round(float(sim_mods[dias_key])))
+                    except: pass
+                try: total_val = int(prod_val * dias_val)
+                except: total_val = 0
+                rows_sim[idx][1] = prod_val
+                rows_sim[idx][2] = dias_val
+                rows_sim[idx][3] = total_val
+                
+            suma_total = 0.0
+            total_dias = 0
+            for idx in range(12):
+                if idx >= len(rows_sim) - 1:
+                    break
+                try: suma_total += float(rows_sim[idx][3])
+                except: pass
+                try: total_dias += int(rows_sim[idx][2])
+                except: pass
+            promedio = suma_total / total_dias if total_dias > 0 else 0.0
+            if len(rows_sim) > 0:
+                rows_sim[-1][0] = "TOTALES"
+                rows_sim[-1][1] = "---"
+                rows_sim[-1][2] = f"Días pasados: {total_dias}"
+                rows_sim[-1][3] = f"Suma: {int(suma_total)} | Prom: {promedio:.2f}"
+            df_sim_new = pd.DataFrame(rows_sim, columns=df_sim_val.columns)
+            
+            # Agregar o actualizar la fila del año actual en df_prod
+            df_prod_new = df_prod_val
+            if df_prod_val is not None and not df_prod_val.empty:
+                rows_prod = df_prod_val.to_numpy().tolist()
+                year_str = str(current_year)
+                year_idx = -1
+                for idx, r in enumerate(rows_prod):
+                    if str(r[0]).strip() == year_str:
+                        year_idx = idx
+                        break
+                if year_idx != -1:
+                    rows_prod[year_idx][1] = int(round(promedio))
+                else:
+                    # Encontrar posición de inserción: justo después de todos los años menores y antes del primer mes
+                    insert_pos = 0
+                    for idx, r in enumerate(rows_prod):
+                        val0 = str(r[0]).strip()
+                        if val0.isdigit() and len(val0) == 4:
+                            if int(val0) < current_year:
+                                insert_pos = idx + 1
+                            else:
+                                insert_pos = idx
+                                break
+                        else:
+                            # Hemos llegado a las filas de meses, insertamos aquí
+                            break
+                    rows_prod.insert(insert_pos, [year_str, int(round(promedio))])
+                df_prod_new = pd.DataFrame(rows_prod, columns=df_prod_val.columns)
+            return df_sim_new, df_prod_new
+
+        df_sim, df_prod_copy = post_process_sim_and_prod("Crudo", df_sim, df_prod_copy)
+        df_sim_gasolinas, df_prod_gasolinas_copy = post_process_sim_and_prod("Gasolinas", df_sim_gasolinas, df_prod_gasolinas_copy)
+        df_sim_diesel, df_prod_diesel_copy = post_process_sim_and_prod("Diesel", df_sim_diesel, df_prod_diesel_copy)
+        df_sim_turbosina, df_prod_turbosina_copy = post_process_sim_and_prod("Turbosina", df_sim_turbosina, df_prod_turbosina_copy)
+        df_sim_asfalto, df_prod_asfalto_copy = post_process_sim_and_prod("Asfalto", df_sim_asfalto, df_prod_asfalto_copy)
+        df_sim_combustoleo, df_prod_combustoleo_copy = post_process_sim_and_prod("Combustoleo", df_sim_combustoleo, df_prod_combustoleo_copy)
+        df_sim_cad_gas, df_prod_cad_gas_copy = post_process_sim_and_prod("Cadereyta -Gasolinas", df_sim_cad_gas, df_prod_cad_gas_copy)
+        df_sim_cad_die, df_prod_cad_die_copy = post_process_sim_and_prod("Cadereyta -Diesel", df_sim_cad_die, df_prod_cad_die_copy)
+        df_sim_cad, df_prod_cad_copy = post_process_sim_and_prod("Cadereyta -Crudo", df_sim_cad, df_prod_cad_copy)
+        df_sim_cad_comb, df_prod_cad_comb_copy = post_process_sim_and_prod("Cadereyta -Combustoleo", df_sim_cad_comb, df_prod_cad_comb_copy)
+        df_sim_mad_crud, df_prod_mad_crud_copy = post_process_sim_and_prod("Madero -Crudo", df_sim_mad_crud, df_prod_mad_crud_copy)
+        df_sim_mad_gas, df_prod_mad_gas_copy = post_process_sim_and_prod("Madero -Gasolinas", df_sim_mad_gas, df_prod_mad_gas_copy)
+        df_sim_mad_die, df_prod_mad_die_copy = post_process_sim_and_prod("Madero -Diesel", df_sim_mad_die, df_prod_mad_die_copy)
+        df_sim_mad_turb, df_prod_mad_turb_copy = post_process_sim_and_prod("Madero -Turbosina", df_sim_mad_turb, df_prod_mad_turb_copy)
+        df_sim_mad_comb, df_prod_mad_comb_copy = post_process_sim_and_prod("Madero -Combustoleo", df_sim_mad_comb, df_prod_mad_comb_copy)
+        df_sim_mina_crud, df_prod_mina_crud_copy = post_process_sim_and_prod("Minatitlan -Crudo", df_sim_mina_crud, df_prod_mina_crud_copy)
+        df_sim_mina_gas, df_prod_mina_gas_copy = post_process_sim_and_prod("Minatitlan -Gasolinas", df_sim_mina_gas, df_prod_mina_gas_copy)
+        df_sim_mina_die, df_prod_mina_die_copy = post_process_sim_and_prod("Minatitlan -Diesel", df_sim_mina_die, df_prod_mina_die_copy)
+        df_sim_mina_comb, df_prod_mina_comb_copy = post_process_sim_and_prod("Minatitlan -Combustoleo", df_sim_mina_comb, df_prod_mina_comb_copy)
+        df_sim_sala_crud, df_prod_sala_crud_copy = post_process_sim_and_prod("Salamanca -Crudo", df_sim_sala_crud, df_prod_sala_crud_copy)
+        df_sim_sala_gas, df_prod_sala_gas_copy = post_process_sim_and_prod("Salamanca -Gasolinas", df_sim_sala_gas, df_prod_sala_gas_copy)
+        df_sim_sala_die, df_prod_sala_die_copy = post_process_sim_and_prod("Salamanca -Diesel", df_sim_sala_die, df_prod_sala_die_copy)
+        df_sim_sala_turb, df_prod_sala_turb_copy = post_process_sim_and_prod("Salamanca -Turbosina", df_sim_sala_turb, df_prod_sala_turb_copy)
+        df_sim_sala_comb, df_prod_sala_comb_copy = post_process_sim_and_prod("Salamanca -Combustoleo", df_sim_sala_comb, df_prod_sala_comb_copy)
+        df_sim_sal_crud, df_prod_sal_crud_copy = post_process_sim_and_prod("Salina Cruz -Crudo", df_sim_sal_crud, df_prod_sal_crud_copy)
+        df_sim_sal_gas, df_prod_sal_gas_copy = post_process_sim_and_prod("Salina Cruz -Gasolinas", df_sim_sal_gas, df_prod_sal_gas_copy)
+        df_sim_sal_die, df_prod_sal_die_copy = post_process_sim_and_prod("Salina Cruz -Diesel", df_sim_sal_die, df_prod_sal_die_copy)
+        df_sim_sal_turb, df_prod_sal_turb_copy = post_process_sim_and_prod("Salina Cruz -Turbosina", df_sim_sal_turb, df_prod_sal_turb_copy)
+        df_sim_sal_comb, df_prod_sal_comb_copy = post_process_sim_and_prod("Salina Cruz -Combustoleo", df_sim_sal_comb, df_prod_sal_comb_copy)
+        df_sim_tula_crud, df_prod_tula_crud_copy = post_process_sim_and_prod("Tula -Crudo", df_sim_tula_crud, df_prod_tula_crud_copy)
+        df_sim_tula_gas, df_prod_tula_gas_copy = post_process_sim_and_prod("Tula -Gasolinas", df_sim_tula_gas, df_prod_tula_gas_copy)
+        df_sim_tula_die, df_prod_tula_die_copy = post_process_sim_and_prod("Tula -Diesel", df_sim_tula_die, df_prod_tula_die_copy)
+        df_sim_tula_turb, df_prod_tula_turb_copy = post_process_sim_and_prod("Tula -Turbosina", df_sim_tula_turb, df_prod_tula_turb_copy)
+        df_sim_tula_comb, df_prod_tula_comb_copy = post_process_sim_and_prod("Tula -Combustoleo", df_sim_tula_comb, df_prod_tula_comb_copy)
+        df_sim_olme_crud, df_prod_olme_crud_copy = post_process_sim_and_prod("Olmeca -Crudo", df_sim_olme_crud, df_prod_olme_crud_copy)
+        df_sim_olme_gas, df_prod_olme_gas_copy = post_process_sim_and_prod("Olmeca -Gasolinas", df_sim_olme_gas, df_prod_olme_gas_copy)
+        df_sim_olme_die, df_prod_olme_die_copy = post_process_sim_and_prod("Olmeca -Diesel", df_sim_olme_die, df_prod_olme_die_copy)
 
         app.after(0, app.update_progress, 0.97, "Finalizando...")
 
