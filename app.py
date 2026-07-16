@@ -10,11 +10,18 @@ import traceback
 from termcolor import colored
 import db_helper
 
-class LoadingOverlay(ctk.CTkFrame):
+class LoadingOverlay(ctk.CTkToplevel):
     def __init__(self, parent):
-        # Fondo oscuro/gris para atenuar la pantalla principal
-        super().__init__(parent, fg_color=("#505050", "#0a0a0a"))
+        super().__init__(parent)
         self.parent = parent
+        self.title("Cargando...")
+        self.withdraw() # Iniciar oculto
+        
+        # Quitar bordes y hacerlo flotante/modal
+        self.overrideredirect(True)
+        
+        # Fondo oscuro/gris para atenuar la pantalla principal
+        self.configure(fg_color=("#505050", "#0a0a0a"))
         
         # Tarjeta central
         self.card = ctk.CTkFrame(self, fg_color=("#ffffff", "#1e1e1e"), corner_radius=15, width=220, height=180)
@@ -31,22 +38,57 @@ class LoadingOverlay(ctk.CTkFrame):
         
         self.angle = 0
         self.animating = False
+        self.alpha = 0.0
         
     def start(self, text="Cargando..."):
         self.lbl_text.configure(text=text)
-        # Adaptar color del canvas al tema actual
-        bg_color = "#1e1e1e" if ctk.get_appearance_mode() == "Dark" else "#ffffff"
-        self.canvas.configure(bg=bg_color)
         
-        self.place(relx=0, rely=0, relwidth=1, relheight=1)
-        self.lift() # Asegurar que esté encima de todo
+        # Sincronizar posición y tamaño con la ventana principal
+        self.parent.update_idletasks()
+        x = self.parent.winfo_x()
+        y = self.parent.winfo_y()
+        w = self.parent.winfo_width()
+        h = self.parent.winfo_height()
+        self.geometry(f"{w}x{h}+{x}+{y}")
+        
+        # Adaptar color del canvas al tema actual
+        bg_theme = ctk.get_appearance_mode()
+        canvas_bg = "#1e1e1e" if bg_theme == "Dark" else "#ffffff"
+        self.canvas.configure(bg=canvas_bg)
+        
+        # Reiniciar opacidad y mostrar
+        self.alpha = 0.0
+        self.wm_attributes("-alpha", self.alpha)
+        self.deiconify()
+        self.parent.update_idletasks()  # Asegurar que Tkinter procese la deiconificación antes del fade-in
+        self.lift()
+        try:
+            self.grab_set() # Bloquear clics en la ventana principal
+        except Exception:
+            pass
+        
         self.animating = True
+        self.fade_in()
         self.animate()
         
     def stop(self):
         self.animating = False
-        self.place_forget()
+        try:
+            self.grab_release()
+        except Exception:
+            pass
+        self.withdraw()
         
+    def fade_in(self):
+        if not self.animating:
+            return
+        if self.alpha < 0.70:
+            self.alpha += 0.07
+            if self.alpha > 0.70:
+                self.alpha = 0.70
+            self.wm_attributes("-alpha", self.alpha)
+            self.after(15, self.fade_in)
+            
     def animate(self):
         if not self.animating:
             return
