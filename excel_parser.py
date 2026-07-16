@@ -205,6 +205,10 @@ def load_data(app, file_path):
                 anio = str(anio).strip()
                 mes = str(mes).strip()
                 
+                # Proteger contra registros corruptos en la base de datos (donde el año no es de 4 dígitos)
+                if not (anio.isdigit() and len(anio) == 4):
+                    continue
+                
                 if mes == "AÑO":
                     insert_pos = 0
                     replaced = False

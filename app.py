@@ -423,15 +423,16 @@ class ExcelViewerApp(ctk.CTk):
             self.btn_guardar.configure(state="disabled")
             self.btn_powerpoint.configure(state="disabled")
             self.progress_bar.pack(pady=15, padx=20, side="left")
-            self.progress_bar.set(0.0)
+            self.progress_bar.configure(mode="indeterminate")
+            self.progress_bar.start()
         else:
             self.btn_buscar.configure(state="normal")
             self.btn_guardar.configure(state="normal")
             self.btn_powerpoint.configure(state="normal")
+            self.progress_bar.stop()
             self.progress_bar.pack_forget()
 
     def update_progress(self, val, text_msg=None):
-        self.progress_bar.set(val)
         if text_msg is not None:
             self.lbl_file.configure(text=text_msg)
 
@@ -1615,10 +1616,25 @@ class ExcelViewerApp(ctk.CTk):
             
         elif table_name == "historica":
             row_data = self.table3.values[row]
-            period_key = str(row_data[0])
+            period_key = str(row_data[0]).strip()
             valor_actual = str(row_data[1])
             
-            self.show_edit_delete_dialog(selection, "historica", period_key, valor_actual)
+            # Si es un mes (no es un año de 4 dígitos), buscamos el año hacia arriba
+            if not (period_key.isdigit() and len(period_key) == 4):
+                year_found = None
+                for r in range(row - 1, 0, -1):
+                    chk_val = str(self.table3.values[r][0]).strip()
+                    if chk_val.isdigit() and len(chk_val) == 4:
+                        year_found = chk_val
+                        break
+                if year_found:
+                    clave = f"{period_key} {year_found}"
+                else:
+                    clave = period_key
+            else:
+                clave = period_key
+            
+            self.show_edit_delete_dialog(selection, "historica", clave, valor_actual)
 
         elif table_name == "simulacion":
             if not self.table4 or not hasattr(self, 'table4'):
