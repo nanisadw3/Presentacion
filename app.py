@@ -1666,7 +1666,25 @@ class ExcelViewerApp(ctk.CTk):
         except:
             print(f"\n[!] ERROR EN HILO DE CARGA:\n{err_msg}\n\nTRACEBACK:\n{error_details}")
             
-        messagebox.showerror("Error Detallado", f"Ocurrió un error al leer el archivo:\n{err_msg}\n\nDetalles técnicos:\n{error_details}")
+        # Detectar si el error es debido a seleccionar un archivo Excel incorrecto
+        is_wrong_excel = False
+        if "Length mismatch" in err_msg or "Expected axis has" in err_msg:
+            is_wrong_excel = True
+        elif "Worksheet" in err_msg or "not found in workbook" in err_msg.lower():
+            is_wrong_excel = True
+        elif "KeyError" in err_msg or "KeyError" in error_details:
+            is_wrong_excel = True
+
+        if is_wrong_excel:
+            user_msg = (
+                "⚠️ ¡ERROR DE FORMATO DE EXCEL! ⚠️\n\n"
+                "El archivo seleccionado no coincide con la estructura de columnas o pestañas esperadas.\n"
+                "Es muy probable que no hayas seleccionado el archivo Excel de producción correcto.\n\n"
+                "Por favor, verifica el archivo e inténtalo de nuevo."
+            )
+            messagebox.showerror("Archivo Excel Incorrecto", user_msg)
+        else:
+            messagebox.showerror("Error Detallado", f"Ocurrió un error al leer el archivo:\n{err_msg}\n\nDetalles técnicos:\n{error_details}")
 
     def get_dataframes_for_process(self, selection):
         if selection == "Crudo":
