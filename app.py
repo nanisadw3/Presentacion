@@ -1776,75 +1776,107 @@ class ExcelViewerApp(ctk.CTk):
             from openpyxl.styles import Font, Border, Side
             from openpyxl.utils import get_column_letter
 
-            opciones_procesos = [
-                "Crudo", "Gasolinas", "Diesel", "Turbosina", "Asfalto", "Combustoleo", 
-                "Cadereyta -Crudo", "Cadereyta -Gasolinas", "Cadereyta -Diesel", "Cadereyta -Combustoleo", 
-                "Madero -Crudo", "Madero -Gasolinas", "Madero -Diesel", "Madero -Turbosina", "Madero -Combustoleo", 
-                "Minatitlan -Crudo", "Minatitlan -Gasolinas", "Minatitlan -Diesel", "Minatitlan -Combustoleo", 
-                "Salamanca -Crudo", "Salamanca -Gasolinas", "Salamanca -Diesel", "Salamanca -Turbosina", "Salamanca -Combustoleo", 
-                "Salina Cruz -Crudo", "Salina Cruz -Gasolinas", "Salina Cruz -Diesel", "Salina Cruz -Turbosina", "Salina Cruz -Combustoleo", 
-                "Tula -Crudo", "Tula -Gasolinas", "Tula -Diesel", "Tula -Turbosina", "Tula -Combustoleo", 
-                "Olmeca -Crudo", "Olmeca -Gasolinas", "Olmeca -Diesel"
-            ]
+            refinerias = {
+                "SNR": ["Crudo", "Gasolinas", "Diesel", "Turbosina", "Asfalto", "Combustoleo"],
+                "Cadereyta": ["Cadereyta -Crudo", "Cadereyta -Gasolinas", "Cadereyta -Diesel", "Cadereyta -Combustoleo"],
+                "Madero": ["Madero -Crudo", "Madero -Gasolinas", "Madero -Diesel", "Madero -Turbosina", "Madero -Combustoleo"],
+                "Minatitlan": ["Minatitlan -Crudo", "Minatitlan -Gasolinas", "Minatitlan -Diesel", "Minatitlan -Combustoleo"],
+                "Salamanca": ["Salamanca -Crudo", "Salamanca -Gasolinas", "Salamanca -Diesel", "Salamanca -Turbosina", "Salamanca -Combustoleo"],
+                "Salina Cruz": ["Salina Cruz -Crudo", "Salina Cruz -Gasolinas", "Salina Cruz -Diesel", "Salina Cruz -Turbosina", "Salina Cruz -Combustoleo"],
+                "Tula": ["Tula -Crudo", "Tula -Gasolinas", "Tula -Diesel", "Tula -Turbosina", "Tula -Combustoleo"],
+                "Olmeca": ["Olmeca -Crudo", "Olmeca -Gasolinas", "Olmeca -Diesel"]
+            }
 
             with pd.ExcelWriter(save_path, engine='openpyxl') as writer:
-                for proc in opciones_procesos:
-                    df1, df2, df3, df4 = self.get_dataframes_for_process(proc)
-                    if df1 is None or df1.empty:
+                for ref_name, products in refinerias.items():
+                    # Verificar si al menos un producto tiene datos para esta refinería
+                    has_data = False
+                    for proc in products:
+                        df1, _, _, _ = self.get_dataframes_for_process(proc)
+                        if df1 is not None and not df1.empty:
+                            has_data = True
+                            break
+                    if not has_data:
                         continue
                     
-                    # Nombre de hoja sanitizado (máx 31 caracteres, sin '/' ni caracteres prohibidos)
-                    sheet_name = proc[:31].replace("/", "-")
+                    # Nombre de la hoja sanitizado
+                    sheet_name = ref_name[:31]
                     
                     row_offset = 2
-                    df1.to_excel(writer, sheet_name=sheet_name, startrow=row_offset, index=False)
+                    subtitles = []  # Lista de (row_index, text, font_type)
                     
-                    row_offset += len(df1) + 4
-                    df2.to_excel(writer, sheet_name=sheet_name, startrow=row_offset, index=False)
-                    
-                    row_offset += len(df2) + 4
-                    df3.to_excel(writer, sheet_name=sheet_name, startrow=row_offset, index=False)
-                    
-                    if df4 is not None and not df4.empty:
-                        row_offset += len(df3) + 4
-                        df4.to_excel(writer, sheet_name=sheet_name, startrow=row_offset, index=False)
+                    for proc in products:
+                        df1, df2, df3, df4 = self.get_dataframes_for_process(proc)
+                        if df1 is None or df1.empty:
+                            continue
+                        
+                        # Título del producto
+                        title_row = row_offset
+                        subtitles.append((title_row, f"PRODUCTO: {proc.upper()}", "title"))
+                        
+                        # Tabla 1: Producción Diaria
+                        t1_row = row_offset + 1
+                        subtitles.append((t1_row, "Tabla 1: Producción Diaria", "subtitle"))
+                        df1.to_excel(writer, sheet_name=sheet_name, startrow=t1_row + 1, index=False)
+                        
+                        # Tabla 2: Programa SNR
+                        t2_row = t1_row + len(df1) + 4
+                        subtitles.append((t2_row, "Tabla 2: Programa de Producción (SNR)", "subtitle"))
+                        df2.to_excel(writer, sheet_name=sheet_name, startrow=t2_row + 1, index=False)
+                        
+                        # Tabla 3: Histórico
+                        t3_row = t2_row + len(df2) + 4
+                        subtitles.append((t3_row, "Tabla 3: Fecha y Producción Histórica", "subtitle"))
+                        df3.to_excel(writer, sheet_name=sheet_name, startrow=t3_row + 1, index=False)
+                        
+                        # Tabla 4: Simulación
+                        next_offset = t3_row + len(df3) + 4
+                        if df4 is not None and not df4.empty:
+                            t4_row = t3_row + len(df3) + 4
+                            subtitles.append((t4_row, "Tabla 4: Simulación de Producción Anual", "subtitle"))
+                            df4.to_excel(writer, sheet_name=sheet_name, startrow=t4_row + 1, index=False)
+                            next_offset = t4_row + len(df4) + 4
+                            
+                        # Espacio de separación para el próximo producto
+                        row_offset = next_offset + 2
                     
                     # Formatear la hoja
                     worksheet = writer.sheets[sheet_name]
                     
-                    # Título Principal
-                    worksheet.cell(row=1, column=1, value=f"REPORTE DE PROYECCIÓN Y PRODUCCIÓN - {proc.upper()}")
+                    # Título Principal de la refinería
+                    worksheet.cell(row=1, column=1, value=f"REPORTE DE PROYECCIÓN Y PRODUCCIÓN - {ref_name.upper()}")
                     worksheet.cell(row=1, column=1).font = Font(name="Segoe UI", size=15, bold=True, color="1F497D")
                     
-                    # Subtítulos
-                    subtitles = [
-                        (2, "Tabla 1: Producción Diaria"),
-                        (len(df1) + 6, "Tabla 2: Programa de Producción (SNR)"),
-                        (len(df1) + len(df2) + 10, "Tabla 3: Fecha y Producción Histórica")
-                    ]
-                    if df4 is not None and not df4.empty:
-                        subtitles.append((len(df1) + len(df2) + len(df3) + 14, "Tabla 4: Simulación de Producción Anual"))
-                    
-                    for r, text in subtitles:
+                    # Aplicar textos y estilos de subtítulos
+                    for r, text, f_type in subtitles:
                         worksheet.cell(row=r, column=1, value=text)
-                        worksheet.cell(row=r, column=1).font = Font(name="Segoe UI", size=12, bold=True, color="595959")
+                        if f_type == "title":
+                            worksheet.cell(row=r, column=1).font = Font(name="Segoe UI", size=13, bold=True, color="1F497D")
+                        else:
+                            worksheet.cell(row=r, column=1).font = Font(name="Segoe UI", size=11, bold=True, italic=True, color="595959")
                     
-                    # Bordes y fuentes
+                    # Bordes y fuentes generales para celdas de datos
                     thin_side = Side(border_style="thin", color="D3D3D3")
                     border = Border(left=thin_side, right=thin_side, top=thin_side, bottom=thin_side)
                     
                     for row in worksheet.iter_rows(min_row=3, max_row=worksheet.max_row, min_col=1, max_col=worksheet.max_column):
+                        # Evitar celdas de títulos y subtítulos
+                        is_subtitle_row = any(row[0].row == sub_r for sub_r, _, _ in subtitles)
+                        if is_subtitle_row:
+                            continue
                         for cell in row:
                             if cell.value is not None:
                                 cell.font = Font(name="Segoe UI", size=10)
                                 cell.border = border
                     
-                    # Autoajustar columnas
+                    # Autoajustar anchos de columnas
                     for col in worksheet.columns:
                         max_len = 0
                         col_letter = get_column_letter(col[0].column)
                         for cell in col:
                             if cell.value is not None:
+                                if cell.row == 1:
+                                    continue
                                 max_len = max(max_len, len(str(cell.value)))
                         worksheet.column_dimensions[col_letter].width = max(max_len + 4, 12)
             
