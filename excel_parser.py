@@ -77,26 +77,44 @@ def load_data(app, file_path):
             else:
                 return df_to_clean.applymap(safe_round)
 
-        # Autodetectar hoja
-        xls = pd.ExcelFile(file_path)
-        sheet_to_use = None
-        for sheet in xls.sheet_names:
-            normalizado = sheet.lower().replace(" ", "").replace("_", "")
-            if "enviocalculopromedio" in normalizado:
-                sheet_to_use = sheet
-                break
-        if not sheet_to_use:
+        # Autodetectar y usar caché si es el mismo archivo para acelerar recargas de celdas
+        use_cache = (
+            hasattr(app, 'cached_file_path') 
+            and app.cached_file_path == file_path 
+            and app.cached_df_sheet is not None 
+            and app.cached_sheet_name is not None
+        )
+        
+        if use_cache:
+            sheet_to_use = app.cached_sheet_name
+            df_sheet = app.cached_df_sheet
+            app.after(0, app.update_progress, 0.1, "Usando caché en memoria para recarga rápida...")
+        else:
+            # Autodetectar hoja
+            xls = pd.ExcelFile(file_path)
+            sheet_to_use = None
             for sheet in xls.sheet_names:
                 normalizado = sheet.lower().replace(" ", "").replace("_", "")
-                if "enviocalculo" in normalizado:
+                if "enviocalculopromedio" in normalizado:
                     sheet_to_use = sheet
                     break
-        if not sheet_to_use:
-            sheet_to_use = xls.sheet_names[0]
+            if not sheet_to_use:
+                for sheet in xls.sheet_names:
+                    normalizado = sheet.lower().replace(" ", "").replace("_", "")
+                    if "enviocalculo" in normalizado:
+                        sheet_to_use = sheet
+                        break
+            if not sheet_to_use:
+                sheet_to_use = xls.sheet_names[0]
 
-        # --- LEER LA HOJA COMPLETA UNA SOLA VEZ ---
-        df_sheet = pd.read_excel(file_path, sheet_name=sheet_to_use, header=None)
-        app.after(0, app.update_progress, 0.1, "Leyendo hoja de cálculo...")
+            # --- LEER LA HOJA COMPLETA UNA SOLA VEZ ---
+            app.after(0, app.update_progress, 0.1, "Leyendo hoja de cálculo...")
+            df_sheet = pd.read_excel(file_path, sheet_name=sheet_to_use, header=None)
+            
+            # Guardar en caché en la instancia app
+            app.cached_file_path = file_path
+            app.cached_sheet_name = sheet_to_use
+            app.cached_df_sheet = df_sheet
 
         # Helper para formatear encabezados
         def get_clean_headers(row_idx, start_col, end_col):

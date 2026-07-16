@@ -400,6 +400,11 @@ class ExcelViewerApp(ctk.CTk):
         self.default_excel_dir = check_and_get_dir(path_excel_preferida)
         self.default_pptx_dir = check_and_get_dir(path_pptx_preferida)
 
+        # Variables de caché para optimización de recargas
+        self.cached_file_path = None
+        self.cached_df_sheet = None
+        self.cached_sheet_name = None
+
         # Barra de progreso (inicialmente oculta)
         self.progress_bar = ctk.CTkProgressBar(self.row1_frame, width=200)
         self.progress_bar.set(0.0)
@@ -448,6 +453,7 @@ class ExcelViewerApp(ctk.CTk):
         lbl_proceso.pack(pady=(10, 0))
         opciones_procesos = ["Crudo", "Gasolinas", "Diesel", "Turbosina", "Asfalto", "Combustoleo", "Cadereyta -Crudo", "Cadereyta -Gasolinas", "Cadereyta -Diesel", "Cadereyta -Combustoleo", "Madero -Crudo", "Madero -Gasolinas", "Madero -Diesel", "Madero -Turbosina", "Madero -Combustoleo", "Minatitlan -Crudo", "Minatitlan -Gasolinas", "Minatitlan -Diesel", "Minatitlan -Combustoleo", "Salamanca -Crudo", "Salamanca -Gasolinas", "Salamanca -Diesel", "Salamanca -Turbosina", "Salamanca -Combustoleo", "Salina Cruz -Crudo", "Salina Cruz -Gasolinas", "Salina Cruz -Diesel", "Salina Cruz -Turbosina", "Salina Cruz -Combustoleo", "Tula -Crudo", "Tula -Gasolinas", "Tula -Diesel", "Tula -Turbosina", "Tula -Combustoleo", "Olmeca -Crudo", "Olmeca -Gasolinas", "Olmeca -Diesel"]
         combo_proceso = ctk.CTkComboBox(dialog, values=opciones_procesos, width=250)
+        combo_proceso.set(self.cb_proceso.get())
         combo_proceso.pack(pady=(5, 10))
 
         tipo_var = ctk.StringVar(value="mes")
@@ -1455,6 +1461,75 @@ class ExcelViewerApp(ctk.CTk):
                 command=lambda cell: self.on_table_clicked("simulacion", cell),
             )
             self.table4.pack(expand=True, fill="both", padx=10, pady=20)
+
+        # --- RESALTAR CELDAS MODIFICADAS ---
+        import db_helper
+        mods = db_helper.get_modificaciones(selection)
+
+        # 1. Tabla Diaria
+        try:
+            for c_idx in range(1, len(table_values[0])):
+                col_name = headers[c_idx]
+                target_proceso = self.resolve_proceso_name(selection, col_name)
+                if target_proceso:
+                    target_mods = db_helper.get_modificaciones(target_proceso)
+                    diaria_mods = target_mods.get("diaria", {})
+                    for r_idx in range(1, len(table_values)):
+                        dia_key = str(table_values[r_idx][0])
+                        if dia_key in diaria_mods:
+                            self.table.insert(row=r_idx, column=c_idx, value=self.table.get(r_idx, c_idx), fg_color="#1f3d5a")
+        except Exception as e:
+            print(f"Error resaltando tabla diaria: {e}")
+
+        # 2. Tabla Programa
+        try:
+            prog_mods = mods.get("programa", {})
+            for r_idx in range(1, len(table_values2)):
+                for c_idx in range(2):
+                    col_name = headers2[c_idx]
+                    key = f"Row_{r_idx - 1}_{col_name}"
+                    if key in prog_mods:
+                        self.table2.insert(row=r_idx, column=c_idx, value=self.table2.get(r_idx, c_idx), fg_color="#1f3d5a")
+        except Exception as e:
+            print(f"Error resaltando tabla programa: {e}")
+
+        # 3. Tabla Histórica
+        try:
+            hist_mods = mods.get("historica", {})
+            extra_prod_rows = db_helper.get_extra_prod(selection)
+            extra_keys = set()
+            for ep in extra_prod_rows:
+                anio, mes, prod = ep
+                if str(mes).strip() == "AÑO":
+                    extra_keys.add(str(anio).strip())
+                else:
+                    extra_keys.add(f"{str(mes).strip()} {str(anio).strip()}")
+                    
+            for r_idx in range(1, len(table_values3)):
+                period_key = str(table_values3[r_idx][0])
+                is_modified = period_key in hist_mods
+                is_extra = period_key in extra_keys or (period_key.split()[0] in extra_keys if len(period_key.split()) == 2 else False)
+                if is_modified or is_extra:
+                    self.table3.insert(row=r_idx, column=1, value=self.table3.get(r_idx, 1), fg_color="#1f3d5a")
+        except Exception as e:
+            print(f"Error resaltando tabla histórica: {e}")
+
+        # 4. Tabla Simulación
+        try:
+            if df_sim is not None and hasattr(self, 'table4') and self.table4 is not None:
+                sim_mods = mods.get("simulacion", {})
+                for r_idx in range(1, len(table_values4)):
+                    mes = str(table_values4[r_idx][0]).strip()
+                    if mes == "TOTALES":
+                        continue
+                    prod_key = f"Sim_{mes}_Prod"
+                    dias_key = f"Sim_{mes}_Dias"
+                    if prod_key in sim_mods:
+                        self.table4.insert(row=r_idx, column=1, value=self.table4.get(r_idx, 1), fg_color="#1f3d5a")
+                    if dias_key in sim_mods:
+                        self.table4.insert(row=r_idx, column=2, value=self.table4.get(r_idx, 2), fg_color="#1f3d5a")
+        except Exception as e:
+            print(f"Error resaltando tabla simulación: {e}")
 
     def on_load_error(self, err_msg, error_details):
         self.set_loading_state(False)
