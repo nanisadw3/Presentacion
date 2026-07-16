@@ -1640,20 +1640,42 @@ def load_data(app, file_path):
         import calendar
         from datetime import datetime
         now = datetime.now()
-        current_year = now.year
+        
+        # Determinar el año que representa la hoja de cálculo (sheet_year)
+        sheet_year = 2026
+        if df_prod is not None and not df_prod.empty:
+            years_found = []
+            for idx, row_data in df_prod.iterrows():
+                val = str(row_data.iloc[0]).strip()
+                if val.isdigit() and len(val) == 4:
+                    years_found.append(int(val))
+            if years_found:
+                sheet_year = max(years_found) + 1
+
+        system_year = now.year
+        system_month = now.month
+        system_day = now.day
         
         meses_nombres = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
         meses_cortos = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
         
-        # Días por mes dinámicos: días reales para meses pasados, días transcurridos menos uno para el mes actual, y 0 para meses futuros
+        # Días por mes dinámicos basados en la relación entre el año de la hoja y el año del sistema
         dias_por_mes = []
         for m in range(1, 13):
-            if m < now.month:
-                dias_por_mes.append(calendar.monthrange(current_year, m)[1])
-            elif m == now.month:
-                dias_por_mes.append(max(0, now.day - 1))
-            else:
+            if sheet_year < system_year:
+                # El año de la hoja ya concluyó. Todos los meses completos.
+                dias_por_mes.append(calendar.monthrange(sheet_year, m)[1])
+            elif sheet_year > system_year:
+                # El año de la hoja es futuro. Ningún mes transcurrido.
                 dias_por_mes.append(0)
+            else:
+                # Es el año actual
+                if m < system_month:
+                    dias_por_mes.append(calendar.monthrange(sheet_year, m)[1])
+                elif m == system_month:
+                    dias_por_mes.append(max(0, system_day - 1))
+                else:
+                    dias_por_mes.append(0)
 
         days_passed = sum(dias_por_mes)
 
@@ -2561,22 +2583,47 @@ def load_data(app, file_path):
             mods = db_helper.get_modificaciones(proceso_name)
             sim_mods = mods.get("simulacion", {})
             
+            # Determinar el año que representa la hoja de cálculo (sheet_year)
+            sheet_year = 2026
+            if df_prod_val is not None and not df_prod_val.empty:
+                years_found = []
+                for r in df_prod_val.to_numpy().tolist():
+                    val = str(r[0]).strip()
+                    if val.isdigit() and len(val) == 4:
+                        years_found.append(int(val))
+                if years_found:
+                    sheet_year = max(years_found) + 1
+            
             rows_sim = df_sim_val.to_numpy().tolist()
             for idx in range(12):
                 if idx >= len(rows_sim) - 1:
                     break
                 row = rows_sim[idx]
                 mes = str(row[0]).strip()
-                prod_key = f"Sim_{mes}_Prod"
-                dias_key = f"Sim_{mes}_Dias"
+                
+                # Claves específicas del año
+                prod_key = f"Sim_{sheet_year}_{mes}_Prod"
+                dias_key = f"Sim_{sheet_year}_{mes}_Dias"
+                
                 prod_val = row[1]
                 dias_val = row[2]
+                
+                # Cargar producción (con fallback heredado de la versión anterior para 2026)
                 if prod_key in sim_mods:
                     try: prod_val = int(round(float(sim_mods[prod_key])))
                     except: pass
+                elif sheet_year == 2026 and f"Sim_{mes}_Prod" in sim_mods:
+                    try: prod_val = int(round(float(sim_mods[f"Sim_{mes}_Prod"])))
+                    except: pass
+                    
+                # Cargar días (con fallback heredado de la versión anterior para 2026)
                 if dias_key in sim_mods:
                     try: dias_val = int(round(float(sim_mods[dias_key])))
                     except: pass
+                elif sheet_year == 2026 and f"Sim_{mes}_Dias" in sim_mods:
+                    try: dias_val = int(round(float(sim_mods[f"Sim_{mes}_Dias"])))
+                    except: pass
+                    
                 try: total_val = int(prod_val * dias_val)
                 except: total_val = 0
                 rows_sim[idx][1] = prod_val
@@ -2600,11 +2647,11 @@ def load_data(app, file_path):
                 rows_sim[-1][3] = f"Suma: {int(suma_total)} | Prom: {promedio:.2f}"
             df_sim_new = pd.DataFrame(rows_sim, columns=df_sim_val.columns)
             
-            # Agregar o actualizar la fila del año actual en df_prod
+            # Agregar o actualizar la fila de sheet_year en df_prod
             df_prod_new = df_prod_val
             if df_prod_val is not None and not df_prod_val.empty:
                 rows_prod = df_prod_val.to_numpy().tolist()
-                year_str = str(current_year)
+                year_str = str(sheet_year)
                 year_idx = -1
                 for idx, r in enumerate(rows_prod):
                     if str(r[0]).strip() == year_str:
@@ -2618,7 +2665,7 @@ def load_data(app, file_path):
                     for idx, r in enumerate(rows_prod):
                         val0 = str(r[0]).strip()
                         if val0.isdigit() and len(val0) == 4:
-                            if int(val0) < current_year:
+                            if int(val0) < sheet_year:
                                 insert_pos = idx + 1
                             else:
                                 insert_pos = idx

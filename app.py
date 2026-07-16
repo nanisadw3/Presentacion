@@ -187,6 +187,15 @@ class ExcelViewerApp(ctk.CTk):
                                             fg_color="#8b5cf6", hover_color="#7c3aed")
         self.btn_powerpoint.pack(pady=8, padx=6, side="left")
 
+        self.btn_excel = ctk.CTkButton(self.row2_frame, 
+                                       text="Exportar a Excel", 
+                                       font=("Roboto", 12, "bold"),
+                                       command=self.export_to_excel,
+                                       height=32, width=160,
+                                       corner_radius=8,
+                                       fg_color="#107c41", hover_color="#0a5c30")
+        self.btn_excel.pack(pady=8, padx=6, side="left")
+
         self.btn_guardar = ctk.CTkButton(self.row2_frame, 
                                         text="Guardar en BD", 
                                         font=("Roboto", 12, "bold"),
@@ -519,11 +528,15 @@ class ExcelViewerApp(ctk.CTk):
             self.btn_buscar.configure(state="disabled")
             self.btn_guardar.configure(state="disabled")
             self.btn_powerpoint.configure(state="disabled")
+            if hasattr(self, 'btn_excel'):
+                self.btn_excel.configure(state="disabled")
             self.loading_overlay.start(loading_text)
         else:
             self.btn_buscar.configure(state="normal")
             self.btn_guardar.configure(state="normal")
             self.btn_powerpoint.configure(state="normal")
+            if hasattr(self, 'btn_excel'):
+                self.btn_excel.configure(state="normal")
             self.loading_overlay.stop()
 
     def update_progress(self, val, text_msg=None):
@@ -1615,15 +1628,31 @@ class ExcelViewerApp(ctk.CTk):
         try:
             if df_sim is not None and hasattr(self, 'table4') and self.table4 is not None:
                 sim_mods = mods.get("simulacion", {})
+                
+                # Determinar el año que representa la hoja de cálculo (sheet_year)
+                sheet_year = 2026
+                if df_prod is not None and not df_prod.empty:
+                    years_found = []
+                    for idx, r in df_prod.iterrows():
+                        val = str(r.iloc[0]).strip()
+                        if val.isdigit() and len(val) == 4:
+                            years_found.append(int(val))
+                    if years_found:
+                        sheet_year = max(years_found) + 1
+                        
                 for r_idx in range(1, len(table_values4)):
                     mes = str(table_values4[r_idx][0]).strip()
                     if mes == "TOTALES":
                         continue
-                    prod_key = f"Sim_{mes}_Prod"
-                    dias_key = f"Sim_{mes}_Dias"
-                    if prod_key in sim_mods:
+                    prod_key = f"Sim_{sheet_year}_{mes}_Prod"
+                    dias_key = f"Sim_{sheet_year}_{mes}_Dias"
+                    
+                    has_prod_mod = prod_key in sim_mods or (sheet_year == 2026 and f"Sim_{mes}_Prod" in sim_mods)
+                    has_dias_mod = dias_key in sim_mods or (sheet_year == 2026 and f"Sim_{mes}_Dias" in sim_mods)
+                    
+                    if has_prod_mod:
                         self.table4.insert(row=r_idx, column=1, value=self.table4.get(r_idx, 1), fg_color="#1f3d5a")
-                    if dias_key in sim_mods:
+                    if has_dias_mod:
                         self.table4.insert(row=r_idx, column=2, value=self.table4.get(r_idx, 2), fg_color="#1f3d5a")
         except Exception as e:
             print(f"Error resaltando tabla simulación: {e}")
@@ -1638,6 +1667,123 @@ class ExcelViewerApp(ctk.CTk):
             print(f"\n[!] ERROR EN HILO DE CARGA:\n{err_msg}\n\nTRACEBACK:\n{error_details}")
             
         messagebox.showerror("Error Detallado", f"Ocurrió un error al leer el archivo:\n{err_msg}\n\nDetalles técnicos:\n{error_details}")
+
+    def export_to_excel(self):
+        if self.df_data is None or self.df_snr is None or self.df_prod is None:
+            messagebox.showerror("Error", "Primero debes buscar un archivo Excel para extraer los datos.")
+            return
+
+        selection = self.cb_proceso.get()
+        save_path = filedialog.asksaveasfilename(
+            title="Guardar reporte Excel",
+            initialdir=self.default_pptx_dir,
+            initialfile=f"Reporte_{selection.replace(' ', '')}.xlsx",
+            defaultextension=".xlsx",
+            filetypes=[("Archivos Excel", "*.xlsx")]
+        )
+
+        if save_path:
+            self.set_loading_state(True, "Exportando tablas a Excel...")
+            threading.Thread(target=self.async_export_to_excel, args=(save_path, selection), daemon=True).start()
+
+    def async_export_to_excel(self, save_path, selection):
+        try:
+            import openpyxl
+            from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+            from openpyxl.utils import get_column_letter
+
+            # 1. Obtener valores de las tablas desde la GUI
+            # Tabla 1
+            t1_vals = self.table.values
+            df1 = pd.DataFrame(t1_vals[1:], columns=t1_vals[0])
+            
+            # Tabla 2
+            t2_vals = self.table2.values
+            df2 = pd.DataFrame(t2_vals[1:], columns=t2_vals[0])
+            
+            # Tabla 3
+            t3_vals = self.table3.values
+            df3 = pd.DataFrame(t3_vals[1:], columns=t3_vals[0])
+            
+            # Tabla 4 (opcional)
+            df4 = None
+            if hasattr(self, 'table4') and self.table4 is not None:
+                t4_vals = self.table4.values
+                df4 = pd.DataFrame(t4_vals[1:], columns=t4_vals[0])
+
+            # 2. Escribir a Excel con formato elegante
+            with pd.ExcelWriter(save_path, engine='openpyxl') as writer:
+                sheet_name = "Reporte"
+                
+                # Escribir dataframes
+                row_offset = 2
+                df1.to_excel(writer, sheet_name=sheet_name, startrow=row_offset, index=False)
+                
+                row_offset += len(df1) + 4
+                df2.to_excel(writer, sheet_name=sheet_name, startrow=row_offset, index=False)
+                
+                row_offset += len(df2) + 4
+                df3.to_excel(writer, sheet_name=sheet_name, startrow=row_offset, index=False)
+                
+                if df4 is not None:
+                    row_offset += len(df3) + 4
+                    df4.to_excel(writer, sheet_name=sheet_name, startrow=row_offset, index=False)
+                
+                # Formatear la hoja
+                worksheet = writer.sheets[sheet_name]
+                
+                # Título Principal
+                worksheet.cell(row=1, column=1, value=f"REPORTE DE PROYECCIÓN Y PRODUCCIÓN - {selection}")
+                worksheet.cell(row=1, column=1).font = Font(name="Segoe UI", size=15, bold=True, color="1F497D")
+                
+                # Subtítulos
+                subtitles = [
+                    (2, "Tabla 1: Producción Diaria"),
+                    (len(df1) + 6, "Tabla 2: Programa de Producción (SNR)"),
+                    (len(df1) + len(df2) + 10, "Tabla 3: Fecha y Producción Histórica")
+                ]
+                if df4 is not None:
+                    subtitles.append((len(df1) + len(df2) + len(df3) + 14, "Tabla 4: Simulación de Producción Anual"))
+                
+                for r, text in subtitles:
+                    worksheet.cell(row=r, column=1, value=text)
+                    worksheet.cell(row=r, column=1).font = Font(name="Segoe UI", size=12, bold=True, color="595959")
+                
+                # Ajustar anchos y formato de bordes
+                thin_side = Side(border_style="thin", color="D3D3D3")
+                border = Border(left=thin_side, right=thin_side, top=thin_side, bottom=thin_side)
+                
+                for row in worksheet.iter_rows(min_row=3, max_row=worksheet.max_row, min_col=1, max_col=worksheet.max_column):
+                    for cell in row:
+                        if cell.value is not None:
+                            cell.font = Font(name="Segoe UI", size=10)
+                            cell.border = border
+                
+                # Ajustar anchos de columnas
+                for col in worksheet.columns:
+                    max_len = 0
+                    col_letter = get_column_letter(col[0].column)
+                    for cell in col:
+                        if cell.value is not None:
+                            max_len = max(max_len, len(str(cell.value)))
+                    worksheet.column_dimensions[col_letter].width = max(max_len + 4, 12)
+            
+            self.after(0, self.on_export_excel_success, save_path)
+        except Exception as e:
+            err_msg = str(e)
+            err_details = traceback.format_exc()
+            self.after(0, self.on_export_excel_error, err_msg, err_details)
+
+    def on_export_excel_success(self, save_path):
+        self.set_loading_state(False)
+        self.lbl_file.configure(text="Exportación a Excel lista")
+        messagebox.showinfo("Éxito", f"¡Reporte de Excel exportado con éxito!\n\nGuardado en:\n{save_path}")
+
+    def on_export_excel_error(self, err_msg, error_details):
+        self.set_loading_state(False)
+        self.lbl_file.configure(text="Error Excel")
+        print(f"Error exportando a Excel:\n{error_details}")
+        messagebox.showerror("Error", f"Ocurrió un error al exportar el reporte a Excel:\n{err_msg}")
 
     def send_to_powerpoint(self):
         if self.df_data is None or self.df_snr is None or self.df_prod is None:
@@ -1752,9 +1898,20 @@ class ExcelViewerApp(ctk.CTk):
                 messagebox.showwarning("No modificable", "El resultado de la multiplicación no se puede modificar directamente.")
                 return
                 
+            # Determinar el año de la simulación
+            sheet_year = 2026
+            if self.df_prod is not None and not self.df_prod.empty:
+                years_found = []
+                for r_idx, r in self.df_prod.iterrows():
+                    val = str(r.iloc[0]).strip()
+                    if val.isdigit() and len(val) == 4:
+                        years_found.append(int(val))
+                if years_found:
+                    sheet_year = max(years_found) + 1
+
             valor_actual = str(row_data[col])
             suffix = "Prod" if col_name == "Producción" else "Dias"
-            clave = f"Sim_{mes}_{suffix}"
+            clave = f"Sim_{sheet_year}_{mes}_{suffix}"
             
             self.show_edit_delete_dialog(selection, "simulacion", clave, valor_actual)
 
