@@ -514,6 +514,7 @@ class ExcelViewerApp(ctk.CTk):
 
         # Inicializar overlay de carga
         self.loading_overlay = LoadingOverlay(self)
+        self.cambios_sin_guardar = False
 
     def report_callback_exception(self, exc, val, tb):
         import traceback
@@ -617,6 +618,7 @@ class ExcelViewerApp(ctk.CTk):
             mes_val = combo_mes.get() if tipo_var.get() == "mes" else "AÑO"
             
             db_helper.save_extra_prod(proceso, anio, mes_val, prod)
+            self.cambios_sin_guardar = True
             
             tipo_txt = "mes de " + mes_val if mes_val != "AÑO" else "año completo"
             messagebox.showinfo("Éxito", f"Producción del {tipo_txt} para '{proceso}' en {anio} guardada correctamente.")
@@ -630,6 +632,7 @@ class ExcelViewerApp(ctk.CTk):
             if messagebox.askyesno("Confirmar", "¿Estás seguro de que quieres borrar TODOS los años y meses extra de la Base de Datos? (Esto no afecta al Excel original)"):
                 import db_helper
                 db_helper.clear_db()
+                self.cambios_sin_guardar = True
                 messagebox.showinfo("Limpieza Completa", "Se ha borrado toda la información extra de la base de datos local.")
                 dialog.destroy()
                 
@@ -648,291 +651,304 @@ class ExcelViewerApp(ctk.CTk):
             messagebox.showerror("Error", "Primero debes buscar un archivo Excel para extraer los datos.")
             return
 
-        db_path = filedialog.asksaveasfilename(
-            title="Crear o seleccionar Base de Datos SQLite",
-            initialdir=self.default_excel_dir,
-            initialfile="datos_extraidos.db",
-            defaultextension=".db",
-            filetypes=[("SQLite Database", "*.db *.sqlite")]
-        )
+        import os
+        import db_helper
 
-        if db_path:
-            import sqlite3
-            import math
+        db_path = db_helper.DB_PATH
+        db_exists = os.path.exists(db_path)
+
+        # Si la base de datos ya existe, solo guardamos si hubieron cambios
+        if db_exists and not getattr(self, 'cambios_sin_guardar', True):
+            messagebox.showinfo("Información", "No hay cambios pendientes por guardar en la base de datos.")
+            return
+
+        # Si no existe, se creará en la ubicación por defecto
+        # db_helper.init_db() se asegura de inicializar la estructura por defecto si no existe
+        if not db_exists:
             try:
-                conn = sqlite3.connect(db_path)
-
-                # Redondear todos los valores numéricos a enteros para la BD
-                # (la pantalla conserva los decimales de MCP y Producción).
-                def to_int_val(v):
-                    try:
-                        if v == "" or v is None:
-                            return v
-                        if isinstance(v, str):
-                            return v
-                        f = float(v)
-                        if math.isinf(f) or math.isnan(f):
-                            return ""
-                        return int(round(f))
-                    except (ValueError, TypeError):
-                        return v
-
-                def redondear_df(df):
-                    out = df.copy()
-                    
-                    # Renombrar columnas vacías o duplicadas para que SQLite no arroje error
-                    nuevas_columnas = []
-                    for i, c in enumerate(out.columns):
-                        if str(c).strip() == "" or pd.isna(c):
-                            nuevas_columnas.append(f"Col_Vacia_{i+1}")
-                        else:
-                            nuevas_columnas.append(str(c))
-                            
-                    vistos = set()
-                    for i in range(len(nuevas_columnas)):
-                        orig = nuevas_columnas[i]
-                        if orig in vistos:
-                            j = 1
-                            while f"{orig}_{j}" in vistos:
-                                j += 1
-                            nuevas_columnas[i] = f"{orig}_{j}"
-                        vistos.add(nuevas_columnas[i])
-                        
-                    out.columns = nuevas_columnas
-
-                    for c in out.columns:
-                        out[c] = out[c].map(to_int_val)
-                    return out
-
-                def save_df(df, table_name):
-                    if df is not None and len(df.columns) > 0:
-                        redondear_df(df).to_sql(table_name, conn, if_exists='replace', index=False)
-
-                # Guardar datos de Crudo
-                save_df(self.df_data, 'crudo_tabla_principal')
-                save_df(self.df_snr, 'crudo_programa_snr')
-                save_df(self.df_prod, 'crudo_produccion')
-                save_df(self.df_sim, 'crudo_simulacion_anual')
-
-                # Guardar datos de Crudo Cadereyta
-                save_df(getattr(self, 'df_data_cad', None), 'cadereyta_crudo_tabla_principal')
-                save_df(getattr(self, 'df_snr_cad', None), 'cadereyta_crudo_programa_snr')
-                save_df(getattr(self, 'df_prod_cad', None), 'cadereyta_crudo_produccion')
-                save_df(getattr(self, 'df_sim_cad', None), 'cadereyta_crudo_simulacion_anual')
-
-                 # Guardar datos de Gasolinas
-                save_df(self.df_data_gasolinas, 'gasolinas_tabla_principal')
-                save_df(self.df_snr_gasolinas, 'gasolinas_programa_snr')
-                save_df(self.df_prod_gasolinas, 'gasolinas_produccion')
-                save_df(getattr(self, 'df_sim_gasolinas', None), 'gasolinas_simulacion_anual')
-
-                # Guardar datos de Diesel
-                save_df(self.df_data_diesel, 'diesel_tabla_principal')
-                save_df(self.df_snr_diesel, 'diesel_programa_snr')
-                save_df(self.df_prod_diesel, 'diesel_produccion')
-                save_df(getattr(self, 'df_sim_diesel', None), 'diesel_simulacion_anual')
-
-                # Guardar datos de Turbosina
-                save_df(self.df_data_turbosina, 'turbosina_tabla_principal')
-                save_df(self.df_snr_turbosina, 'turbosina_programa_snr')
-                save_df(self.df_prod_turbosina, 'turbosina_produccion')
-                save_df(getattr(self, 'df_sim_turbosina', None), 'turbosina_simulacion_anual')
-
-                # Guardar datos de Asfalto
-                save_df(getattr(self, 'df_data_asfalto', None), 'asfalto_tabla_principal')
-                save_df(getattr(self, 'df_snr_asfalto', None), 'asfalto_programa_snr')
-                save_df(getattr(self, 'df_prod_asfalto', None), 'asfalto_produccion')
-                save_df(getattr(self, 'df_sim_asfalto', None), 'asfalto_simulacion_anual')
-
-                # Guardar datos de Combustoleo
-                save_df(getattr(self, 'df_data_combustoleo', None), 'combustoleo_tabla_principal')
-                save_df(getattr(self, 'df_snr_combustoleo', None), 'combustoleo_programa_snr')
-                save_df(getattr(self, 'df_prod_combustoleo', None), 'combustoleo_produccion')
-                save_df(getattr(self, 'df_sim_combustoleo', None), 'combustoleo_simulacion_anual')
-
-                # Guardar datos de Cadereyta - Gasolinas
-                save_df(getattr(self, 'df_data_cad_gas', None), 'cadereyta_gasolinas_tabla_principal')
-                save_df(getattr(self, 'df_snr_cad_gas', None), 'cadereyta_gasolinas_programa_snr')
-                save_df(getattr(self, 'df_prod_cad_gas', None), 'cadereyta_gasolinas_produccion')
-                save_df(getattr(self, 'df_sim_cad_gas', None), 'cadereyta_gasolinas_simulacion_anual')
-
-                # Guardar datos de Cadereyta - Diesel
-                save_df(getattr(self, 'df_data_cad_die', None), 'cadereyta_diesel_tabla_principal')
-                save_df(getattr(self, 'df_snr_cad_die', None), 'cadereyta_diesel_programa_snr')
-                save_df(getattr(self, 'df_prod_cad_die', None), 'cadereyta_diesel_produccion')
-                save_df(getattr(self, 'df_sim_cad_die', None), 'cadereyta_diesel_simulacion_anual')
-                save_df(getattr(self, 'df_data_cad_comb', None), 'cadereyta_combustoleo_tabla_principal')
-                save_df(getattr(self, 'df_snr_cad_comb', None), 'cadereyta_combustoleo_programa_snr')
-                save_df(getattr(self, 'df_prod_cad_comb', None), 'cadereyta_combustoleo_produccion')
-                save_df(getattr(self, 'df_sim_cad_comb', None), 'cadereyta_combustoleo_simulacion_anual')
-
-                # Guardar datos de Madero - Crudo
-                save_df(getattr(self, 'df_data_mad_crud', None), 'madero_crudo_tabla_principal')
-                save_df(getattr(self, 'df_snr_mad_crud', None), 'madero_crudo_programa_snr')
-                save_df(getattr(self, 'df_prod_mad_crud', None), 'madero_crudo_produccion')
-                save_df(getattr(self, 'df_sim_mad_crud', None), 'madero_crudo_simulacion_anual')
-
-                # Guardar datos de Madero - Gasolinas
-                save_df(getattr(self, 'df_data_mad_gas', None), 'madero_gasolinas_tabla_principal')
-                save_df(getattr(self, 'df_snr_mad_gas', None), 'madero_gasolinas_programa_snr')
-                save_df(getattr(self, 'df_prod_mad_gas', None), 'madero_gasolinas_produccion')
-                save_df(getattr(self, 'df_sim_mad_gas', None), 'madero_gasolinas_simulacion_anual')
-
-                # Guardar datos de Madero - Diesel
-                save_df(getattr(self, 'df_data_mad_die', None), 'madero_diesel_tabla_principal')
-                save_df(getattr(self, 'df_snr_mad_die', None), 'madero_diesel_programa_snr')
-                save_df(getattr(self, 'df_prod_mad_die', None), 'madero_diesel_produccion')
-                save_df(getattr(self, 'df_sim_mad_die', None), 'madero_diesel_simulacion_anual')
-
-                # Guardar datos de Madero - Turbosina
-                save_df(getattr(self, 'df_data_mad_turb', None), 'madero_turbosina_tabla_principal')
-                save_df(getattr(self, 'df_snr_mad_turb', None), 'madero_turbosina_programa_snr')
-                save_df(getattr(self, 'df_prod_mad_turb', None), 'madero_turbosina_produccion')
-                save_df(getattr(self, 'df_sim_mad_turb', None), 'madero_turbosina_simulacion_anual')
-
-                # Guardar datos de Madero - Combustoleo
-                save_df(getattr(self, 'df_data_mad_comb', None), 'madero_combustoleo_tabla_principal')
-                save_df(getattr(self, 'df_snr_mad_comb', None), 'madero_combustoleo_programa_snr')
-                save_df(getattr(self, 'df_prod_mad_comb', None), 'madero_combustoleo_produccion')
-                save_df(getattr(self, 'df_sim_mad_comb', None), 'madero_combustoleo_simulacion_anual')
-
-                # Guardar datos de Minatitlan - Crudo
-                save_df(getattr(self, 'df_data_mina_crud', None), 'minatitlan_crudo_tabla_principal')
-                save_df(getattr(self, 'df_snr_mina_crud', None), 'minatitlan_crudo_programa_snr')
-                save_df(getattr(self, 'df_prod_mina_crud', None), 'minatitlan_crudo_produccion')
-                save_df(getattr(self, 'df_sim_mina_crud', None), 'minatitlan_crudo_simulacion_anual')
-
-                # Guardar datos de Minatitlan - Gasolinas
-                save_df(getattr(self, 'df_data_mina_gas', None), 'minatitlan_gasolinas_tabla_principal')
-                save_df(getattr(self, 'df_snr_mina_gas', None), 'minatitlan_gasolinas_programa_snr')
-                save_df(getattr(self, 'df_prod_mina_gas', None), 'minatitlan_gasolinas_produccion')
-                save_df(getattr(self, 'df_sim_mina_gas', None), 'minatitlan_gasolinas_simulacion_anual')
-
-                # Guardar datos de Minatitlan - Diesel
-                save_df(getattr(self, 'df_data_mina_die', None), 'minatitlan_diesel_tabla_principal')
-                save_df(getattr(self, 'df_snr_mina_die', None), 'minatitlan_diesel_programa_snr')
-                save_df(getattr(self, 'df_prod_mina_die', None), 'minatitlan_diesel_produccion')
-                save_df(getattr(self, 'df_sim_mina_die', None), 'minatitlan_diesel_simulacion_anual')
-
-                # Guardar datos de Minatitlan - Combustoleo
-                save_df(getattr(self, 'df_data_mina_comb', None), 'minatitlan_combustoleo_tabla_principal')
-                save_df(getattr(self, 'df_snr_mina_comb', None), 'minatitlan_combustoleo_programa_snr')
-                save_df(getattr(self, 'df_prod_mina_comb', None), 'minatitlan_combustoleo_produccion')
-                save_df(getattr(self, 'df_sim_mina_comb', None), 'minatitlan_combustoleo_simulacion_anual')
-
-                # Guardar datos de Salamanca - Crudo
-                save_df(getattr(self, 'df_data_sala_crud', None), 'salamanca_crudo_tabla_principal')
-                save_df(getattr(self, 'df_snr_sala_crud', None), 'salamanca_crudo_programa_snr')
-                save_df(getattr(self, 'df_prod_sala_crud', None), 'salamanca_crudo_produccion')
-                save_df(getattr(self, 'df_sim_sala_crud', None), 'salamanca_crudo_simulacion_anual')
-
-                # Guardar datos de Salamanca - Gasolinas
-                save_df(getattr(self, 'df_data_sala_gas', None), 'salamanca_gasolinas_tabla_principal')
-                save_df(getattr(self, 'df_snr_sala_gas', None), 'salamanca_gasolinas_programa_snr')
-                save_df(getattr(self, 'df_prod_sala_gas', None), 'salamanca_gasolinas_produccion')
-                save_df(getattr(self, 'df_sim_sala_gas', None), 'salamanca_gasolinas_simulacion_anual')
-
-                # Guardar datos de Salamanca - Diesel
-                save_df(getattr(self, 'df_data_sala_die', None), 'salamanca_diesel_tabla_principal')
-                save_df(getattr(self, 'df_snr_sala_die', None), 'salamanca_diesel_programa_snr')
-                save_df(getattr(self, 'df_prod_sala_die', None), 'salamanca_diesel_produccion')
-                save_df(getattr(self, 'df_sim_sala_die', None), 'salamanca_diesel_simulacion_anual')
-
-                # Guardar datos de Salamanca - Turbosina
-                save_df(getattr(self, 'df_data_sala_turb', None), 'salamanca_turbosina_tabla_principal')
-                save_df(getattr(self, 'df_snr_sala_turb', None), 'salamanca_turbosina_programa_snr')
-                save_df(getattr(self, 'df_prod_sala_turb', None), 'salamanca_turbosina_produccion')
-                save_df(getattr(self, 'df_sim_sala_turb', None), 'salamanca_turbosina_simulacion_anual')
-
-                # Guardar datos de Salamanca - Combustoleo
-                save_df(getattr(self, 'df_data_sala_comb', None), 'salamanca_combustoleo_tabla_principal')
-                save_df(getattr(self, 'df_snr_sala_comb', None), 'salamanca_combustoleo_programa_snr')
-                save_df(getattr(self, 'df_prod_sala_comb', None), 'salamanca_combustoleo_produccion')
-                save_df(getattr(self, 'df_sim_sala_comb', None), 'salamanca_combustoleo_simulacion_anual')
-
-                # Guardar datos de Salina Cruz - Crudo
-                save_df(getattr(self, 'df_data_sal_crud', None), 'salina_cruz_crudo_tabla_principal')
-                save_df(getattr(self, 'df_snr_sal_crud', None), 'salina_cruz_crudo_programa_snr')
-                save_df(getattr(self, 'df_prod_sal_crud', None), 'salina_cruz_crudo_produccion')
-                save_df(getattr(self, 'df_sim_sal_crud', None), 'salina_cruz_crudo_simulacion_anual')
-
-                # Guardar datos de Salina Cruz - Gasolinas
-                save_df(getattr(self, 'df_data_sal_gas', None), 'salina_cruz_gasolinas_tabla_principal')
-                save_df(getattr(self, 'df_snr_sal_gas', None), 'salina_cruz_gasolinas_programa_snr')
-                save_df(getattr(self, 'df_prod_sal_gas', None), 'salina_cruz_gasolinas_produccion')
-                save_df(getattr(self, 'df_sim_sal_gas', None), 'salina_cruz_gasolinas_simulacion_anual')
-
-                # Guardar datos de Salina Cruz - Diesel
-                save_df(getattr(self, 'df_data_sal_die', None), 'salina_cruz_diesel_tabla_principal')
-                save_df(getattr(self, 'df_snr_sal_die', None), 'salina_cruz_diesel_programa_snr')
-                save_df(getattr(self, 'df_prod_sal_die', None), 'salina_cruz_diesel_produccion')
-                save_df(getattr(self, 'df_sim_sal_die', None), 'salina_cruz_diesel_simulacion_anual')
-
-                # Guardar datos de Salina Cruz - Turbosina
-                save_df(getattr(self, 'df_data_sal_turb', None), 'salina_cruz_turbosina_tabla_principal')
-                save_df(getattr(self, 'df_snr_sal_turb', None), 'salina_cruz_turbosina_programa_snr')
-                save_df(getattr(self, 'df_prod_sal_turb', None), 'salina_cruz_turbosina_produccion')
-                save_df(getattr(self, 'df_sim_sal_turb', None), 'salina_cruz_turbosina_simulacion_anual')
-
-                # Guardar datos de Salina Cruz - Combustoleo
-                save_df(getattr(self, 'df_data_sal_comb', None), 'salina_cruz_combustoleo_tabla_principal')
-                save_df(getattr(self, 'df_snr_sal_comb', None), 'salina_cruz_combustoleo_programa_snr')
-                save_df(getattr(self, 'df_prod_sal_comb', None), 'salina_cruz_combustoleo_produccion')
-                save_df(getattr(self, 'df_sim_sal_comb', None), 'salina_cruz_combustoleo_simulacion_anual')
-
-                # Guardar datos de Tula - Crudo
-                save_df(getattr(self, 'df_data_tula_crud', None), 'tula_crudo_tabla_principal')
-                save_df(getattr(self, 'df_snr_tula_crud', None), 'tula_crudo_programa_snr')
-                save_df(getattr(self, 'df_prod_tula_crud', None), 'tula_crudo_produccion')
-                save_df(getattr(self, 'df_sim_tula_crud', None), 'tula_crudo_simulacion_anual')
-
-                # Guardar datos de Tula - Gasolinas
-                save_df(getattr(self, 'df_data_tula_gas', None), 'tula_gasolinas_tabla_principal')
-                save_df(getattr(self, 'df_snr_tula_gas', None), 'tula_gasolinas_programa_snr')
-                save_df(getattr(self, 'df_prod_tula_gas', None), 'tula_gasolinas_produccion')
-                save_df(getattr(self, 'df_sim_tula_gas', None), 'tula_gasolinas_simulacion_anual')
-
-                # Guardar datos de Tula - Diesel
-                save_df(getattr(self, 'df_data_tula_die', None), 'tula_diesel_tabla_principal')
-                save_df(getattr(self, 'df_snr_tula_die', None), 'tula_diesel_programa_snr')
-                save_df(getattr(self, 'df_prod_tula_die', None), 'tula_diesel_produccion')
-                save_df(getattr(self, 'df_sim_tula_die', None), 'tula_diesel_simulacion_anual')
-
-                # Guardar datos de Tula - Turbosina
-                save_df(getattr(self, 'df_data_tula_turb', None), 'tula_turbosina_tabla_principal')
-                save_df(getattr(self, 'df_snr_tula_turb', None), 'tula_turbosina_programa_snr')
-                save_df(getattr(self, 'df_prod_tula_turb', None), 'tula_turbosina_produccion')
-                save_df(getattr(self, 'df_sim_tula_turb', None), 'tula_turbosina_simulacion_anual')
-
-                # Guardar datos de Tula - Combustoleo
-                save_df(getattr(self, 'df_data_tula_comb', None), 'tula_combustoleo_tabla_principal')
-                save_df(getattr(self, 'df_snr_tula_comb', None), 'tula_combustoleo_programa_snr')
-                save_df(getattr(self, 'df_prod_tula_comb', None), 'tula_combustoleo_produccion')
-                save_df(getattr(self, 'df_sim_tula_comb', None), 'tula_combustoleo_simulacion_anual')
-
-                # Guardar datos de Olmeca - Crudo
-                save_df(getattr(self, 'df_data_olme_crud', None), 'olmeca_crudo_tabla_principal')
-                save_df(getattr(self, 'df_snr_olme_crud', None), 'olmeca_crudo_programa_snr')
-                save_df(getattr(self, 'df_prod_olme_crud', None), 'olmeca_crudo_produccion')
-                save_df(getattr(self, 'df_sim_olme_crud', None), 'olmeca_crudo_simulacion_anual')
-
-                # Guardar datos de Olmeca - Gasolinas
-                save_df(getattr(self, 'df_data_olme_gas', None), 'olmeca_gasolinas_tabla_principal')
-                save_df(getattr(self, 'df_snr_olme_gas', None), 'olmeca_gasolinas_programa_snr')
-                save_df(getattr(self, 'df_prod_olme_gas', None), 'olmeca_gasolinas_produccion')
-                save_df(getattr(self, 'df_sim_olme_gas', None), 'olmeca_gasolinas_simulacion_anual')
-
-                # Guardar datos de Olmeca - Diesel
-                save_df(getattr(self, 'df_data_olme_die', None), 'olmeca_diesel_tabla_principal')
-                save_df(getattr(self, 'df_snr_olme_die', None), 'olmeca_diesel_programa_snr')
-                save_df(getattr(self, 'df_prod_olme_die', None), 'olmeca_diesel_produccion')
-                save_df(getattr(self, 'df_sim_olme_die', None), 'olmeca_diesel_simulacion_anual')
-
-                conn.commit()
-                conn.close()
-                messagebox.showinfo("Éxito", f"¡Los datos de todos los procesos han sido guardados en la base de datos!\n\nRuta:\n{db_path}")
+                db_helper.init_db()
             except Exception as e:
-                messagebox.showerror("Error", f"Ocurrió un error al guardar en SQLite:\n{str(e)}")
+                messagebox.showerror("Error", f"No se pudo crear la base de datos en la ubicación por defecto:\n{str(e)}")
+                return
+
+        import sqlite3
+        import math
+        import pandas as pd
+        try:
+            conn = sqlite3.connect(db_path)
+
+            # Redondear todos los valores numéricos a enteros para la BD
+            # (la pantalla conserva los decimales de MCP y Producción).
+            def to_int_val(v):
+                try:
+                    if v == "" or v is None:
+                        return v
+                    if isinstance(v, str):
+                        return v
+                    f = float(v)
+                    if math.isinf(f) or math.isnan(f):
+                        return ""
+                    return int(round(f))
+                except (ValueError, TypeError):
+                    return v
+
+            def redondear_df(df):
+                out = df.copy()
+                
+                # Renombrar columnas vacías o duplicadas para que SQLite no arroje error
+                nuevas_columnas = []
+                for i, c in enumerate(out.columns):
+                    if str(c).strip() == "" or pd.isna(c):
+                        nuevas_columnas.append(f"Col_Vacia_{i+1}")
+                    else:
+                        nuevas_columnas.append(str(c))
+                        
+                vistos = set()
+                for i in range(len(nuevas_columnas)):
+                    orig = nuevas_columnas[i]
+                    if orig in vistos:
+                        j = 1
+                        while f"{orig}_{j}" in vistos:
+                            j += 1
+                        nuevas_columnas[i] = f"{orig}_{j}"
+                    vistos.add(nuevas_columnas[i])
+                    
+                out.columns = nuevas_columnas
+
+                for c in out.columns:
+                    out[c] = out[c].map(to_int_val)
+                return out
+
+            def save_df(df, table_name):
+                if df is not None and len(df.columns) > 0:
+                    redondear_df(df).to_sql(table_name, conn, if_exists='replace', index=False)
+
+            # Guardar datos de Crudo
+            save_df(self.df_data, 'crudo_tabla_principal')
+            save_df(self.df_snr, 'crudo_programa_snr')
+            save_df(self.df_prod, 'crudo_produccion')
+            save_df(self.df_sim, 'crudo_simulacion_anual')
+
+            # Guardar datos de Crudo Cadereyta
+            save_df(getattr(self, 'df_data_cad', None), 'cadereyta_crudo_tabla_principal')
+            save_df(getattr(self, 'df_snr_cad', None), 'cadereyta_crudo_programa_snr')
+            save_df(getattr(self, 'df_prod_cad', None), 'cadereyta_crudo_produccion')
+            save_df(getattr(self, 'df_sim_cad', None), 'cadereyta_crudo_simulacion_anual')
+
+             # Guardar datos de Gasolinas
+            save_df(self.df_data_gasolinas, 'gasolinas_tabla_principal')
+            save_df(self.df_snr_gasolinas, 'gasolinas_programa_snr')
+            save_df(self.df_prod_gasolinas, 'gasolinas_produccion')
+            save_df(getattr(self, 'df_sim_gasolinas', None), 'gasolinas_simulacion_anual')
+
+            # Guardar datos de Diesel
+            save_df(self.df_data_diesel, 'diesel_tabla_principal')
+            save_df(self.df_snr_diesel, 'diesel_programa_snr')
+            save_df(self.df_prod_diesel, 'diesel_produccion')
+            save_df(getattr(self, 'df_sim_diesel', None), 'diesel_simulacion_anual')
+
+            # Guardar datos de Turbosina
+            save_df(self.df_data_turbosina, 'turbosina_tabla_principal')
+            save_df(self.df_snr_turbosina, 'turbosina_programa_snr')
+            save_df(self.df_prod_turbosina, 'turbosina_produccion')
+            save_df(getattr(self, 'df_sim_turbosina', None), 'turbosina_simulacion_anual')
+
+            # Guardar datos de Asfalto
+            save_df(getattr(self, 'df_data_asfalto', None), 'asfalto_tabla_principal')
+            save_df(getattr(self, 'df_snr_asfalto', None), 'asfalto_programa_snr')
+            save_df(getattr(self, 'df_prod_asfalto', None), 'asfalto_produccion')
+            save_df(getattr(self, 'df_sim_asfalto', None), 'asfalto_simulacion_anual')
+
+            # Guardar datos de Combustoleo
+            save_df(getattr(self, 'df_data_combustoleo', None), 'combustoleo_tabla_principal')
+            save_df(getattr(self, 'df_snr_combustoleo', None), 'combustoleo_programa_snr')
+            save_df(getattr(self, 'df_prod_combustoleo', None), 'combustoleo_produccion')
+            save_df(getattr(self, 'df_sim_combustoleo', None), 'combustoleo_simulacion_anual')
+
+            # Guardar datos de Cadereyta - Gasolinas
+            save_df(getattr(self, 'df_data_cad_gas', None), 'cadereyta_gasolinas_tabla_principal')
+            save_df(getattr(self, 'df_snr_cad_gas', None), 'cadereyta_gasolinas_programa_snr')
+            save_df(getattr(self, 'df_prod_cad_gas', None), 'cadereyta_gasolinas_produccion')
+            save_df(getattr(self, 'df_sim_cad_gas', None), 'cadereyta_gasolinas_simulacion_anual')
+
+            # Guardar datos de Cadereyta - Diesel
+            save_df(getattr(self, 'df_data_cad_die', None), 'cadereyta_diesel_tabla_principal')
+            save_df(getattr(self, 'df_snr_cad_die', None), 'cadereyta_diesel_programa_snr')
+            save_df(getattr(self, 'df_prod_cad_die', None), 'cadereyta_diesel_produccion')
+            save_df(getattr(self, 'df_sim_cad_die', None), 'cadereyta_diesel_simulacion_anual')
+            save_df(getattr(self, 'df_data_cad_comb', None), 'cadereyta_combustoleo_tabla_principal')
+            save_df(getattr(self, 'df_snr_cad_comb', None), 'cadereyta_combustoleo_programa_snr')
+            save_df(getattr(self, 'df_prod_cad_comb', None), 'cadereyta_combustoleo_produccion')
+            save_df(getattr(self, 'df_sim_cad_comb', None), 'cadereyta_combustoleo_simulacion_anual')
+
+            # Guardar datos de Madero - Crudo
+            save_df(getattr(self, 'df_data_mad_crud', None), 'madero_crudo_tabla_principal')
+            save_df(getattr(self, 'df_snr_mad_crud', None), 'madero_crudo_programa_snr')
+            save_df(getattr(self, 'df_prod_mad_crud', None), 'madero_crudo_produccion')
+            save_df(getattr(self, 'df_sim_mad_crud', None), 'madero_crudo_simulacion_anual')
+
+            # Guardar datos de Madero - Gasolinas
+            save_df(getattr(self, 'df_data_mad_gas', None), 'madero_gasolinas_tabla_principal')
+            save_df(getattr(self, 'df_snr_mad_gas', None), 'madero_gasolinas_programa_snr')
+            save_df(getattr(self, 'df_prod_mad_gas', None), 'madero_gasolinas_produccion')
+            save_df(getattr(self, 'df_sim_mad_gas', None), 'madero_gasolinas_simulacion_anual')
+
+            # Guardar datos de Madero - Diesel
+            save_df(getattr(self, 'df_data_mad_die', None), 'madero_diesel_tabla_principal')
+            save_df(getattr(self, 'df_snr_mad_die', None), 'madero_diesel_programa_snr')
+            save_df(getattr(self, 'df_prod_mad_die', None), 'madero_diesel_produccion')
+            save_df(getattr(self, 'df_sim_mad_die', None), 'madero_diesel_simulacion_anual')
+
+            # Guardar datos de Madero - Turbosina
+            save_df(getattr(self, 'df_data_mad_turb', None), 'madero_turbosina_tabla_principal')
+            save_df(getattr(self, 'df_snr_mad_turb', None), 'madero_turbosina_programa_snr')
+            save_df(getattr(self, 'df_prod_mad_turb', None), 'madero_turbosina_produccion')
+            save_df(getattr(self, 'df_sim_mad_turb', None), 'madero_turbosina_simulacion_anual')
+
+            # Guardar datos de Madero - Combustoleo
+            save_df(getattr(self, 'df_data_mad_comb', None), 'madero_combustoleo_tabla_principal')
+            save_df(getattr(self, 'df_snr_mad_comb', None), 'madero_combustoleo_programa_snr')
+            save_df(getattr(self, 'df_prod_mad_comb', None), 'madero_combustoleo_produccion')
+            save_df(getattr(self, 'df_sim_mad_comb', None), 'madero_combustoleo_simulacion_anual')
+
+            # Guardar datos de Minatitlan - Crudo
+            save_df(getattr(self, 'df_data_mina_crud', None), 'minatitlan_crudo_tabla_principal')
+            save_df(getattr(self, 'df_snr_mina_crud', None), 'minatitlan_crudo_programa_snr')
+            save_df(getattr(self, 'df_prod_mina_crud', None), 'minatitlan_crudo_produccion')
+            save_df(getattr(self, 'df_sim_mina_crud', None), 'minatitlan_crudo_simulacion_anual')
+
+            # Guardar datos de Minatitlan - Gasolinas
+            save_df(getattr(self, 'df_data_mina_gas', None), 'minatitlan_gasolinas_tabla_principal')
+            save_df(getattr(self, 'df_snr_mina_gas', None), 'minatitlan_gasolinas_programa_snr')
+            save_df(getattr(self, 'df_prod_mina_gas', None), 'minatitlan_gasolinas_produccion')
+            save_df(getattr(self, 'df_sim_mina_gas', None), 'minatitlan_gasolinas_simulacion_anual')
+
+            # Guardar datos de Minatitlan - Diesel
+            save_df(getattr(self, 'df_data_mina_die', None), 'minatitlan_diesel_tabla_principal')
+            save_df(getattr(self, 'df_snr_mina_die', None), 'minatitlan_diesel_programa_snr')
+            save_df(getattr(self, 'df_prod_mina_die', None), 'minatitlan_diesel_produccion')
+            save_df(getattr(self, 'df_sim_mina_die', None), 'minatitlan_diesel_simulacion_anual')
+
+            # Guardar datos de Minatitlan - Combustoleo
+            save_df(getattr(self, 'df_data_mina_comb', None), 'minatitlan_combustoleo_tabla_principal')
+            save_df(getattr(self, 'df_snr_mina_comb', None), 'minatitlan_combustoleo_programa_snr')
+            save_df(getattr(self, 'df_prod_mina_comb', None), 'minatitlan_combustoleo_produccion')
+            save_df(getattr(self, 'df_sim_mina_comb', None), 'minatitlan_combustoleo_simulacion_anual')
+
+            # Guardar datos de Salamanca - Crudo
+            save_df(getattr(self, 'df_data_sala_crud', None), 'salamanca_crudo_tabla_principal')
+            save_df(getattr(self, 'df_snr_sala_crud', None), 'salamanca_crudo_programa_snr')
+            save_df(getattr(self, 'df_prod_sala_crud', None), 'salamanca_crudo_produccion')
+            save_df(getattr(self, 'df_sim_sala_crud', None), 'salamanca_crudo_simulacion_anual')
+
+            # Guardar datos de Salamanca - Gasolinas
+            save_df(getattr(self, 'df_data_sala_gas', None), 'salamanca_gasolinas_tabla_principal')
+            save_df(getattr(self, 'df_snr_sala_gas', None), 'salamanca_gasolinas_programa_snr')
+            save_df(getattr(self, 'df_prod_sala_gas', None), 'salamanca_gasolinas_produccion')
+            save_df(getattr(self, 'df_sim_sala_gas', None), 'salamanca_gasolinas_simulacion_anual')
+
+            # Guardar datos de Salamanca - Diesel
+            save_df(getattr(self, 'df_data_sala_die', None), 'salamanca_diesel_tabla_principal')
+            save_df(getattr(self, 'df_snr_sala_die', None), 'salamanca_diesel_programa_snr')
+            save_df(getattr(self, 'df_prod_sala_die', None), 'salamanca_diesel_produccion')
+            save_df(getattr(self, 'df_sim_sala_die', None), 'salamanca_diesel_simulacion_anual')
+
+            # Guardar datos de Salamanca - Turbosina
+            save_df(getattr(self, 'df_data_sala_turb', None), 'salamanca_turbosina_tabla_principal')
+            save_df(getattr(self, 'df_snr_sala_turb', None), 'salamanca_turbosina_programa_snr')
+            save_df(getattr(self, 'df_prod_sala_turb', None), 'salamanca_turbosina_produccion')
+            save_df(getattr(self, 'df_sim_sala_turb', None), 'salamanca_turbosina_simulacion_anual')
+
+            # Guardar datos de Salamanca - Combustoleo
+            save_df(getattr(self, 'df_data_sala_comb', None), 'salamanca_combustoleo_tabla_principal')
+            save_df(getattr(self, 'df_snr_sala_comb', None), 'salamanca_combustoleo_programa_snr')
+            save_df(getattr(self, 'df_prod_sala_comb', None), 'salamanca_combustoleo_produccion')
+            save_df(getattr(self, 'df_sim_sala_comb', None), 'salamanca_combustoleo_simulacion_anual')
+
+            # Guardar datos de Salina Cruz - Crudo
+            save_df(getattr(self, 'df_data_sal_crud', None), 'salina_cruz_crudo_tabla_principal')
+            save_df(getattr(self, 'df_snr_sal_crud', None), 'salina_cruz_crudo_programa_snr')
+            save_df(getattr(self, 'df_prod_sal_crud', None), 'salina_cruz_crudo_produccion')
+            save_df(getattr(self, 'df_sim_sal_crud', None), 'salina_cruz_crudo_simulacion_anual')
+
+            # Guardar datos de Salina Cruz - Gasolinas
+            save_df(getattr(self, 'df_data_sal_gas', None), 'salina_cruz_gasolinas_tabla_principal')
+            save_df(getattr(self, 'df_snr_sal_gas', None), 'salina_cruz_gasolinas_programa_snr')
+            save_df(getattr(self, 'df_prod_sal_gas', None), 'salina_cruz_gasolinas_produccion')
+            save_df(getattr(self, 'df_sim_sal_gas', None), 'salina_cruz_gasolinas_simulacion_anual')
+
+            # Guardar datos de Salina Cruz - Diesel
+            save_df(getattr(self, 'df_data_sal_die', None), 'salina_cruz_diesel_tabla_principal')
+            save_df(getattr(self, 'df_snr_sal_die', None), 'salina_cruz_diesel_programa_snr')
+            save_df(getattr(self, 'df_prod_sal_die', None), 'salina_cruz_diesel_produccion')
+            save_df(getattr(self, 'df_sim_sal_die', None), 'salina_cruz_diesel_simulacion_anual')
+
+            # Guardar datos de Salina Cruz - Turbosina
+            save_df(getattr(self, 'df_data_sal_turb', None), 'salina_cruz_turbosina_tabla_principal')
+            save_df(getattr(self, 'df_snr_sal_turb', None), 'salina_cruz_turbosina_programa_snr')
+            save_df(getattr(self, 'df_prod_sal_turb', None), 'salina_cruz_turbosina_produccion')
+            save_df(getattr(self, 'df_sim_sal_turb', None), 'salina_cruz_turbosina_simulacion_anual')
+
+            # Guardar datos de Salina Cruz - Combustoleo
+            save_df(getattr(self, 'df_data_sal_comb', None), 'salina_cruz_combustoleo_tabla_principal')
+            save_df(getattr(self, 'df_snr_sal_comb', None), 'salina_cruz_combustoleo_programa_snr')
+            save_df(getattr(self, 'df_prod_sal_comb', None), 'salina_cruz_combustoleo_produccion')
+            save_df(getattr(self, 'df_sim_sal_comb', None), 'salina_cruz_combustoleo_simulacion_anual')
+
+            # Guardar datos de Tula - Crudo
+            save_df(getattr(self, 'df_data_tula_crud', None), 'tula_crudo_tabla_principal')
+            save_df(getattr(self, 'df_snr_tula_crud', None), 'tula_crudo_programa_snr')
+            save_df(getattr(self, 'df_prod_tula_crud', None), 'tula_crudo_produccion')
+            save_df(getattr(self, 'df_sim_tula_crud', None), 'tula_crudo_simulacion_anual')
+
+            # Guardar datos de Tula - Gasolinas
+            save_df(getattr(self, 'df_data_tula_gas', None), 'tula_gasolinas_tabla_principal')
+            save_df(getattr(self, 'df_snr_tula_gas', None), 'tula_gasolinas_programa_snr')
+            save_df(getattr(self, 'df_prod_tula_gas', None), 'tula_gasolinas_produccion')
+            save_df(getattr(self, 'df_sim_tula_gas', None), 'tula_gasolinas_simulacion_anual')
+
+            # Guardar datos de Tula - Diesel
+            save_df(getattr(self, 'df_data_tula_die', None), 'tula_diesel_tabla_principal')
+            save_df(getattr(self, 'df_snr_tula_die', None), 'tula_diesel_programa_snr')
+            save_df(getattr(self, 'df_prod_tula_die', None), 'tula_diesel_produccion')
+            save_df(getattr(self, 'df_sim_tula_die', None), 'tula_diesel_simulacion_anual')
+
+            # Guardar datos de Tula - Turbosina
+            save_df(getattr(self, 'df_data_tula_turb', None), 'tula_turbosina_tabla_principal')
+            save_df(getattr(self, 'df_snr_tula_turb', None), 'tula_turbosina_programa_snr')
+            save_df(getattr(self, 'df_prod_tula_turb', None), 'tula_turbosina_produccion')
+            save_df(getattr(self, 'df_sim_tula_turb', None), 'tula_turbosina_simulacion_anual')
+
+            # Guardar datos de Tula - Combustoleo
+            save_df(getattr(self, 'df_data_tula_comb', None), 'tula_combustoleo_tabla_principal')
+            save_df(getattr(self, 'df_snr_tula_comb', None), 'tula_combustoleo_programa_snr')
+            save_df(getattr(self, 'df_prod_tula_comb', None), 'tula_combustoleo_produccion')
+            save_df(getattr(self, 'df_sim_tula_comb', None), 'tula_combustoleo_simulacion_anual')
+
+            # Guardar datos de Olmeca - Crudo
+            save_df(getattr(self, 'df_data_olme_crud', None), 'olmeca_crudo_tabla_principal')
+            save_df(getattr(self, 'df_snr_olme_crud', None), 'olmeca_crudo_programa_snr')
+            save_df(getattr(self, 'df_prod_olme_crud', None), 'olmeca_crudo_produccion')
+            save_df(getattr(self, 'df_sim_olme_crud', None), 'olmeca_crudo_simulacion_anual')
+
+            # Guardar datos de Olmeca - Gasolinas
+            save_df(getattr(self, 'df_data_olme_gas', None), 'olmeca_gasolinas_tabla_principal')
+            save_df(getattr(self, 'df_snr_olme_gas', None), 'olmeca_gasolinas_programa_snr')
+            save_df(getattr(self, 'df_prod_olme_gas', None), 'olmeca_gasolinas_produccion')
+            save_df(getattr(self, 'df_sim_olme_gas', None), 'olmeca_gasolinas_simulacion_anual')
+
+            # Guardar datos de Olmeca - Diesel
+            save_df(getattr(self, 'df_data_olme_die', None), 'olmeca_diesel_tabla_principal')
+            save_df(getattr(self, 'df_snr_olme_die', None), 'olmeca_diesel_programa_snr')
+            save_df(getattr(self, 'df_prod_olme_die', None), 'olmeca_diesel_produccion')
+            save_df(getattr(self, 'df_sim_olme_die', None), 'olmeca_diesel_simulacion_anual')
+
+            conn.commit()
+            conn.close()
+            self.cambios_sin_guardar = False
+            messagebox.showinfo("Éxito", f"¡Los datos de todos los procesos han sido guardados en la base de datos!\n\nRuta:\n{db_path}")
+        except Exception as e:
+            messagebox.showerror("Error", f"Ocurrió un error al guardar en SQLite:\n{str(e)}")
 
     def load_excel(self):
         file_path = filedialog.askopenfilename(
@@ -1180,6 +1196,7 @@ class ExcelViewerApp(ctk.CTk):
         self.set_loading_state(False)
         self.current_file_path = file_path
         self.lbl_file.configure(text=f"Archivo: {os.path.basename(file_path)}")
+        self.cambios_sin_guardar = True
 
     def on_proceso_changed(self, selection):
         if self.df_data is None:
@@ -2140,7 +2157,8 @@ class ExcelViewerApp(ctk.CTk):
                 db_helper.save_extra_prod(proceso, anio, mes, nuevo_val)
             else:
                 db_helper.save_modificacion(proceso, tabla, clave, nuevo_val)
-                
+            
+            self.cambios_sin_guardar = True
             messagebox.showinfo("Éxito", "Valor actualizado correctamente.", parent=dialog)
             dialog.destroy()
             
@@ -2169,7 +2187,8 @@ class ExcelViewerApp(ctk.CTk):
                 conn.close()
             else:
                 db_helper.delete_modificacion(proceso, tabla, clave)
-                
+            
+            self.cambios_sin_guardar = True
             messagebox.showinfo("Éxito", "Valor restaurado al original.", parent=dialog)
             dialog.destroy()
             
@@ -2411,6 +2430,7 @@ class ExcelViewerApp(ctk.CTk):
 
             import db_helper
             db_helper.save_coordenadas_override(proceso_sel, d_f, d_c, p_f, p_c, h_f, h_c)
+            self.cambios_sin_guardar = True
             messagebox.showinfo("Éxito", f"Coordenadas para '{proceso_sel}' guardadas en base de datos.", parent=dialog)
             dialog.destroy()
 
@@ -2425,6 +2445,7 @@ class ExcelViewerApp(ctk.CTk):
             
             import db_helper
             db_helper.delete_coordenadas_override(proceso_sel)
+            self.cambios_sin_guardar = True
             messagebox.showinfo("Éxito", f"Configuración de '{proceso_sel}' restaurada a valores por defecto.", parent=dialog)
             dialog.destroy()
 
