@@ -44,7 +44,7 @@ def update_slide_chart(chart, categories, proceso_vals, diario_vals, programa_va
         last_month_idx = -1
         for i, val in enumerate(proceso_vals):
             if i < len(categories) and any(c.isalpha() for c in categories[i]):
-                if current_month_name and categories[i].lower() == current_month_name.lower():
+                if current_month_name and categories[i].strip().lower() == current_month_name.strip().lower():
                     last_month_idx = i
                 elif val is not None and val != 0:
                     last_month_idx = i
@@ -81,6 +81,7 @@ def update_slide_chart(chart, categories, proceso_vals, diario_vals, programa_va
                         try:
                             point.data_label.font.size = Pt(14)
                             point.data_label.font.bold = True
+                            point.data_label.font.color.rgb = wine_color
                         except Exception:
                             pass
                     else:
@@ -88,6 +89,7 @@ def update_slide_chart(chart, categories, proceso_vals, diario_vals, programa_va
                         try:
                             point.data_label.font.size = Pt(9)
                             point.data_label.font.bold = False
+                            point.data_label.font.color.rgb = green_color
                         except Exception:
                             pass
                         
@@ -107,6 +109,7 @@ def update_slide_chart(chart, categories, proceso_vals, diario_vals, programa_va
                     try:
                         point.data_label.font.size = Pt(9)
                         point.data_label.font.bold = False
+                        point.data_label.font.color.rgb = gray_color
                     except Exception:
                         pass
                     

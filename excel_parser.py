@@ -114,7 +114,10 @@ def load_data(app, file_path):
             
             try:
                 df_envio = pd.read_excel(file_path, sheet_name="EnvioProDiairo", header=None)
-                app.cmp_value = str(df_envio.iloc[18, 32])
+                try:
+                    app.cmp_value = str(round(float(df_envio.iloc[18, 32]), 1))
+                except:
+                    app.cmp_value = str(df_envio.iloc[18, 32])
                 
                 def get_float(row, col):
                     try:
