@@ -6,7 +6,7 @@ import pandas as pd
 from pptx import Presentation
 from pptx.dml.color import RGBColor
 
-def update_slide_chart(chart, categories, proceso_vals, diario_vals, programa_vals, columna1_vals, wine_color, green_color):
+def update_slide_chart(chart, categories, proceso_vals, diario_vals, programa_vals, columna1_vals, wine_color, green_color, current_month_name=None):
     from pptx.chart.data import CategoryChartData
     from pptx.util import Pt
 
@@ -40,14 +40,13 @@ def update_slide_chart(chart, categories, proceso_vals, diario_vals, programa_va
         series = chart.series[0]
         
         # Buscar el último mes con producción real en la nueva lista de categorías
+        # Determinar cuál es el último mes con datos para pintarlo de vino
         last_month_idx = -1
-        limit_idx = min(17, len(categories))
-        for i in range(limit_idx):
-            cat = categories[i]
-            val = proceso_vals[i]
-            # Si es un mes (contiene letras)
-            if any(c.isalpha() for c in cat):
-                if val is not None and val != 0:
+        for i, val in enumerate(proceso_vals):
+            if i < len(categories) and any(c.isalpha() for c in categories[i]):
+                if current_month_name and categories[i].lower() == current_month_name.lower():
+                    last_month_idx = i
+                elif val is not None and val != 0:
                     last_month_idx = i
 
         # Eliminar TODOS los formatos específicos de puntos (<c:dPt>)
@@ -168,6 +167,11 @@ def export_to_pptx(app, file_path, save_path):
                 except: pass
         
         if len(prod_rows) > 30: prod_rows = prod_rows[-30:]
+
+        master_current_month = None
+        for cat, val in prod_rows:
+            if any(c.isalpha() for c in cat):
+                master_current_month = cat
 
         for i in range(len(prod_rows)):
             categories.append(prod_rows[i][0])
@@ -658,7 +662,7 @@ def export_to_pptx(app, file_path, save_path):
                 columna1_vals_asf.append(c_val)
 
             # Actualizar la gráfica de Asfalto (Diapositiva 6)
-            update_slide_chart(chart_asf, categories_asf, proceso_vals_asf, diario_vals_asf, programa_vals_asf, columna1_vals_asf, wine_color, green_color)
+            update_slide_chart(chart_asf, categories_asf, proceso_vals_asf, diario_vals_asf, programa_vals_asf, columna1_vals_asf, wine_color, green_color, current_month_name=master_current_month)
 
 
         # --- 6. PROCESAR DIAPOSITIVA DE COMBUSTOLEO (DIAPOSITIVA 7) ---
@@ -760,7 +764,7 @@ def export_to_pptx(app, file_path, save_path):
                 columna1_vals_comb.append(c_val)
 
             # Actualizar la gráfica de Combustoleo (Diapositiva 7)
-            update_slide_chart(chart_comb, categories_comb, proceso_vals_comb, diario_vals_comb, programa_vals_comb, columna1_vals_comb, wine_color, green_color)
+            update_slide_chart(chart_comb, categories_comb, proceso_vals_comb, diario_vals_comb, programa_vals_comb, columna1_vals_comb, wine_color, green_color, current_month_name=master_current_month)
  
             # --- 7. PROCESAR DIAPOSITIVA DE GASOLINAS CADEREYTA (DIAPOSITIVA 11) ---
             if app.df_data_cad_gas is not None and app.df_snr_cad_gas is not None and app.df_prod_cad_gas is not None:
