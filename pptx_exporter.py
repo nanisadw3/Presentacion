@@ -44,7 +44,7 @@ def update_slide_chart(chart, categories, proceso_vals, diario_vals, programa_va
         last_month_idx = -1
         for i, val in enumerate(proceso_vals):
             if i < len(categories) and any(c.isalpha() for c in categories[i]):
-                if current_month_name and categories[i].strip().lower() == current_month_name.strip().lower():
+                if current_month_name and categories[i].strip().lower()[:3] == current_month_name.strip().lower()[:3]:
                     last_month_idx = i
                 elif val is not None and val != 0:
                     last_month_idx = i
@@ -78,8 +78,18 @@ def update_slide_chart(chart, categories, proceso_vals, diario_vals, programa_va
                 if any(c.isalpha() for c in cat):
                     if p_idx == last_month_idx:
                         fill.fore_color.rgb = wine_color
+                        try:
+                            point.data_label.font.size = Pt(14)
+                            point.data_label.font.bold = True
+                        except Exception:
+                            pass
                     else:
                         fill.fore_color.rgb = green_color
+                        try:
+                            point.data_label.font.size = Pt(9)
+                            point.data_label.font.bold = False
+                        except Exception:
+                            pass
                         
                     # Limpiar modificadores de color
                     try:
@@ -94,6 +104,11 @@ def update_slide_chart(chart, categories, proceso_vals, diario_vals, programa_va
                 else:
                     # Si es un año, aplicamos el gris explícitamente y reseteamos fuente
                     fill.fore_color.rgb = gray_color
+                    try:
+                        point.data_label.font.size = Pt(9)
+                        point.data_label.font.bold = False
+                    except Exception:
+                        pass
                     
             except Exception:
                 pass
