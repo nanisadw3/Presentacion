@@ -133,7 +133,11 @@ def export_to_pptx(app, file_path, save_path):
                 chart = shape.chart
             elif shape.has_text_frame and "CMP:" in shape.text:
                 cmp_val = getattr(app, 'cmp_value', "1234.8")
-                shape.text = f"         CMP: {cmp_val} Mbd"
+                import re
+                for paragraph in shape.text_frame.paragraphs:
+                    for run in paragraph.runs:
+                        if "CMP:" in run.text:
+                            run.text = re.sub(r'CMP:\s*[\d\.]+', f'CMP: {cmp_val}', run.text)
 
         if not chart:
             raise ValueError("No se encontró ninguna gráfica en la segunda diapositiva (Crudo).")
@@ -261,7 +265,10 @@ def export_to_pptx(app, file_path, save_path):
             elif shape.has_text_frame and "CMP" in shape.text and "Demanda" in shape.text:
                 cmp_val = getattr(app, 'cmp_gasolinas', "513")
                 import re
-                shape.text = re.sub(r'CMP\s*:\s*[\d\.]+', f'CMP : {cmp_val}', shape.text)
+                for paragraph in shape.text_frame.paragraphs:
+                    for run in paragraph.runs:
+                        if "CMP" in run.text:
+                            run.text = re.sub(r'CMP\s*:\s*[\d\.]+', f'CMP : {cmp_val}', run.text)
 
         if not chart_gas:
             raise ValueError("No se encontró ninguna gráfica en la tercera diapositiva (Gasolinas).")
@@ -360,7 +367,10 @@ def export_to_pptx(app, file_path, save_path):
             elif shape.has_text_frame and "CMP" in shape.text and "Demanda" in shape.text:
                 cmp_val = getattr(app, 'cmp_diesel', "386.9")
                 import re
-                shape.text = re.sub(r'CMP\s*:\s*[\d\.]+', f'CMP : {cmp_val}', shape.text)
+                for paragraph in shape.text_frame.paragraphs:
+                    for run in paragraph.runs:
+                        if "CMP" in run.text:
+                            run.text = re.sub(r'CMP\s*:\s*[\d\.]+', f'CMP : {cmp_val}', run.text)
 
         if not chart_die:
             raise ValueError("No se encontró ninguna gráfica en la cuarta diapositiva (Diesel).")
@@ -459,7 +469,10 @@ def export_to_pptx(app, file_path, save_path):
             elif shape.has_text_frame and "CMP" in shape.text and "Demanda" in shape.text:
                 cmp_val = getattr(app, 'cmp_turbosina', "312.4")
                 import re
-                shape.text = re.sub(r'CMP\s*:\s*[\d\.]+', f'CMP : {cmp_val}', shape.text)
+                for paragraph in shape.text_frame.paragraphs:
+                    for run in paragraph.runs:
+                        if "CMP" in run.text:
+                            run.text = re.sub(r'CMP\s*:\s*[\d\.]+', f'CMP : {cmp_val}', run.text)
 
         if not chart_turb:
             raise ValueError("No se encontró ninguna gráfica en la quinta diapositiva (Turbosina).")
@@ -594,8 +607,8 @@ def export_to_pptx(app, file_path, save_path):
                         p_val = float(val)
                     except:
                         p_val = 0
-                    if p_val != 0:
-                        prod_rows_asf.append((cat, val))
+                    # Permitir meses con producción 0
+                    prod_rows_asf.append((cat, val))
 
             # Ajustar al límite de 30 categorías
             if len(prod_rows_asf) > 30:
@@ -696,8 +709,8 @@ def export_to_pptx(app, file_path, save_path):
                         p_val = float(val)
                     except:
                         p_val = 0
-                    if p_val != 0:
-                        prod_rows_comb.append((cat, val))
+                    # Permitir meses con producción 0 para no saltar el mes actual
+                    prod_rows_comb.append((cat, val))
 
             # Ajustar al límite de 30 categorías
             if len(prod_rows_comb) > 30:
