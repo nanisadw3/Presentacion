@@ -6,7 +6,12 @@ import pandas as pd
 from pptx import Presentation
 from pptx.dml.color import RGBColor
 
+master_current_month = None
+
 def update_slide_chart(chart, categories, proceso_vals, diario_vals, programa_vals, columna1_vals, wine_color, green_color, current_month_name=None):
+    global master_current_month
+    if not current_month_name:
+        current_month_name = master_current_month
     from pptx.chart.data import CategoryChartData
     from pptx.util import Pt
 
@@ -168,6 +173,7 @@ def export_to_pptx(app, file_path, save_path):
         
         if len(prod_rows) > 30: prod_rows = prod_rows[-30:]
 
+        global master_current_month
         master_current_month = None
         for cat, val in prod_rows:
             if any(c.isalpha() for c in cat):
