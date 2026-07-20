@@ -583,7 +583,13 @@ def export_to_pptx(app, file_path, save_path):
             for shape in slide_asf.shapes:
                 if shape.has_chart:
                     chart_asf = shape.chart
-                    break
+                elif shape.has_text_frame and "CMP" in shape.text and "Demanda" in shape.text:
+                    cmp_val = getattr(app, 'cmp_asfalto', "21.4")
+                    import re
+                    for paragraph in shape.text_frame.paragraphs:
+                        for run in paragraph.runs:
+                            if "CMP" in run.text:
+                                run.text = re.sub(r'CMP\s*:\s*[\d\.]+', f'CMP : {cmp_val}', run.text)
 
             if not chart_asf:
                 raise ValueError("No se encontró ninguna gráfica en la sexta diapositiva (Asfalto).")
@@ -682,7 +688,13 @@ def export_to_pptx(app, file_path, save_path):
             for shape in slide_comb.shapes:
                 if shape.has_chart:
                     chart_comb = shape.chart
-                    break
+                elif shape.has_text_frame and "CMP" in shape.text and "Demanda" in shape.text:
+                    cmp_val = getattr(app, 'cmp_combustoleo', "250.9")
+                    import re
+                    for paragraph in shape.text_frame.paragraphs:
+                        for run in paragraph.runs:
+                            if "CMP" in run.text:
+                                run.text = re.sub(r'CMP\s*:\s*[\d\.]+', f'CMP : {cmp_val}', run.text)
 
             if not chart_comb:
                 raise ValueError("No se encontró ninguna gráfica en la séptima diapositiva (Combustoleo).")
