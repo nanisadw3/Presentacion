@@ -78,20 +78,8 @@ def update_slide_chart(chart, categories, proceso_vals, diario_vals, programa_va
                 if any(c.isalpha() for c in cat):
                     if p_idx == last_month_idx:
                         fill.fore_color.rgb = wine_color
-                        try:
-                            point.data_label.font.size = Pt(14)
-                            point.data_label.font.bold = True
-                            point.data_label.font.color.rgb = wine_color
-                        except Exception:
-                            pass
                     else:
                         fill.fore_color.rgb = green_color
-                        try:
-                            point.data_label.font.size = Pt(9)
-                            point.data_label.font.bold = False
-                            point.data_label.font.color.rgb = green_color
-                        except Exception:
-                            pass
                         
                     # Limpiar modificadores de color
                     try:
@@ -106,12 +94,6 @@ def update_slide_chart(chart, categories, proceso_vals, diario_vals, programa_va
                 else:
                     # Si es un año, aplicamos el gris explícitamente y reseteamos fuente
                     fill.fore_color.rgb = gray_color
-                    try:
-                        point.data_label.font.size = Pt(9)
-                        point.data_label.font.bold = False
-                        point.data_label.font.color.rgb = gray_color
-                    except Exception:
-                        pass
                     
             except Exception:
                 pass
