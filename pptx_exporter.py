@@ -2650,6 +2650,87 @@ def export_to_pptx(app, file_path, save_path):
 
                         update_slide_chart(chart_olme_die, categories_sd, proceso_vals_sd, diario_vals_sd, programa_vals_sd, columna1_vals_sd, wine_color, green_color)
 
+        # --- NUEVO: ACTUALIZAR TEXTOS DE PROGRAMAS DE REFINERÍAS DESDE ENVIO PRO DIARIO ---
+        try:
+            if hasattr(app, 'df_envio') and app.df_envio is not None:
+                df_envio = app.df_envio
+                
+                refinery_map = {
+                    "cadereyta": "CY",
+                    "madero": "MA",
+                    "minatit": "MI",
+                    "salamanca": "SA",
+                    "salina cruz": "SC",
+                    "tula": "TU",
+                    "olmeca": "OL"
+                }
+
+                ref_row_index = {
+                    "CY": 0, "MA": 1, "MI": 2, "OL": 3, "SA": 4, "SC": 5, "TU": 6
+                }
+
+                def get_envio_val(row, col=32):
+                    try:
+                        return float(df_envio.iloc[row, col])
+                    except:
+                        return 0.0
+
+                for slide in prs.slides:
+                    for shape in slide.shapes:
+                        if shape.has_text_frame and "Programa:" in shape.text:
+                            text_lower = shape.text.lower()
+                            
+                            # Detect refinery
+                            ref_code = None
+                            for ref_kw, ref_c in refinery_map.items():
+                                if ref_kw in text_lower:
+                                    ref_code = ref_c
+                                    break
+                            
+                            if not ref_code:
+                                continue
+                                
+                            offset = ref_row_index[ref_code]
+                            new_val = None
+                            
+                            # Detect product
+                            if "crudo" in text_lower:
+                                new_val = get_envio_val(11 + offset)
+                            elif "gasolina" in text_lower:
+                                # Sum of Magna (21), Premium RP (31), Premium ZM (41)
+                                new_val = get_envio_val(21 + offset) + get_envio_val(31 + offset) + get_envio_val(41 + offset)
+                            elif "diesel" in text_lower:
+                                new_val = get_envio_val(81 + offset)
+                            elif "combust" in text_lower:
+                                new_val = get_envio_val(121 + offset)
+                                
+                            if new_val is not None:
+                                rounded_val = round(new_val, 1)
+                                for p in shape.text_frame.paragraphs:
+                                    if "Programa:" in p.text:
+                                        if len(p.runs) > 0:
+                                            first_run = p.runs[0]
+                                            font_name = first_run.font.name
+                                            font_size = first_run.font.size
+                                            font_bold = first_run.font.bold
+                                            font_color = first_run.font.color.rgb if first_run.font.color.type == 1 else None
+                                            
+                                            import re
+                                            p.text = re.sub(r'Programa:\s*[\d\.]+', f'Programa: {rounded_val}', p.text)
+                                            
+                                            if len(p.runs) > 0:
+                                                new_run = p.runs[0]
+                                                new_run.font.name = font_name
+                                                new_run.font.size = font_size
+                                                new_run.font.bold = font_bold
+                                                if font_color:
+                                                    new_run.font.color.rgb = font_color
+                                        else:
+                                            import re
+                                            p.text = re.sub(r'Programa:\s*[\d\.]+', f'Programa: {rounded_val}', p.text)
+        except Exception as e_text:
+            print("Error actualizando textos de programas:", e_text)
+
         prs.save(save_path)
 
 
