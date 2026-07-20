@@ -131,7 +131,9 @@ def export_to_pptx(app, file_path, save_path):
         for shape in slide.shapes:
             if shape.has_chart:
                 chart = shape.chart
-                break
+            elif shape.has_text_frame and "CMP:" in shape.text:
+                cmp_val = getattr(app, 'cmp_value', "1234.8")
+                shape.text = f"         CMP: {cmp_val} Mbd"
 
         if not chart:
             raise ValueError("No se encontró ninguna gráfica en la segunda diapositiva (Crudo).")
@@ -256,7 +258,10 @@ def export_to_pptx(app, file_path, save_path):
         for shape in slide_gas.shapes:
             if shape.has_chart:
                 chart_gas = shape.chart
-                break
+            elif shape.has_text_frame and "CMP" in shape.text and "Demanda" in shape.text:
+                cmp_val = getattr(app, 'cmp_gasolinas', "513")
+                import re
+                shape.text = re.sub(r'CMP\s*:\s*[\d\.]+', f'CMP : {cmp_val}', shape.text)
 
         if not chart_gas:
             raise ValueError("No se encontró ninguna gráfica en la tercera diapositiva (Gasolinas).")
@@ -352,7 +357,10 @@ def export_to_pptx(app, file_path, save_path):
         for shape in slide_die.shapes:
             if shape.has_chart:
                 chart_die = shape.chart
-                break
+            elif shape.has_text_frame and "CMP" in shape.text and "Demanda" in shape.text:
+                cmp_val = getattr(app, 'cmp_diesel', "386.9")
+                import re
+                shape.text = re.sub(r'CMP\s*:\s*[\d\.]+', f'CMP : {cmp_val}', shape.text)
 
         if not chart_die:
             raise ValueError("No se encontró ninguna gráfica en la cuarta diapositiva (Diesel).")
@@ -448,7 +456,10 @@ def export_to_pptx(app, file_path, save_path):
         for shape in slide_turb.shapes:
             if shape.has_chart:
                 chart_turb = shape.chart
-                break
+            elif shape.has_text_frame and "CMP" in shape.text and "Demanda" in shape.text:
+                cmp_val = getattr(app, 'cmp_turbosina', "312.4")
+                import re
+                shape.text = re.sub(r'CMP\s*:\s*[\d\.]+', f'CMP : {cmp_val}', shape.text)
 
         if not chart_turb:
             raise ValueError("No se encontró ninguna gráfica en la quinta diapositiva (Turbosina).")

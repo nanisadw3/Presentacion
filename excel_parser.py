@@ -88,6 +88,7 @@ def load_data(app, file_path):
         if use_cache:
             sheet_to_use = app.cached_sheet_name
             df_sheet = app.cached_df_sheet
+            app.cmp_value = getattr(app, 'cached_cmp_value', "1234.8")
             app.after(0, app.update_progress, 0.1, "Usando caché en memoria para recarga rápida...")
         else:
             # Autodetectar hoja
@@ -111,10 +112,32 @@ def load_data(app, file_path):
             app.after(0, app.update_progress, 0.1, "Leyendo hoja de cálculo...")
             df_sheet = pd.read_excel(file_path, sheet_name=sheet_to_use, header=None)
             
+            try:
+                df_envio = pd.read_excel(file_path, sheet_name="EnvioProDiario", header=None)
+                app.cmp_value = str(df_envio.iloc[18, 32])
+                
+                def get_float(row, col):
+                    try:
+                        return float(df_envio.iloc[row, col])
+                    except:
+                        return 0.0
+
+                app.cmp_gasolinas = str(round(get_float(28, 32) + get_float(38, 32) + get_float(48, 32), 1))
+                app.cmp_turbosina = str(round(get_float(68, 32), 1))
+                app.cmp_diesel = str(round(get_float(78, 32), 1))
+
+            except Exception as e:
+                print("Error leyendo EnvioProDiario:", e)
+                app.cmp_value = "1234.8"
+                app.cmp_gasolinas = "513"
+                app.cmp_turbosina = "312.4"
+                app.cmp_diesel = "386.9"
+            
             # Guardar en caché en la instancia app
             app.cached_file_path = file_path
             app.cached_sheet_name = sheet_to_use
             app.cached_df_sheet = df_sheet
+            app.cached_cmp_value = app.cmp_value
 
         # Helper para formatear encabezados
         def get_clean_headers(row_idx, start_col, end_col):
@@ -1071,7 +1094,7 @@ def load_data(app, file_path):
         df_prod_sal_die_copy = df_prod_sal_die.copy()
 
         # --- 1.22 PROCESAR TURBOSINA SALINA CRUZ ---
-        r_d, c_d, r_s, c_s, r_h, c_h = get_coords("Salina Cruz -Turbosina", (73, 104), [11, 12], (73, 104), [92, 92], (20, 40), list(range(105, 107)))
+        r_d, c_d, r_s, c_s, r_h, c_h = get_coords("Salina Cruz -Turbosina", (73, 104), [11, 14], (73, 104), [92, 92], (20, 40), list(range(105, 107)))
         app.after(0, app.update_progress, 0.53, "Procesando Turbosina Salina Cruz...")
         df_data_sal_turb = df_sheet.iloc[r_d[0]:r_d[1], c_d].copy()
         df_data_sal_turb.columns = ["Turb Día", "Salina Cruz Turb"]
@@ -1563,7 +1586,7 @@ def load_data(app, file_path):
         df_asf.columns = ["Asfalto", "real"]
         df_asf = df_asf.dropna(how='all').dropna(axis=1, how='all')
         df_asf = remove_decimals(df_asf)
-        df_data_asfalto = filter_zero_rows(df_asf).copy()
+        df_data_asfalto = df_asf.copy()
 
         # Leer Tabla 2 (Programa, Rows 122-152 -> index 121:152), Cols AK:AL (36:38)
         df_snr_asf = df_sheet.iloc[121:152, 36:38].copy()

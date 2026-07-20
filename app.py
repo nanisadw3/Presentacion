@@ -1938,17 +1938,17 @@ class ExcelViewerApp(ctk.CTk):
             return
 
         app_dir = os.path.dirname(os.path.abspath(__file__))
-        file_path = os.path.join(app_dir, "Proceso y Producciones 01-08 Julio 2026.pptx")
+        file_path = os.path.join(app_dir, "assets", "plantilla.pptx")
 
         if not os.path.exists(file_path):
-            alternative_path = os.path.join(self.default_pptx_dir, "Proceso y Producciones 01-08 Julio 2026.pptx")
+            alternative_path = os.path.join(self.default_pptx_dir, "plantilla.pptx")
             if os.path.exists(alternative_path):
                 file_path = alternative_path
             else:
                 # Si de plano no existe, permitimos seleccionarlo manualmente como fallback
                 messagebox.showwarning(
                     "Plantilla Predeterminada No Encontrada", 
-                    f"No se encontró 'Proceso y Producciones 01-08 Julio 2026.pptx' en:\n{file_path}\n\nPor favor, selecciónala manualmente."
+                    f"No se encontró 'plantilla.pptx' en:\n{file_path}\n\nPor favor, selecciónala manualmente."
                 )
                 file_path = filedialog.askopenfilename(
                     title="Seleccionar plantilla PowerPoint",
