@@ -72,9 +72,13 @@ def update_slide_chart(chart, categories, proceso_vals, diario_vals, programa_va
         gray_color = RGBColor(192, 192, 192)
 
         # Pintar todas las barras y formatear sus etiquetas de datos
-        for p_idx in range(min(17, len(series.points))):
+        for p_idx in range(len(series.points)):
+            if p_idx >= len(categories):
+                break
+            cat = categories[p_idx]
+            if cat.isdigit() and len(cat) <= 2:
+                break
             try:
-                cat = categories[p_idx]
                 point = series.points[p_idx]
                 fill = point.format.fill
                 fill.solid()
