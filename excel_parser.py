@@ -113,7 +113,7 @@ def load_data(app, file_path):
             df_sheet = pd.read_excel(file_path, sheet_name=sheet_to_use, header=None)
             
             try:
-                df_envio = pd.read_excel(file_path, sheet_name="EnvioProDiario", header=None)
+                df_envio = pd.read_excel(file_path, sheet_name="EnvioProDiairo", header=None)
                 app.cmp_value = str(df_envio.iloc[18, 32])
                 
                 def get_float(row, col):
@@ -127,7 +127,7 @@ def load_data(app, file_path):
                 app.cmp_diesel = str(round(get_float(78, 32), 1))
 
             except Exception as e:
-                print("Error leyendo EnvioProDiario:", e)
+                print("Error leyendo EnvioProDiairo:", e)
                 app.cmp_value = "1234.8"
                 app.cmp_gasolinas = "513"
                 app.cmp_turbosina = "312.4"
