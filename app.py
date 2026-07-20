@@ -155,7 +155,7 @@ class ExcelViewerApp(ctk.CTk):
         self.lbl_proceso.pack(pady=10, padx=(8, 4), side="left")
         
         self.cb_proceso = ctk.CTkComboBox(self.row1_frame, 
-                                            values=["Crudo", "Gasolinas", "Diesel", "Turbosina", "Asfalto", "Combustoleo",
+                                            values=["Titulares", "Crudo", "Gasolinas", "Diesel", "Turbosina", "Asfalto", "Combustoleo",
                                                     "Cadereyta -Crudo", "Cadereyta -Gasolinas", "Cadereyta -Diesel", "Cadereyta -Combustoleo",
                                                     "Madero -Crudo", "Madero -Gasolinas", "Madero -Diesel", "Madero -Turbosina", "Madero -Combustoleo",
                                                     "Minatitlan -Crudo", "Minatitlan -Gasolinas", "Minatitlan -Diesel", "Minatitlan -Combustoleo",
@@ -1198,6 +1198,46 @@ class ExcelViewerApp(ctk.CTk):
         self.lbl_file.configure(text=f"Archivo: {os.path.basename(file_path)}")
         self.cambios_sin_guardar = True
 
+    def get_titulares_df(self):
+        if not hasattr(self, 'df_envio') or self.df_envio is None:
+            return None
+        
+        df_envio = self.df_envio
+        refinery_names = ["Cadereyta", "Madero", "Minatitlán", "Olmeca", "Salamanca", "Salina Cruz", "Tula"]
+        ref_row_index = {
+            "Cadereyta": 0, "Madero": 1, "Minatitlán": 2, "Olmeca": 3, "Salamanca": 4, "Salina Cruz": 5, "Tula": 6
+        }
+        
+        def get_envio_val(row, col=32):
+            try:
+                return float(df_envio.iloc[row, col])
+            except:
+                return 0.0
+
+        rows = []
+        for ref in refinery_names:
+            offset = ref_row_index[ref]
+            # Crudo (Mbd)
+            crudo = round(get_envio_val(11 + offset), 1)
+            # Gasolinas (Mbd): Magna (21) + Premium RP (31) + Premium ZM (41)
+            gasolinas = round(get_envio_val(21 + offset) + get_envio_val(31 + offset) + get_envio_val(41 + offset), 1)
+            # Diesel (Mbd)
+            diesel = round(get_envio_val(81 + offset), 1)
+            # Combustoleo (Mbd)
+            combustoleo = round(get_envio_val(121 + offset), 1)
+            
+            rows.append([ref, crudo, gasolinas, diesel, combustoleo])
+            
+        # Calcular TOTAL
+        total_crudo = round(sum(r[1] for r in rows), 1)
+        total_gas = round(sum(r[2] for r in rows), 1)
+        total_die = round(sum(r[3] for r in rows), 1)
+        total_comb = round(sum(r[4] for r in rows), 1)
+        rows.append(["TOTAL", total_crudo, total_gas, total_die, total_comb])
+        
+        df = pd.DataFrame(rows, columns=["Refinería", "Crudo (Mbd)", "Gasolinas (Mbd)", "Diesel (Mbd)", "Combustóleo (Mbd)"])
+        return df
+
     def on_proceso_changed(self, selection):
         if self.df_data is None:
             return
@@ -1225,6 +1265,27 @@ class ExcelViewerApp(ctk.CTk):
             self.table4 = None
         if hasattr(self, 'lbl_table4') and self.lbl_table4 is not None:
             self.lbl_table4.destroy()
+
+        if selection == "Titulares":
+            self.lbl_table1 = ctk.CTkLabel(self.scroll_frame, text="Resumen de Programas (Titulares)", font=("Roboto", 16, "bold"), text_color="#3484F0")
+            self.lbl_table1.pack(pady=(20, 5))
+            
+            df_titulares = self.get_titulares_df()
+            if df_titulares is not None:
+                headers = list(df_titulares.columns)
+                rows = df_titulares.to_numpy().tolist()
+                table_values = [headers] + rows
+                self.table = CTkTable(
+                    master=self.scroll_frame, 
+                    row=len(table_values), 
+                    column=len(table_values[0]), 
+                    values=table_values,
+                    header_color="#1f538d",
+                    colors=["#2a2a2a", "#242424"],
+                    hover_color="#3a3a3a",
+                )
+                self.table.pack(expand=True, fill="both", padx=10, pady=10)
+            return
 
         if selection == "Crudo":
             df_data = self.df_data
@@ -1823,6 +1884,45 @@ class ExcelViewerApp(ctk.CTk):
             }
 
             with pd.ExcelWriter(save_path, engine='openpyxl') as writer:
+                # --- NUEVO: Exportar tabla de Titulares a una nueva hoja ---
+                df_titulares = self.get_titulares_df()
+                if df_titulares is not None:
+                    df_titulares.to_excel(writer, sheet_name="Titulares", index=False)
+                    
+                    # Darle formato a la hoja de Titulares
+                    worksheet_tit = writer.sheets["Titulares"]
+                    worksheet_tit.insert_rows(1, 2)
+                    worksheet_tit.cell(row=1, column=1, value="RESUMEN DE PROGRAMAS (TITULARES)")
+                    worksheet_tit.cell(row=1, column=1).font = Font(name="Segoe UI", size=15, bold=True, color="1F497D")
+                    
+                    # Mover los headers originales a la fila 3 e iluminarlos
+                    for col_idx, col_name in enumerate(df_titulares.columns, start=1):
+                        cell = worksheet_tit.cell(row=3, column=col_idx, value=col_name)
+                        cell.font = Font(name="Segoe UI", size=11, bold=True, color="FFFFFF")
+                        cell.fill = openpyxl.styles.PatternFill(start_color="1F538D", end_color="1F538D", fill_type="solid")
+                    
+                    # Formato para los datos
+                    thin_side = Side(border_style="thin", color="D3D3D3")
+                    border = Border(left=thin_side, right=thin_side, top=thin_side, bottom=thin_side)
+                    for r_idx in range(4, 4 + len(df_titulares)):
+                        for c_idx in range(1, 1 + len(df_titulares.columns)):
+                            cell = worksheet_tit.cell(row=r_idx, column=c_idx)
+                            cell.font = Font(name="Segoe UI", size=10)
+                            cell.border = border
+                            if r_idx == 3 + len(df_titulares):
+                                cell.font = Font(name="Segoe UI", size=10, bold=True)
+                                
+                    # Ajustar anchos
+                    for col in worksheet_tit.columns:
+                        max_len = 0
+                        col_letter = get_column_letter(col[0].column)
+                        for cell in col:
+                            if cell.value is not None:
+                                if cell.row == 1:
+                                    continue
+                                max_len = max(max_len, len(str(cell.value)))
+                        worksheet_tit.column_dimensions[col_letter].width = max(max_len + 4, 15)
+
                 for ref_name, products in refinerias.items():
                     # Verificar si al menos un producto tiene datos para esta refinería
                     has_data = False
