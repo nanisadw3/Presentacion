@@ -187,6 +187,15 @@ class ExcelViewerApp(ctk.CTk):
                                             fg_color="#8b5cf6", hover_color="#7c3aed")
         self.btn_powerpoint.pack(pady=8, padx=6, side="left")
 
+        self.btn_select_template = ctk.CTkButton(self.row2_frame, 
+                                                text="Seleccionar Plantilla", 
+                                                font=("Roboto", 12, "bold"),
+                                                command=self.select_powerpoint_template,
+                                                height=32, width=160,
+                                                corner_radius=8,
+                                                fg_color="#6366f1", hover_color="#4f46e5")
+        self.btn_select_template.pack(pady=8, padx=6, side="left")
+
         self.btn_excel = ctk.CTkButton(self.row2_frame, 
                                        text="Exportar a Excel", 
                                        font=("Roboto", 12, "bold"),
@@ -502,6 +511,7 @@ class ExcelViewerApp(ctk.CTk):
 
         self.default_excel_dir = check_and_get_dir(path_excel_preferida)
         self.default_pptx_dir = check_and_get_dir(path_pptx_preferida)
+        self.template_path = None
 
         # Variables de caché para optimización de recargas
         self.cached_file_path = None
@@ -2038,31 +2048,45 @@ class ExcelViewerApp(ctk.CTk):
         print(f"Error exportando a Excel:\n{error_details}")
         messagebox.showerror("Error", f"Ocurrió un error al exportar el reporte a Excel:\n{err_msg}")
 
+    def select_powerpoint_template(self):
+        initial_dir = self.default_pptx_dir if hasattr(self, 'default_pptx_dir') else "/"
+        file_path = filedialog.askopenfilename(
+            title="Seleccionar plantilla PowerPoint (.pptx)",
+            initialdir=initial_dir,
+            filetypes=[("Archivos PowerPoint", "*.pptx")]
+        )
+        if file_path:
+            self.template_path = file_path
+            messagebox.showinfo("Plantilla Seleccionada", f"Se seleccionó la plantilla:\n{os.path.basename(file_path)}")
+
     def send_to_powerpoint(self):
         if self.df_data is None or self.df_snr is None or self.df_prod is None:
             messagebox.showerror("Error", "Primero debes buscar un archivo Excel para extraer los datos.")
             return
 
-        app_dir = os.path.dirname(os.path.abspath(__file__))
-        file_path = os.path.join(app_dir, "assets", "plantilla.pptx")
+        if hasattr(self, 'template_path') and self.template_path and os.path.exists(self.template_path):
+            file_path = self.template_path
+        else:
+            app_dir = os.path.dirname(os.path.abspath(__file__))
+            file_path = os.path.join(app_dir, "assets", "plantilla.pptx")
 
-        if not os.path.exists(file_path):
-            alternative_path = os.path.join(self.default_pptx_dir, "plantilla.pptx")
-            if os.path.exists(alternative_path):
-                file_path = alternative_path
-            else:
-                # Si de plano no existe, permitimos seleccionarlo manualmente como fallback
-                messagebox.showwarning(
-                    "Plantilla Predeterminada No Encontrada", 
-                    f"No se encontró 'plantilla.pptx' en:\n{file_path}\n\nPor favor, selecciónala manualmente."
-                )
-                file_path = filedialog.askopenfilename(
-                    title="Seleccionar plantilla PowerPoint",
-                    initialdir=self.default_pptx_dir,
-                    filetypes=[("Archivos PowerPoint", "*.pptx")]
-                )
-                if not file_path:
-                    return
+            if not os.path.exists(file_path):
+                alternative_path = os.path.join(self.default_pptx_dir, "plantilla.pptx")
+                if os.path.exists(alternative_path):
+                    file_path = alternative_path
+                else:
+                    # Si de plano no existe, permitimos seleccionarlo manualmente como fallback
+                    messagebox.showwarning(
+                        "Plantilla Predeterminada No Encontrada", 
+                        f"No se encontró 'plantilla.pptx' en:\n{file_path}\n\nPor favor, selecciónala manualmente."
+                    )
+                    file_path = filedialog.askopenfilename(
+                        title="Seleccionar plantilla PowerPoint",
+                        initialdir=self.default_pptx_dir,
+                        filetypes=[("Archivos PowerPoint", "*.pptx")]
+                    )
+                    if not file_path:
+                        return
 
         save_path = filedialog.asksaveasfilename(
             title="Guardar presentación actualizada",

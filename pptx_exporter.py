@@ -2699,10 +2699,14 @@ def export_to_pptx(app, file_path, save_path):
                             elif "gasolina" in text_lower:
                                 # Sum of Magna (21), Premium RP (31), Premium ZM (41)
                                 new_val = get_envio_val(21 + offset) + get_envio_val(31 + offset) + get_envio_val(41 + offset)
+                            elif "turbosina" in text_lower:
+                                new_val = get_envio_val(71 + offset)
                             elif "diesel" in text_lower:
                                 new_val = get_envio_val(81 + offset)
                             elif "combust" in text_lower:
                                 new_val = get_envio_val(121 + offset)
+                            elif "asfalto" in text_lower:
+                                new_val = get_envio_val(131 + offset)
                                 
                             if new_val is not None:
                                 rounded_val = round(new_val, 1)
