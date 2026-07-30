@@ -127,10 +127,10 @@ def load_data(app, file_path):
                         return 0.0
 
                 app.cmp_gasolinas = str(round(get_float(28, 32) + get_float(38, 32) + get_float(48, 32), 1))
-                app.cmp_turbosina = str(round(get_float(68, 32), 1))
-                app.cmp_diesel = str(round(get_float(78, 32), 1))
-                app.cmp_asfalto = str(round(get_float(128, 32), 1))
-                app.cmp_combustoleo = str(round(get_float(118, 32), 1))
+                app.cmp_turbosina = str(round(get_float(78, 32), 1))
+                app.cmp_diesel = str(round(get_float(88, 32), 1))
+                app.cmp_asfalto = str(round(get_float(138, 32), 1))
+                app.cmp_combustoleo = str(round(get_float(128, 32), 1))
 
             except Exception as e:
                 print("Error leyendo EnvioProDiairo:", e)

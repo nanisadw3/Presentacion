@@ -1221,21 +1221,27 @@ class ExcelViewerApp(ctk.CTk):
             crudo = round(get_envio_val(11 + offset), 1)
             # Gasolinas (Mbd): Magna (21) + Premium RP (31) + Premium ZM (41)
             gasolinas = round(get_envio_val(21 + offset) + get_envio_val(31 + offset) + get_envio_val(41 + offset), 1)
+            # Turbosina (Mbd)
+            turbosina = round(get_envio_val(71 + offset), 1)
             # Diesel (Mbd)
             diesel = round(get_envio_val(81 + offset), 1)
             # Combustoleo (Mbd)
             combustoleo = round(get_envio_val(121 + offset), 1)
+            # Asfalto (Mbd)
+            asfalto = round(get_envio_val(131 + offset), 1)
             
-            rows.append([ref, crudo, gasolinas, diesel, combustoleo])
+            rows.append([ref, crudo, gasolinas, turbosina, diesel, combustoleo, asfalto])
             
         # Calcular TOTAL
         total_crudo = round(sum(r[1] for r in rows), 1)
         total_gas = round(sum(r[2] for r in rows), 1)
-        total_die = round(sum(r[3] for r in rows), 1)
-        total_comb = round(sum(r[4] for r in rows), 1)
-        rows.append(["TOTAL", total_crudo, total_gas, total_die, total_comb])
+        total_turb = round(sum(r[3] for r in rows), 1)
+        total_die = round(sum(r[4] for r in rows), 1)
+        total_comb = round(sum(r[5] for r in rows), 1)
+        total_asf = round(sum(r[6] for r in rows), 1)
+        rows.append(["TOTAL", total_crudo, total_gas, total_turb, total_die, total_comb, total_asf])
         
-        df = pd.DataFrame(rows, columns=["Refinería", "Crudo (Mbd)", "Gasolinas (Mbd)", "Diesel (Mbd)", "Combustóleo (Mbd)"])
+        df = pd.DataFrame(rows, columns=["Refinería", "Crudo (Mbd)", "Gasolinas (Mbd)", "Turbosina (Mbd)", "Diesel (Mbd)", "Combustóleo (Mbd)", "Asfalto (Mbd)"])
         return df
 
     def on_proceso_changed(self, selection):
