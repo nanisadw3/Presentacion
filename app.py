@@ -105,15 +105,26 @@ class LoadingOverlay(ctk.CTkToplevel):
         self.after(30, self.animate)
 
 class ExcelViewerApp(ctk.CTk):
+    def _get_primary_monitor_size(self):
+        # En Windows con varios monitores, winfo_screenwidth/height devuelve el
+        # escritorio virtual (todos los monitores juntos), lo que centra la ventana
+        # a caballo entre ambos. GetSystemMetrics(SM_CXSCREEN/SM_CYSCREEN) da el
+        # tamaño solo del monitor principal.
+        try:
+            import ctypes
+            user32 = ctypes.windll.user32
+            return user32.GetSystemMetrics(0), user32.GetSystemMetrics(1)
+        except Exception:
+            return self.winfo_screenwidth(), self.winfo_screenheight()
+
     def __init__(self):
         super().__init__()
 
         self.title("Sistema de Proyección y Reportes de Refinerías")
-        
-        # Centrar ventana al 80% de la pantalla principal
+
+        # Centrar ventana al 80% del monitor principal
         self.update_idletasks()
-        screen_w = self.winfo_screenwidth()
-        screen_h = self.winfo_screenheight()
+        screen_w, screen_h = self._get_primary_monitor_size()
         width = int(screen_w * 0.8)
         height = int(screen_h * 0.8)
         x = int((screen_w - width) / 2)
@@ -561,10 +572,9 @@ class ExcelViewerApp(ctk.CTk):
         dialog.title("Agregar/Editar Producción")
         
         width, height = 450, 500
-        screen_w = dialog.winfo_screenwidth()
-        screen_h = dialog.winfo_screenheight()
-        x = int((screen_w/2) - (width/2))
-        y = int((screen_h/2) - (height/2))
+        self.update_idletasks()
+        x = self.winfo_x() + (self.winfo_width() - width) // 2
+        y = self.winfo_y() + (self.winfo_height() - height) // 2
         dialog.geometry(f"{width}x{height}+{x}+{y}")
         
         dialog.transient(self)

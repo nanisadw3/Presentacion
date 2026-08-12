@@ -351,7 +351,7 @@ def load_data(app, file_path):
         df_data_cad.columns = ["Crudo", "Cadereyta"]
         df_data_cad = df_data_cad.dropna(how='all')
         df_data_cad = remove_decimals(df_data_cad)
-        df_data_cad = filter_zero_rows(df_data_cad)
+        df_data_cad = df_data_cad.iloc[:num_dias_reales]
 
         # Programa: Columna BI (60) repetida, Filas 74-104
         df_snr_cad = df_sheet.iloc[r_s[0]:r_s[1], c_s].copy()
@@ -377,7 +377,6 @@ def load_data(app, file_path):
         df_gas_cad.columns = headers_cad_gas
         df_gas_cad = df_gas_cad.dropna(how='all')
         df_gas_cad = remove_decimals(df_gas_cad)
-        df_gas_cad = filter_zero_rows(df_gas_cad)
         df_data_cad_gas = df_gas_cad.copy()
 
         # Leer Tabla 2 (Programa, Rows 74-104 -> index 73:104), Col BS repetida (70, 70)
@@ -418,7 +417,6 @@ def load_data(app, file_path):
         df_die_cad.columns = headers_cad_die
         df_die_cad = df_die_cad.dropna(how='all')
         df_die_cad = remove_decimals(df_die_cad)
-        df_die_cad = filter_zero_rows(df_die_cad)
         df_data_cad_die = df_die_cad.copy()
 
         # Leer Tabla 2 (Programa, Rows 74-104 -> index 73:104), Col CC repetida (80, 80)
@@ -458,7 +456,6 @@ def load_data(app, file_path):
         df_comb_cad.columns = headers_cad_comb
         df_comb_cad = df_comb_cad.dropna(how='all')
         df_comb_cad = remove_decimals(df_comb_cad)
-        df_comb_cad = filter_zero_rows(df_comb_cad)
         df_data_cad_comb = df_comb_cad.copy()
 
         df_snr_cad_comb = df_sheet.iloc[r_s[0]:r_s[1], c_s].copy()
@@ -1470,7 +1467,7 @@ def load_data(app, file_path):
         df_gas.columns = clean_headers_gas
         df_gas = df_gas.dropna(how='all').dropna(axis=1, how='all')
         df_gas = remove_decimals(df_gas)
-        df_data_gasolinas = filter_zero_rows(df_gas).copy()
+        df_data_gasolinas = df_gas.copy()
 
         # Leer Tabla 2 (Programa, Rows 74-104 -> index 73:104), Cols AK:AL (36:38)
         df_snr_gas = df_sheet.iloc[73:104, 36:38].copy()
@@ -1512,7 +1509,7 @@ def load_data(app, file_path):
         df_die.columns = clean_headers_die
         df_die = df_die.dropna(how='all').dropna(axis=1, how='all')
         df_die = remove_decimals(df_die)
-        df_data_diesel = filter_zero_rows(df_die).copy()
+        df_data_diesel = df_die.copy()
 
         # Leer Tabla 2 (Programa, Rows 74-104 -> index 73:104), Cols AQ:AR (42:44)
         df_snr_die = df_sheet.iloc[73:104, 42:44].copy()
@@ -1554,7 +1551,7 @@ def load_data(app, file_path):
         df_turb.columns = clean_headers_turb
         df_turb = df_turb.dropna(how='all').dropna(axis=1, how='all')
         df_turb = remove_decimals(df_turb)
-        df_data_turbosina = filter_zero_rows(df_turb).copy()
+        df_data_turbosina = df_turb.copy()
 
         # Leer Tabla 2 (Programa, Rows 74-104 -> index 73:104), Cols AW:AX (48:50)
         df_snr_turb = df_sheet.iloc[73:104, 48:50].copy()
@@ -1634,7 +1631,7 @@ def load_data(app, file_path):
         df_comb.columns = ["SNR", "Combustoleo"]
         df_comb = df_comb.dropna(how='all').dropna(axis=1, how='all')
         df_comb = remove_decimals(df_comb)
-        df_data_combustoleo = filter_zero_rows(df_comb).copy()
+        df_data_combustoleo = df_comb.copy()
 
         # Leer Tabla 2 (Programa, Rows 74-104 -> index 73:104), Cols BC:BD (54:56)
         df_snr_comb = df_sheet.iloc[73:104, 54:56].copy()

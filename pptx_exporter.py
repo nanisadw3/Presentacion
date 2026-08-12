@@ -170,10 +170,11 @@ def export_to_pptx(app, file_path, save_path):
             if not any(c.isalpha() for c in cat):
                 prod_rows.append((cat, val))
             else:
-                try:
-                    p_val = float(val)
-                    if p_val != 0: prod_rows.append((cat, val))
-                except: pass
+                if val != "" and val is not None:
+                    try:
+                        float(val)
+                        prod_rows.append((cat, val))
+                    except: pass
         
         if len(prod_rows) > 30: prod_rows = prod_rows[-30:]
 
@@ -237,10 +238,11 @@ def export_to_pptx(app, file_path, save_path):
                 if not any(c.isalpha() for c in cat):
                     prod_rows_cad.append((cat, val))
                 else:
-                    try:
-                        p_val = float(val)
-                        if p_val != 0: prod_rows_cad.append((cat, val))
-                    except: pass
+                    if val != "" and val is not None:
+                        try:
+                            float(val)
+                            prod_rows_cad.append((cat, val))
+                        except: pass
             
             if len(prod_rows_cad) > 30: prod_rows_cad = prod_rows_cad[-30:]
             
@@ -314,12 +316,11 @@ def export_to_pptx(app, file_path, save_path):
             if not any(c.isalpha() for c in cat):
                 prod_rows_gas.append((cat, val))
             else:
-                try:
-                    p_val = float(val)
-                except:
-                    p_val = 0
-                if p_val != 0:
-                    prod_rows_gas.append((cat, val))
+                if val != "" and val is not None:
+                    try:
+                        float(val)
+                        prod_rows_gas.append((cat, val))
+                    except: pass
 
         # Ajustar al límite de 30 categorías
         if len(prod_rows_gas) > 30:
@@ -416,12 +417,11 @@ def export_to_pptx(app, file_path, save_path):
             if not any(c.isalpha() for c in cat):
                 prod_rows_die.append((cat, val))
             else:
-                try:
-                    p_val = float(val)
-                except:
-                    p_val = 0
-                if p_val != 0:
-                    prod_rows_die.append((cat, val))
+                if val != "" and val is not None:
+                    try:
+                        float(val)
+                        prod_rows_die.append((cat, val))
+                    except: pass
 
         # Ajustar al límite de 30 categorías
         if len(prod_rows_die) > 30:
@@ -518,12 +518,11 @@ def export_to_pptx(app, file_path, save_path):
             if not any(c.isalpha() for c in cat):
                 prod_rows_turb.append((cat, val))
             else:
-                try:
-                    p_val = float(val)
-                except:
-                    p_val = 0
-                if p_val != 0:
-                    prod_rows_turb.append((cat, val))
+                if val != "" and val is not None:
+                    try:
+                        float(val)
+                        prod_rows_turb.append((cat, val))
+                    except: pass
 
         # Ajustar al límite de 30 categorías
         if len(prod_rows_turb) > 30:
@@ -623,12 +622,11 @@ def export_to_pptx(app, file_path, save_path):
                 if not any(c.isalpha() for c in cat):
                     prod_rows_asf.append((cat, val))
                 else:
-                    try:
-                        p_val = float(val)
-                    except:
-                        p_val = 0
-                    # Permitir meses con producción 0
-                    prod_rows_asf.append((cat, val))
+                    if val != "" and val is not None:
+                        try:
+                            float(val)
+                            prod_rows_asf.append((cat, val))
+                        except: pass
 
             # Ajustar al límite de 30 categorías
             if len(prod_rows_asf) > 30:
@@ -731,12 +729,11 @@ def export_to_pptx(app, file_path, save_path):
                 if not any(c.isalpha() for c in cat):
                     prod_rows_comb.append((cat, val))
                 else:
-                    try:
-                        p_val = float(val)
-                    except:
-                        p_val = 0
-                    # Permitir meses con producción 0 para no saltar el mes actual
-                    prod_rows_comb.append((cat, val))
+                    if val != "" and val is not None:
+                        try:
+                            float(val)
+                            prod_rows_comb.append((cat, val))
+                        except: pass
 
             # Ajustar al límite de 30 categorías
             if len(prod_rows_comb) > 30:
@@ -823,9 +820,11 @@ def export_to_pptx(app, file_path, save_path):
                             if not any(c.isalpha() for c in cat):
                                 prod_rows_cg.append((cat, val))
                             else:
-                                try:
-                                    if float(val) != 0: prod_rows_cg.append((cat, val))
-                                except: pass
+                                if val != "" and val is not None:
+                                    try:
+                                        float(val)
+                                        prod_rows_cg.append((cat, val))
+                                    except: pass
 
 
 
@@ -890,9 +889,11 @@ def export_to_pptx(app, file_path, save_path):
                                 if not any(c.isalpha() for c in cat):
                                     prod_rows_cd.append((cat, val))
                                 else:
-                                    try:
-                                        if float(val) != 0: prod_rows_cd.append((cat, val))
-                                    except: pass
+                                    if val != "" and val is not None:
+                                        try:
+                                            float(val)
+                                            prod_rows_cd.append((cat, val))
+                                        except: pass
                             
                             if len(prod_rows_cd) > 30: prod_rows_cd = prod_rows_cd[-30:]
  
@@ -953,9 +954,11 @@ def export_to_pptx(app, file_path, save_path):
                                 if not any(c.isalpha() for c in cat):
                                     prod_rows_cc.append((cat, val))
                                 else:
-                                    try:
-                                        if float(val) != 0: prod_rows_cc.append((cat, val))
-                                    except: pass
+                                    if val != "" and val is not None:
+                                        try:
+                                            float(val)
+                                            prod_rows_cc.append((cat, val))
+                                        except: pass
                             
                             if len(prod_rows_cc) > 30: prod_rows_cc = prod_rows_cc[-30:]
  
@@ -1007,9 +1010,11 @@ def export_to_pptx(app, file_path, save_path):
                         if not any(c.isalpha() for c in cat):
                             prod_rows_mc.append((cat, val))
                         else:
-                            try:
-                                if float(val) != 0: prod_rows_mc.append((cat, val))
-                            except: pass
+                            if val != "" and val is not None:
+                                try:
+                                    float(val)
+                                    prod_rows_mc.append((cat, val))
+                                except: pass
 
                     if len(prod_rows_mc) > 30: prod_rows_mc = prod_rows_mc[-30:]
 
@@ -1071,9 +1076,11 @@ def export_to_pptx(app, file_path, save_path):
                             if not any(c.isalpha() for c in cat):
                                 prod_rows_mg.append((cat, val))
                             else:
-                                try:
-                                    if float(val) != 0: prod_rows_mg.append((cat, val))
-                                except: pass
+                                if val != "" and val is not None:
+                                    try:
+                                        float(val)
+                                        prod_rows_mg.append((cat, val))
+                                    except: pass
 
                         if len(prod_rows_mg) > 30: prod_rows_mg = prod_rows_mg[-30:]
 
@@ -1133,9 +1140,11 @@ def export_to_pptx(app, file_path, save_path):
                             if not any(c.isalpha() for c in cat):
                                 prod_rows_md.append((cat, val))
                             else:
-                                try:
-                                    if float(val) != 0: prod_rows_md.append((cat, val))
-                                except: pass
+                                if val != "" and val is not None:
+                                    try:
+                                        float(val)
+                                        prod_rows_md.append((cat, val))
+                                    except: pass
 
                         if len(prod_rows_md) > 30: prod_rows_md = prod_rows_md[-30:]
 
@@ -1195,9 +1204,11 @@ def export_to_pptx(app, file_path, save_path):
                             if not any(c.isalpha() for c in cat):
                                 prod_rows_mtu.append((cat, val))
                             else:
-                                try:
-                                    if float(val) != 0: prod_rows_mtu.append((cat, val))
-                                except: pass
+                                if val != "" and val is not None:
+                                    try:
+                                        float(val)
+                                        prod_rows_mtu.append((cat, val))
+                                    except: pass
 
                         if len(prod_rows_mtu) > 30: prod_rows_mtu = prod_rows_mtu[-30:]
 
@@ -1257,9 +1268,11 @@ def export_to_pptx(app, file_path, save_path):
                             if not any(c.isalpha() for c in cat):
                                 prod_rows_mco.append((cat, val))
                             else:
-                                try:
-                                    if float(val) != 0: prod_rows_mco.append((cat, val))
-                                except: pass
+                                if val != "" and val is not None:
+                                    try:
+                                        float(val)
+                                        prod_rows_mco.append((cat, val))
+                                    except: pass
 
                         if len(prod_rows_mco) > 30: prod_rows_mco = prod_rows_mco[-30:]
 
@@ -1319,9 +1332,11 @@ def export_to_pptx(app, file_path, save_path):
                             if not any(c.isalpha() for c in cat):
                                 prod_rows_mic.append((cat, val))
                             else:
-                                try:
-                                    if float(val) != 0: prod_rows_mic.append((cat, val))
-                                except: pass
+                                if val != "" and val is not None:
+                                    try:
+                                        float(val)
+                                        prod_rows_mic.append((cat, val))
+                                    except: pass
 
                         if len(prod_rows_mic) > 30: prod_rows_mic = prod_rows_mic[-30:]
 
@@ -1381,9 +1396,11 @@ def export_to_pptx(app, file_path, save_path):
                             if not any(c.isalpha() for c in cat):
                                 prod_rows_mig.append((cat, val))
                             else:
-                                try:
-                                    if float(val) != 0: prod_rows_mig.append((cat, val))
-                                except: pass
+                                if val != "" and val is not None:
+                                    try:
+                                        float(val)
+                                        prod_rows_mig.append((cat, val))
+                                    except: pass
 
                         if len(prod_rows_mig) > 30: prod_rows_mig = prod_rows_mig[-30:]
 
@@ -1443,9 +1460,11 @@ def export_to_pptx(app, file_path, save_path):
                             if not any(c.isalpha() for c in cat):
                                 prod_rows_mid.append((cat, val))
                             else:
-                                try:
-                                    if float(val) != 0: prod_rows_mid.append((cat, val))
-                                except: pass
+                                if val != "" and val is not None:
+                                    try:
+                                        float(val)
+                                        prod_rows_mid.append((cat, val))
+                                    except: pass
 
                         if len(prod_rows_mid) > 30: prod_rows_mid = prod_rows_mid[-30:]
 
@@ -1505,9 +1524,11 @@ def export_to_pptx(app, file_path, save_path):
                             if not any(c.isalpha() for c in cat):
                                 prod_rows_mco.append((cat, val))
                             else:
-                                try:
-                                    if float(val) != 0: prod_rows_mco.append((cat, val))
-                                except: pass
+                                if val != "" and val is not None:
+                                    try:
+                                        float(val)
+                                        prod_rows_mco.append((cat, val))
+                                    except: pass
 
                         if len(prod_rows_mco) > 30: prod_rows_mco = prod_rows_mco[-30:]
 
@@ -1567,9 +1588,11 @@ def export_to_pptx(app, file_path, save_path):
                             if not any(c.isalpha() for c in cat):
                                 prod_rows_sc.append((cat, val))
                             else:
-                                try:
-                                    if float(val) != 0: prod_rows_sc.append((cat, val))
-                                except: pass
+                                if val != "" and val is not None:
+                                    try:
+                                        float(val)
+                                        prod_rows_sc.append((cat, val))
+                                    except: pass
 
                         if len(prod_rows_sc) > 30: prod_rows_sc = prod_rows_sc[-30:]
 
@@ -1629,9 +1652,11 @@ def export_to_pptx(app, file_path, save_path):
                             if not any(c.isalpha() for c in cat):
                                 prod_rows_sg.append((cat, val))
                             else:
-                                try:
-                                    if float(val) != 0: prod_rows_sg.append((cat, val))
-                                except: pass
+                                if val != "" and val is not None:
+                                    try:
+                                        float(val)
+                                        prod_rows_sg.append((cat, val))
+                                    except: pass
 
                         if len(prod_rows_sg) > 30: prod_rows_sg = prod_rows_sg[-30:]
 
@@ -1691,9 +1716,11 @@ def export_to_pptx(app, file_path, save_path):
                             if not any(c.isalpha() for c in cat):
                                 prod_rows_sd.append((cat, val))
                             else:
-                                try:
-                                    if float(val) != 0: prod_rows_sd.append((cat, val))
-                                except: pass
+                                if val != "" and val is not None:
+                                    try:
+                                        float(val)
+                                        prod_rows_sd.append((cat, val))
+                                    except: pass
 
                         if len(prod_rows_sd) > 30: prod_rows_sd = prod_rows_sd[-30:]
 
@@ -1753,9 +1780,11 @@ def export_to_pptx(app, file_path, save_path):
                             if not any(c.isalpha() for c in cat):
                                 prod_rows_stur.append((cat, val))
                             else:
-                                try:
-                                    if float(val) != 0: prod_rows_stur.append((cat, val))
-                                except: pass
+                                if val != "" and val is not None:
+                                    try:
+                                        float(val)
+                                        prod_rows_stur.append((cat, val))
+                                    except: pass
 
                         if len(prod_rows_stur) > 30: prod_rows_stur = prod_rows_stur[-30:]
 
@@ -1815,9 +1844,11 @@ def export_to_pptx(app, file_path, save_path):
                             if not any(c.isalpha() for c in cat):
                                 prod_rows_sco.append((cat, val))
                             else:
-                                try:
-                                    if float(val) != 0: prod_rows_sco.append((cat, val))
-                                except: pass
+                                if val != "" and val is not None:
+                                    try:
+                                        float(val)
+                                        prod_rows_sco.append((cat, val))
+                                    except: pass
 
                         if len(prod_rows_sco) > 30: prod_rows_sco = prod_rows_sco[-30:]
 
@@ -1877,9 +1908,11 @@ def export_to_pptx(app, file_path, save_path):
                             if not any(c.isalpha() for c in cat):
                                 prod_rows_sc.append((cat, val))
                             else:
-                                try:
-                                    if float(val) != 0: prod_rows_sc.append((cat, val))
-                                except: pass
+                                if val != "" and val is not None:
+                                    try:
+                                        float(val)
+                                        prod_rows_sc.append((cat, val))
+                                    except: pass
 
                         if len(prod_rows_sc) > 30: prod_rows_sc = prod_rows_sc[-30:]
 
@@ -1939,9 +1972,11 @@ def export_to_pptx(app, file_path, save_path):
                             if not any(c.isalpha() for c in cat):
                                 prod_rows_sg.append((cat, val))
                             else:
-                                try:
-                                    if float(val) != 0: prod_rows_sg.append((cat, val))
-                                except: pass
+                                if val != "" and val is not None:
+                                    try:
+                                        float(val)
+                                        prod_rows_sg.append((cat, val))
+                                    except: pass
 
                         if len(prod_rows_sg) > 30: prod_rows_sg = prod_rows_sg[-30:]
 
@@ -2001,9 +2036,11 @@ def export_to_pptx(app, file_path, save_path):
                             if not any(c.isalpha() for c in cat):
                                 prod_rows_sd.append((cat, val))
                             else:
-                                try:
-                                    if float(val) != 0: prod_rows_sd.append((cat, val))
-                                except: pass
+                                if val != "" and val is not None:
+                                    try:
+                                        float(val)
+                                        prod_rows_sd.append((cat, val))
+                                    except: pass
 
                         if len(prod_rows_sd) > 30: prod_rows_sd = prod_rows_sd[-30:]
 
@@ -2063,9 +2100,11 @@ def export_to_pptx(app, file_path, save_path):
                             if not any(c.isalpha() for c in cat):
                                 prod_rows_stur.append((cat, val))
                             else:
-                                try:
-                                    if float(val) != 0: prod_rows_stur.append((cat, val))
-                                except: pass
+                                if val != "" and val is not None:
+                                    try:
+                                        float(val)
+                                        prod_rows_stur.append((cat, val))
+                                    except: pass
 
                         if len(prod_rows_stur) > 30: prod_rows_stur = prod_rows_stur[-30:]
 
@@ -2125,9 +2164,11 @@ def export_to_pptx(app, file_path, save_path):
                             if not any(c.isalpha() for c in cat):
                                 prod_rows_sco.append((cat, val))
                             else:
-                                try:
-                                    if float(val) != 0: prod_rows_sco.append((cat, val))
-                                except: pass
+                                if val != "" and val is not None:
+                                    try:
+                                        float(val)
+                                        prod_rows_sco.append((cat, val))
+                                    except: pass
 
                         if len(prod_rows_sco) > 30: prod_rows_sco = prod_rows_sco[-30:]
 
@@ -2187,9 +2228,11 @@ def export_to_pptx(app, file_path, save_path):
                             if not any(c.isalpha() for c in cat):
                                 prod_rows_sc.append((cat, val))
                             else:
-                                try:
-                                    if float(val) != 0: prod_rows_sc.append((cat, val))
-                                except: pass
+                                if val != "" and val is not None:
+                                    try:
+                                        float(val)
+                                        prod_rows_sc.append((cat, val))
+                                    except: pass
 
                         if len(prod_rows_sc) > 30: prod_rows_sc = prod_rows_sc[-30:]
 
@@ -2249,9 +2292,11 @@ def export_to_pptx(app, file_path, save_path):
                             if not any(c.isalpha() for c in cat):
                                 prod_rows_sg.append((cat, val))
                             else:
-                                try:
-                                    if float(val) != 0: prod_rows_sg.append((cat, val))
-                                except: pass
+                                if val != "" and val is not None:
+                                    try:
+                                        float(val)
+                                        prod_rows_sg.append((cat, val))
+                                    except: pass
 
                         if len(prod_rows_sg) > 30: prod_rows_sg = prod_rows_sg[-30:]
 
@@ -2311,9 +2356,11 @@ def export_to_pptx(app, file_path, save_path):
                             if not any(c.isalpha() for c in cat):
                                 prod_rows_sd.append((cat, val))
                             else:
-                                try:
-                                    if float(val) != 0: prod_rows_sd.append((cat, val))
-                                except: pass
+                                if val != "" and val is not None:
+                                    try:
+                                        float(val)
+                                        prod_rows_sd.append((cat, val))
+                                    except: pass
 
                         if len(prod_rows_sd) > 30: prod_rows_sd = prod_rows_sd[-30:]
 
@@ -2373,9 +2420,11 @@ def export_to_pptx(app, file_path, save_path):
                             if not any(c.isalpha() for c in cat):
                                 prod_rows_stur.append((cat, val))
                             else:
-                                try:
-                                    if float(val) != 0: prod_rows_stur.append((cat, val))
-                                except: pass
+                                if val != "" and val is not None:
+                                    try:
+                                        float(val)
+                                        prod_rows_stur.append((cat, val))
+                                    except: pass
 
                         if len(prod_rows_stur) > 30: prod_rows_stur = prod_rows_stur[-30:]
 
@@ -2435,9 +2484,11 @@ def export_to_pptx(app, file_path, save_path):
                             if not any(c.isalpha() for c in cat):
                                 prod_rows_sco.append((cat, val))
                             else:
-                                try:
-                                    if float(val) != 0: prod_rows_sco.append((cat, val))
-                                except: pass
+                                if val != "" and val is not None:
+                                    try:
+                                        float(val)
+                                        prod_rows_sco.append((cat, val))
+                                    except: pass
 
                         if len(prod_rows_sco) > 30: prod_rows_sco = prod_rows_sco[-30:]
 
@@ -2497,9 +2548,11 @@ def export_to_pptx(app, file_path, save_path):
                             if not any(c.isalpha() for c in cat):
                                 prod_rows_sc.append((cat, val))
                             else:
-                                try:
-                                    if float(val) != 0: prod_rows_sc.append((cat, val))
-                                except: pass
+                                if val != "" and val is not None:
+                                    try:
+                                        float(val)
+                                        prod_rows_sc.append((cat, val))
+                                    except: pass
 
                         if len(prod_rows_sc) > 30: prod_rows_sc = prod_rows_sc[-30:]
 
@@ -2559,9 +2612,11 @@ def export_to_pptx(app, file_path, save_path):
                             if not any(c.isalpha() for c in cat):
                                 prod_rows_sg.append((cat, val))
                             else:
-                                try:
-                                    if float(val) != 0: prod_rows_sg.append((cat, val))
-                                except: pass
+                                if val != "" and val is not None:
+                                    try:
+                                        float(val)
+                                        prod_rows_sg.append((cat, val))
+                                    except: pass
 
                         if len(prod_rows_sg) > 30: prod_rows_sg = prod_rows_sg[-30:]
 
@@ -2621,9 +2676,11 @@ def export_to_pptx(app, file_path, save_path):
                             if not any(c.isalpha() for c in cat):
                                 prod_rows_sd.append((cat, val))
                             else:
-                                try:
-                                    if float(val) != 0: prod_rows_sd.append((cat, val))
-                                except: pass
+                                if val != "" and val is not None:
+                                    try:
+                                        float(val)
+                                        prod_rows_sd.append((cat, val))
+                                    except: pass
 
                         if len(prod_rows_sd) > 30: prod_rows_sd = prod_rows_sd[-30:]
 
