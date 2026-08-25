@@ -169,7 +169,7 @@ class ExcelViewerApp(ctk.CTk):
                                             values=["Titulares", "Crudo", "Gasolinas", "Diesel", "Turbosina", "Asfalto", "Combustoleo",
                                                     "Cadereyta -Crudo", "Cadereyta -Gasolinas", "Cadereyta -Diesel", "Cadereyta -Combustoleo",
                                                     "Madero -Crudo", "Madero -Gasolinas", "Madero -Diesel", "Madero -Turbosina", "Madero -Combustoleo",
-                                                    "Minatitlan -Crudo", "Minatitlan -Gasolinas", "Minatitlan -Diesel", "Minatitlan -Combustoleo",
+                                                    "Minatitlan -Crudo", "Minatitlan -Gasolinas", "Minatitlan -Diesel", "Minatitlan -Turbosina", "Minatitlan -Combustoleo",
                                                     "Salamanca -Crudo", "Salamanca -Gasolinas", "Salamanca -Diesel", "Salamanca -Turbosina", "Salamanca -Combustoleo",
                                                     "Salina Cruz -Crudo", "Salina Cruz -Gasolinas", "Salina Cruz -Diesel", "Salina Cruz -Turbosina", "Salina Cruz -Combustoleo",
                                                     "Tula -Crudo", "Tula -Gasolinas", "Tula -Diesel", "Tula -Turbosina", "Tula -Combustoleo",
@@ -588,7 +588,7 @@ class ExcelViewerApp(ctk.CTk):
 
         lbl_proceso = ctk.CTkLabel(dialog, text="Proceso:", font=("Roboto", 14, "bold"))
         lbl_proceso.pack(pady=(10, 0))
-        opciones_procesos = ["Crudo", "Gasolinas", "Diesel", "Turbosina", "Asfalto", "Combustoleo", "Cadereyta -Crudo", "Cadereyta -Gasolinas", "Cadereyta -Diesel", "Cadereyta -Combustoleo", "Madero -Crudo", "Madero -Gasolinas", "Madero -Diesel", "Madero -Turbosina", "Madero -Combustoleo", "Minatitlan -Crudo", "Minatitlan -Gasolinas", "Minatitlan -Diesel", "Minatitlan -Combustoleo", "Salamanca -Crudo", "Salamanca -Gasolinas", "Salamanca -Diesel", "Salamanca -Turbosina", "Salamanca -Combustoleo", "Salina Cruz -Crudo", "Salina Cruz -Gasolinas", "Salina Cruz -Diesel", "Salina Cruz -Turbosina", "Salina Cruz -Combustoleo", "Tula -Crudo", "Tula -Gasolinas", "Tula -Diesel", "Tula -Turbosina", "Tula -Combustoleo", "Olmeca -Crudo", "Olmeca -Gasolinas", "Olmeca -Diesel"]
+        opciones_procesos = ["Crudo", "Gasolinas", "Diesel", "Turbosina", "Asfalto", "Combustoleo", "Cadereyta -Crudo", "Cadereyta -Gasolinas", "Cadereyta -Diesel", "Cadereyta -Combustoleo", "Madero -Crudo", "Madero -Gasolinas", "Madero -Diesel", "Madero -Turbosina", "Madero -Combustoleo", "Minatitlan -Crudo", "Minatitlan -Gasolinas", "Minatitlan -Diesel", "Minatitlan -Turbosina", "Minatitlan -Combustoleo", "Salamanca -Crudo", "Salamanca -Gasolinas", "Salamanca -Diesel", "Salamanca -Turbosina", "Salamanca -Combustoleo", "Salina Cruz -Crudo", "Salina Cruz -Gasolinas", "Salina Cruz -Diesel", "Salina Cruz -Turbosina", "Salina Cruz -Combustoleo", "Tula -Crudo", "Tula -Gasolinas", "Tula -Diesel", "Tula -Turbosina", "Tula -Combustoleo", "Olmeca -Crudo", "Olmeca -Gasolinas", "Olmeca -Diesel"]
         combo_proceso = ctk.CTkComboBox(dialog, values=opciones_procesos, width=250)
         combo_proceso.set(self.cb_proceso.get())
         combo_proceso.pack(pady=(5, 10))
@@ -1457,6 +1457,13 @@ class ExcelViewerApp(ctk.CTk):
             df_sim = self.df_sim_mina_die
             lbl2_txt = "Programa de Diesel Minatitlan (Col CE x2, Filas 74-104)"
             lbl3_txt = "Fecha y Producción de Diesel Minatitlan (CM-CN, Filas 21-40)"
+        elif selection == "Minatitlan -Turbosina":
+            df_data = self.df_data_mina_turb
+            df_snr = self.df_snr_mina_turb
+            df_prod = self.df_prod_mina_turb
+            df_sim = self.df_sim_mina_turb
+            lbl2_txt = "Programa de Turbosina Minatitlan (Col AX-AY, Filas 122-152)"
+            lbl3_txt = "Fecha y Producción de Turbosina Minatitlan (DF-DG, Filas 21-33)"
         elif selection == "Minatitlan -Combustoleo":
             df_data = self.df_data_mina_comb
             df_snr = self.df_snr_mina_comb
@@ -1848,6 +1855,8 @@ class ExcelViewerApp(ctk.CTk):
             return self.df_data_mina_gas, self.df_snr_mina_gas, self.df_prod_mina_gas, self.df_sim_mina_gas
         elif selection == "Minatitlan -Diesel":
             return self.df_data_mina_die, self.df_snr_mina_die, self.df_prod_mina_die, self.df_sim_mina_die
+        elif selection == "Minatitlan -Turbosina":
+            return self.df_data_mina_turb, self.df_snr_mina_turb, self.df_prod_mina_turb, self.df_sim_mina_turb
         elif selection == "Minatitlan -Combustoleo":
             return self.df_data_mina_comb, self.df_snr_mina_comb, self.df_prod_mina_comb, self.df_sim_mina_comb
             
@@ -1920,7 +1929,7 @@ class ExcelViewerApp(ctk.CTk):
                 "SNR": ["Crudo", "Gasolinas", "Diesel", "Turbosina", "Asfalto", "Combustoleo"],
                 "Cadereyta": ["Cadereyta -Crudo", "Cadereyta -Gasolinas", "Cadereyta -Diesel", "Cadereyta -Combustoleo"],
                 "Madero": ["Madero -Crudo", "Madero -Gasolinas", "Madero -Diesel", "Madero -Turbosina", "Madero -Combustoleo"],
-                "Minatitlan": ["Minatitlan -Crudo", "Minatitlan -Gasolinas", "Minatitlan -Diesel", "Minatitlan -Combustoleo"],
+                "Minatitlan": ["Minatitlan -Crudo", "Minatitlan -Gasolinas", "Minatitlan -Diesel", "Minatitlan -Turbosina", "Minatitlan -Combustoleo"],
                 "Salamanca": ["Salamanca -Crudo", "Salamanca -Gasolinas", "Salamanca -Diesel", "Salamanca -Turbosina", "Salamanca -Combustoleo"],
                 "Salina Cruz": ["Salina Cruz -Crudo", "Salina Cruz -Gasolinas", "Salina Cruz -Diesel", "Salina Cruz -Turbosina", "Salina Cruz -Combustoleo"],
                 "Tula": ["Tula -Crudo", "Tula -Gasolinas", "Tula -Diesel", "Tula -Turbosina", "Tula -Combustoleo"],
