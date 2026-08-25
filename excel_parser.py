@@ -369,10 +369,10 @@ def load_data(app, file_path):
         df_prod_cad_copy = df_prod_cad.copy()
         
         # --- 1.1 PROCESAR GASOLINAS (Cadereyta) ---
-        r_d, c_d, r_s, c_s, r_h, c_h = get_coords("Cadereyta -Gasolinas", (21, 51), [11, 12], (73, 104), [70, 70], (20, 51), list(range(66, 68)))
+        r_d, c_d, r_s, c_s, r_h, c_h = get_coords("Cadereyta -Gasolinas", (20, 51), [11, 12], (73, 104), [70, 70], (20, 51), list(range(66, 68)))
         app.after(0, app.update_progress, 0.25, "Procesando Gasolinas Cadereyta...")
         headers_cad_gas = ["Cadereyta Gas - Día", "Cadereyta Gas - Producción"]
-        # Leer Tabla 1 (Rows 22-51 -> index 21:51), Cols L y M (11, 12)
+        # Leer Tabla 1 (Rows 21-51 -> index 20:51), Cols L y M (11, 12)
         df_gas_cad = df_sheet.iloc[r_d[0]:r_d[1], c_d].copy()
         df_gas_cad.columns = headers_cad_gas
         df_gas_cad = df_gas_cad.dropna(how='all')
@@ -809,6 +809,42 @@ def load_data(app, file_path):
         df_prod_mina_comb = remove_decimals(df_prod_mina_comb, skip_last=True)
         df_prod_mina_comb = merge_extra_prod("Minatitlan -Combustoleo", df_prod_mina_comb)
         df_prod_mina_comb_copy = df_prod_mina_comb.copy()
+
+        # --- 1.13.1 PROCESAR TURBOSINA MINATITLAN ---
+        r_d, c_d, r_s, c_s, r_h, c_h = get_coords("Minatitlan -Turbosina", (122, 152), [51, 52], (122, 152), [49, 50], (21, 33), [109, 110])
+        app.after(0, app.update_progress, 0.445, "Procesando Turbosina Minatitlan...")
+        df_data_mina_turb = df_sheet.iloc[r_d[0]:r_d[1], c_d].copy()
+        df_data_mina_turb.columns = ["Turb Día", "Minatitlan Turb"]
+        df_data_mina_turb = df_data_mina_turb.dropna(how='all')
+        df_data_mina_turb = remove_decimals(df_data_mina_turb)
+        df_data_mina_turb = df_data_mina_turb.iloc[:num_dias_reales]
+
+        df_snr_mina_turb = df_sheet.iloc[r_s[0]:r_s[1], c_s].copy()
+        df_snr_mina_turb.columns = ["MCP", "PODIM"]
+        df_snr_mina_turb = df_snr_mina_turb.dropna(how='all').dropna(axis=1, how='all')
+        df_snr_mina_turb = remove_decimals(df_snr_mina_turb, skip_first=True)
+        df_snr_mina_turb_copy = df_snr_mina_turb.copy()
+
+        df_prod_mina_turb_raw = df_sheet.iloc[r_h[0]:r_h[1], c_h].copy()
+        df_prod_mina_turb_raw.columns = ["Año/Mes", "Produccion"]
+        df_prod_mina_turb_raw = df_prod_mina_turb_raw.dropna(how='all')
+
+        dic_idx_mina_turb = -1
+        for idx, row in df_prod_mina_turb_raw.iterrows():
+            val = str(row.iloc[0]).strip().lower()
+            if "dic" in val or "diciembre" in val:
+                dic_idx_mina_turb = idx - 20
+                break
+
+        if dic_idx_mina_turb != -1:
+            df_prod_mina_turb = df_prod_mina_turb_raw.iloc[:dic_idx_mina_turb + 1]
+        else:
+            df_prod_mina_turb = df_prod_mina_turb_raw.iloc[:13]
+
+        df_prod_mina_turb = df_prod_mina_turb.dropna(axis=1, how='all')
+        df_prod_mina_turb = remove_decimals(df_prod_mina_turb, skip_last=True)
+        df_prod_mina_turb = merge_extra_prod("Minatitlan -Turbosina", df_prod_mina_turb)
+        df_prod_mina_turb_copy = df_prod_mina_turb.copy()
 
         # --- 1.14 PROCESAR CRUDO SALAMANCA ---
         r_d, c_d, r_s, c_s, r_h, c_h = get_coords("Salamanca -Crudo", (20, 51), [0, 5], (73, 104), [63, 63], (20, 40), list(range(56, 58)))
@@ -2190,6 +2226,29 @@ def load_data(app, file_path):
         sim_data_mina_comb.append(["TOTALES", "---", f"Días pasados: {days_passed}", f"Suma: {int(suma_total_mina_comb)} | Prom: {promedio_mina_comb:.2f}"])
         df_sim_mina_comb = pd.DataFrame(sim_data_mina_comb, columns=["Mes", "Producción", "Días", "Total (Prod x Días)"])
 
+        # 17.1. Simulación Minatitlan Turbosina
+        prod_dict_mina_turb = {m: 0.0 for m in meses_nombres}
+        for idx, row_data in df_prod_mina_turb.iterrows():
+            val_anio = str(row_data.iloc[0]).strip().lower()
+            val_prod = row_data.iloc[1]
+            try: p = float(val_prod)
+            except: p = 0.0
+            for i, (m_largo, m_corto) in enumerate(zip(meses_nombres, meses_cortos)):
+                if m_largo.lower() in val_anio or m_corto.lower() in val_anio:
+                    prod_dict_mina_turb[meses_nombres[i]] += p
+                    break
+        sim_data_mina_turb = []
+        suma_total_mina_turb = 0.0
+        for i, mes in enumerate(meses_nombres):
+            dias = dias_por_mes[i]
+            prod = prod_dict_mina_turb[mes]
+            total = prod * dias
+            suma_total_mina_turb += total
+            sim_data_mina_turb.append([mes, int(prod), dias, int(total)])
+        promedio_mina_turb = suma_total_mina_turb / days_passed if days_passed > 0 else 0
+        sim_data_mina_turb.append(["TOTALES", "---", f"Días pasados: {days_passed}", f"Suma: {int(suma_total_mina_turb)} | Prom: {promedio_mina_turb:.2f}"])
+        df_sim_mina_turb = pd.DataFrame(sim_data_mina_turb, columns=["Mes", "Producción", "Días", "Total (Prod x Días)"])
+
         # 18. Simulación Salamanca Crudo
         prod_dict_sala_crud = {m: 0.0 for m in meses_nombres}
         for idx, row_data in df_prod_sala_crud.iterrows():
@@ -2724,6 +2783,7 @@ def load_data(app, file_path):
         df_sim_mina_gas, df_prod_mina_gas_copy = post_process_sim_and_prod("Minatitlan -Gasolinas", df_sim_mina_gas, df_prod_mina_gas_copy)
         df_sim_mina_die, df_prod_mina_die_copy = post_process_sim_and_prod("Minatitlan -Diesel", df_sim_mina_die, df_prod_mina_die_copy)
         df_sim_mina_comb, df_prod_mina_comb_copy = post_process_sim_and_prod("Minatitlan -Combustoleo", df_sim_mina_comb, df_prod_mina_comb_copy)
+        df_sim_mina_turb, df_prod_mina_turb_copy = post_process_sim_and_prod("Minatitlan -Turbosina", df_sim_mina_turb, df_prod_mina_turb_copy)
         df_sim_sala_crud, df_prod_sala_crud_copy = post_process_sim_and_prod("Salamanca -Crudo", df_sim_sala_crud, df_prod_sala_crud_copy)
         df_sim_sala_gas, df_prod_sala_gas_copy = post_process_sim_and_prod("Salamanca -Gasolinas", df_sim_sala_gas, df_prod_sala_gas_copy)
         df_sim_sala_die, df_prod_sala_die_copy = post_process_sim_and_prod("Salamanca -Diesel", df_sim_sala_die, df_prod_sala_die_copy)
@@ -2765,6 +2825,7 @@ def load_data(app, file_path):
                    df_data_mina_gas, df_snr_mina_gas_copy, df_prod_mina_gas_copy, df_sim_mina_gas,
                    df_data_mina_die, df_snr_mina_die_copy, df_prod_mina_die_copy, df_sim_mina_die,
                    df_data_mina_comb, df_snr_mina_comb_copy, df_prod_mina_comb_copy, df_sim_mina_comb,
+                   df_data_mina_turb, df_snr_mina_turb_copy, df_prod_mina_turb_copy, df_sim_mina_turb,
                    df_data_sala_crud, df_snr_sala_crud_copy, df_prod_sala_crud_copy, df_sim_sala_crud,
                    df_data_sala_gas, df_snr_sala_gas_copy, df_prod_sala_gas_copy, df_sim_sala_gas,
                    df_data_sala_die, df_snr_sala_die_copy, df_prod_sala_die_copy, df_sim_sala_die,

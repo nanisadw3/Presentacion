@@ -380,6 +380,12 @@ class ExcelViewerApp(ctk.CTk):
         self.df_prod_mina_comb = None
         self.df_sim_mina_comb = None
 
+        # Datos de Minatitlan -Turbosina
+        self.df_data_mina_turb = None
+        self.df_snr_mina_turb = None
+        self.df_prod_mina_turb = None
+        self.df_sim_mina_turb = None
+
         # Datos de Salamanca -Crudo
         self.df_data_sala_crud = None
         self.df_snr_sala_crud = None
@@ -855,6 +861,12 @@ class ExcelViewerApp(ctk.CTk):
             save_df(getattr(self, 'df_prod_mina_comb', None), 'minatitlan_combustoleo_produccion')
             save_df(getattr(self, 'df_sim_mina_comb', None), 'minatitlan_combustoleo_simulacion_anual')
 
+            # Guardar datos de Minatitlan - Turbosina
+            save_df(getattr(self, 'df_data_mina_turb', None), 'minatitlan_turbosina_tabla_principal')
+            save_df(getattr(self, 'df_snr_mina_turb', None), 'minatitlan_turbosina_programa_snr')
+            save_df(getattr(self, 'df_prod_mina_turb', None), 'minatitlan_turbosina_produccion')
+            save_df(getattr(self, 'df_sim_mina_turb', None), 'minatitlan_turbosina_simulacion_anual')
+
             # Guardar datos de Salamanca - Crudo
             save_df(getattr(self, 'df_data_sala_crud', None), 'salamanca_crudo_tabla_principal')
             save_df(getattr(self, 'df_snr_sala_crud', None), 'salamanca_crudo_programa_snr')
@@ -1005,6 +1017,7 @@ class ExcelViewerApp(ctk.CTk):
                             df_data_mina_gas=None, df_snr_mina_gas=None, df_prod_mina_gas=None, df_sim_mina_gas=None,
                             df_data_mina_die=None, df_snr_mina_die=None, df_prod_mina_die=None, df_sim_mina_die=None,
                             df_data_mina_comb=None, df_snr_mina_comb=None, df_prod_mina_comb=None, df_sim_mina_comb=None,
+                            df_data_mina_turb=None, df_snr_mina_turb=None, df_prod_mina_turb=None, df_sim_mina_turb=None,
                             df_data_sala_crud=None, df_snr_sala_crud=None, df_prod_sala_crud=None, df_sim_sala_crud=None,
                             df_data_sala_gas=None, df_snr_sala_gas=None, df_prod_sala_gas=None, df_sim_sala_gas=None,
                             df_data_sala_die=None, df_snr_sala_die=None, df_prod_sala_die=None, df_sim_sala_die=None,
@@ -1119,6 +1132,11 @@ class ExcelViewerApp(ctk.CTk):
         self.df_snr_mina_comb = df_snr_mina_comb
         self.df_prod_mina_comb = df_prod_mina_comb
         self.df_sim_mina_comb = df_sim_mina_comb
+
+        self.df_data_mina_turb = df_data_mina_turb
+        self.df_snr_mina_turb = df_snr_mina_turb
+        self.df_prod_mina_turb = df_prod_mina_turb
+        self.df_sim_mina_turb = df_sim_mina_turb
 
         self.df_data_sala_crud = df_data_sala_crud
         self.df_snr_sala_crud = df_snr_sala_crud

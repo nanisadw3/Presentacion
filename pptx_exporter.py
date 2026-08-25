@@ -129,8 +129,8 @@ def export_to_pptx(app, file_path, save_path):
         from pptx.dml.color import RGBColor
 
         prs = Presentation(file_path)
-        if len(prs.slides) < 52:
-            raise ValueError("La presentación debe tener al menos 52 diapositivas (incluyendo las de Madero, Minatitlán, Salamanca, Salina Cruz, Tula y Olmeca).")
+        if len(prs.slides) < 53:
+            raise ValueError("La presentación debe tener al menos 53 diapositivas (incluyendo las de Madero, Minatitlán, Salamanca, Salina Cruz, Tula y Olmeca).")
  
         # --- 1. PROCESAR DIAPOSITIVA DE CRUDO (DIAPOSITIVA 2) ---
         slide = prs.slides[1]
@@ -1555,9 +1555,73 @@ def export_to_pptx(app, file_path, save_path):
 
                         update_slide_chart(chart_mina_comb, categories_mco, proceso_vals_mco, diario_vals_mco, programa_vals_mco, columna1_vals_mco, wine_color, green_color)
 
-            # --- 19. PROCESAR DIAPOSITIVA DE CRUDO SALAMANCA (DIAPOSITIVA 29) ---
-            if len(prs.slides) > 28 and app.df_data_sala_crud is not None and app.df_snr_sala_crud is not None and app.df_prod_sala_crud is not None:
-                slide_sala_crud = prs.slides[28]
+            # --- 18.1. PROCESAR DIAPOSITIVA DE TURBOSINA MINATITLAN (DIAPOSITIVA 27) ---
+            if len(prs.slides) > 26 and getattr(app, 'df_data_mina_turb', None) is not None and getattr(app, 'df_snr_mina_turb', None) is not None and getattr(app, 'df_prod_mina_turb', None) is not None:
+                slide_mina_turb = prs.slides[26]
+                chart_mina_turb = None
+                for shape in slide_mina_turb.shapes:
+                    if shape.has_chart:
+                        chart_mina_turb = shape.chart
+                        break
+                
+                if chart_mina_turb:
+                    snr_col_mina_turb = None
+                    for col in app.df_data_mina_turb.columns:
+                        if "SNR" in str(col).upper():
+                            snr_col_mina_turb = col
+                            break
+                    if not snr_col_mina_turb and len(app.df_data_mina_turb.columns) >= 2:
+                        snr_col_mina_turb = app.df_data_mina_turb.columns[1]
+
+                    if snr_col_mina_turb:
+                        categories_mtu = []
+                        proceso_vals_mtu = []
+                        diario_vals_mtu = []
+                        programa_vals_mtu = []
+                        columna1_vals_mtu = []
+
+                        prod_rows_mtu = []
+                        for idx, row in app.df_prod_mina_turb.iterrows():
+                            cat = str(row.iloc[0]).strip()
+                            val = row.iloc[1]
+                            if not cat: continue
+                            if not any(c.isalpha() for c in cat):
+                                prod_rows_mtu.append((cat, val))
+                            else:
+                                if val != "" and val is not None:
+                                    try:
+                                        float(val)
+                                        prod_rows_mtu.append((cat, val))
+                                    except: pass
+
+                        if len(prod_rows_mtu) > 30: prod_rows_mtu = prod_rows_mtu[-30:]
+
+                        for i in range(len(prod_rows_mtu)):
+                            categories_mtu.append(prod_rows_mtu[i][0])
+                            try: proceso_vals_mtu.append(float(prod_rows_mtu[i][1]))
+                            except: proceso_vals_mtu.append(None)
+                            diario_vals_mtu.append(None)
+                            programa_vals_mtu.append(None)
+                            columna1_vals_mtu.append(None)
+
+                        for i in range(31):
+                            categories_mtu.append(str(i + 1))
+                            proceso_vals_mtu.append(None)
+                            
+                            try: diario_vals_mtu.append(float(app.df_data_mina_turb[snr_col_mina_turb].iloc[i]))
+                            except: diario_vals_mtu.append(None)
+                            
+                            try: programa_vals_mtu.append(float(app.df_snr_mina_turb.iloc[i, 0]))
+                            except: programa_vals_mtu.append(None)
+                            
+                            try: columna1_vals_mtu.append(float(app.df_snr_mina_turb.iloc[i, 1]))
+                            except: columna1_vals_mtu.append(None)
+
+                        update_slide_chart(chart_mina_turb, categories_mtu, proceso_vals_mtu, diario_vals_mtu, programa_vals_mtu, columna1_vals_mtu, wine_color, green_color)
+
+            # --- 19. PROCESAR DIAPOSITIVA DE CRUDO SALAMANCA (DIAPOSITIVA 30) ---
+            if len(prs.slides) > 29 and app.df_data_sala_crud is not None and app.df_snr_sala_crud is not None and app.df_prod_sala_crud is not None:
+                slide_sala_crud = prs.slides[29]
                 chart_sala_crud = None
                 for shape in slide_sala_crud.shapes:
                     if shape.has_chart:
@@ -1619,9 +1683,9 @@ def export_to_pptx(app, file_path, save_path):
 
                         update_slide_chart(chart_sala_crud, categories_sc, proceso_vals_sc, diario_vals_sc, programa_vals_sc, columna1_vals_sc, wine_color, green_color)
 
-            # --- 20. PROCESAR DIAPOSITIVA DE GASOLINAS SALAMANCA (DIAPOSITIVA 30) ---
-            if len(prs.slides) > 29 and app.df_data_sala_gas is not None and app.df_snr_sala_gas is not None and app.df_prod_sala_gas is not None:
-                slide_sala_gas = prs.slides[29]
+            # --- 20. PROCESAR DIAPOSITIVA DE GASOLINAS SALAMANCA (DIAPOSITIVA 31) ---
+            if len(prs.slides) > 30 and app.df_data_sala_gas is not None and app.df_snr_sala_gas is not None and app.df_prod_sala_gas is not None:
+                slide_sala_gas = prs.slides[30]
                 chart_sala_gas = None
                 for shape in slide_sala_gas.shapes:
                     if shape.has_chart:
@@ -1683,9 +1747,9 @@ def export_to_pptx(app, file_path, save_path):
 
                         update_slide_chart(chart_sala_gas, categories_sg, proceso_vals_sg, diario_vals_sg, programa_vals_sg, columna1_vals_sg, wine_color, green_color)
 
-            # --- 21. PROCESAR DIAPOSITIVA DE DIESEL SALAMANCA (DIAPOSITIVA 31) ---
-            if len(prs.slides) > 30 and app.df_data_sala_die is not None and app.df_snr_sala_die is not None and app.df_prod_sala_die is not None:
-                slide_sala_die = prs.slides[30]
+            # --- 21. PROCESAR DIAPOSITIVA DE DIESEL SALAMANCA (DIAPOSITIVA 32) ---
+            if len(prs.slides) > 31 and app.df_data_sala_die is not None and app.df_snr_sala_die is not None and app.df_prod_sala_die is not None:
+                slide_sala_die = prs.slides[31]
                 chart_sala_die = None
                 for shape in slide_sala_die.shapes:
                     if shape.has_chart:
@@ -1747,9 +1811,9 @@ def export_to_pptx(app, file_path, save_path):
 
                         update_slide_chart(chart_sala_die, categories_sd, proceso_vals_sd, diario_vals_sd, programa_vals_sd, columna1_vals_sd, wine_color, green_color)
 
-            # --- 22. PROCESAR DIAPOSITIVA DE TURBOSINA SALAMANCA (DIAPOSITIVA 32) ---
-            if len(prs.slides) > 31 and app.df_data_sala_turb is not None and app.df_snr_sala_turb is not None and app.df_prod_sala_turb is not None:
-                slide_sala_turb = prs.slides[31]
+            # --- 22. PROCESAR DIAPOSITIVA DE TURBOSINA SALAMANCA (DIAPOSITIVA 33) ---
+            if len(prs.slides) > 32 and app.df_data_sala_turb is not None and app.df_snr_sala_turb is not None and app.df_prod_sala_turb is not None:
+                slide_sala_turb = prs.slides[32]
                 chart_sala_turb = None
                 for shape in slide_sala_turb.shapes:
                     if shape.has_chart:
@@ -1811,9 +1875,9 @@ def export_to_pptx(app, file_path, save_path):
 
                         update_slide_chart(chart_sala_turb, categories_stur, proceso_vals_stur, diario_vals_stur, programa_vals_stur, columna1_vals_stur, wine_color, green_color)
 
-            # --- 23. PROCESAR DIAPOSITIVA DE COMBUSTOLEO SALAMANCA (DIAPOSITIVA 33) ---
-            if len(prs.slides) > 32 and app.df_data_sala_comb is not None and app.df_snr_sala_comb is not None and app.df_prod_sala_comb is not None:
-                slide_sala_comb = prs.slides[32]
+            # --- 23. PROCESAR DIAPOSITIVA DE COMBUSTOLEO SALAMANCA (DIAPOSITIVA 34) ---
+            if len(prs.slides) > 33 and app.df_data_sala_comb is not None and app.df_snr_sala_comb is not None and app.df_prod_sala_comb is not None:
+                slide_sala_comb = prs.slides[33]
                 chart_sala_comb = None
                 for shape in slide_sala_comb.shapes:
                     if shape.has_chart:
@@ -1875,9 +1939,9 @@ def export_to_pptx(app, file_path, save_path):
 
                         update_slide_chart(chart_sala_comb, categories_sco, proceso_vals_sco, diario_vals_sco, programa_vals_sco, columna1_vals_sco, wine_color, green_color)
 
-            # --- 24. PROCESAR DIAPOSITIVA DE CRUDO SALINA CRUZ (DIAPOSITIVA 36) ---
-            if len(prs.slides) > 35 and app.df_data_sal_crud is not None and app.df_snr_sal_crud is not None and app.df_prod_sal_crud is not None:
-                slide_sal_crud = prs.slides[35]
+            # --- 24. PROCESAR DIAPOSITIVA DE CRUDO SALINA CRUZ (DIAPOSITIVA 37) ---
+            if len(prs.slides) > 36 and app.df_data_sal_crud is not None and app.df_snr_sal_crud is not None and app.df_prod_sal_crud is not None:
+                slide_sal_crud = prs.slides[36]
                 chart_sal_crud = None
                 for shape in slide_sal_crud.shapes:
                     if shape.has_chart:
@@ -1939,9 +2003,9 @@ def export_to_pptx(app, file_path, save_path):
 
                         update_slide_chart(chart_sal_crud, categories_sc, proceso_vals_sc, diario_vals_sc, programa_vals_sc, columna1_vals_sc, wine_color, green_color)
 
-            # --- 25. PROCESAR DIAPOSITIVA DE GASOLINAS SALINA CRUZ (DIAPOSITIVA 37) ---
-            if len(prs.slides) > 36 and app.df_data_sal_gas is not None and app.df_snr_sal_gas is not None and app.df_prod_sal_gas is not None:
-                slide_sal_gas = prs.slides[36]
+            # --- 25. PROCESAR DIAPOSITIVA DE GASOLINAS SALINA CRUZ (DIAPOSITIVA 38) ---
+            if len(prs.slides) > 37 and app.df_data_sal_gas is not None and app.df_snr_sal_gas is not None and app.df_prod_sal_gas is not None:
+                slide_sal_gas = prs.slides[37]
                 chart_sal_gas = None
                 for shape in slide_sal_gas.shapes:
                     if shape.has_chart:
@@ -2003,9 +2067,9 @@ def export_to_pptx(app, file_path, save_path):
 
                         update_slide_chart(chart_sal_gas, categories_sg, proceso_vals_sg, diario_vals_sg, programa_vals_sg, columna1_vals_sg, wine_color, green_color)
 
-            # --- 26. PROCESAR DIAPOSITIVA DE DIESEL SALINA CRUZ (DIAPOSITIVA 38) ---
-            if len(prs.slides) > 37 and app.df_data_sal_die is not None and app.df_snr_sal_die is not None and app.df_prod_sal_die is not None:
-                slide_sal_die = prs.slides[37]
+            # --- 26. PROCESAR DIAPOSITIVA DE DIESEL SALINA CRUZ (DIAPOSITIVA 39) ---
+            if len(prs.slides) > 38 and app.df_data_sal_die is not None and app.df_snr_sal_die is not None and app.df_prod_sal_die is not None:
+                slide_sal_die = prs.slides[38]
                 chart_sal_die = None
                 for shape in slide_sal_die.shapes:
                     if shape.has_chart:
@@ -2067,9 +2131,9 @@ def export_to_pptx(app, file_path, save_path):
 
                         update_slide_chart(chart_sal_die, categories_sd, proceso_vals_sd, diario_vals_sd, programa_vals_sd, columna1_vals_sd, wine_color, green_color)
 
-            # --- 27. PROCESAR DIAPOSITIVA DE TURBOSINA SALINA CRUZ (DIAPOSITIVA 39) ---
-            if len(prs.slides) > 38 and app.df_data_sal_turb is not None and app.df_snr_sal_turb is not None and app.df_prod_sal_turb is not None:
-                slide_sal_turb = prs.slides[38]
+            # --- 27. PROCESAR DIAPOSITIVA DE TURBOSINA SALINA CRUZ (DIAPOSITIVA 40) ---
+            if len(prs.slides) > 39 and app.df_data_sal_turb is not None and app.df_snr_sal_turb is not None and app.df_prod_sal_turb is not None:
+                slide_sal_turb = prs.slides[39]
                 chart_sal_turb = None
                 for shape in slide_sal_turb.shapes:
                     if shape.has_chart:
@@ -2131,9 +2195,9 @@ def export_to_pptx(app, file_path, save_path):
 
                         update_slide_chart(chart_sal_turb, categories_stur, proceso_vals_stur, diario_vals_stur, programa_vals_stur, columna1_vals_stur, wine_color, green_color)
 
-            # --- 28. PROCESAR DIAPOSITIVA DE COMBUSTOLEO SALINA CRUZ (DIAPOSITIVA 40) ---
-            if len(prs.slides) > 39 and app.df_data_sal_comb is not None and app.df_snr_sal_comb is not None and app.df_prod_sal_comb is not None:
-                slide_sal_comb = prs.slides[39]
+            # --- 28. PROCESAR DIAPOSITIVA DE COMBUSTOLEO SALINA CRUZ (DIAPOSITIVA 41) ---
+            if len(prs.slides) > 40 and app.df_data_sal_comb is not None and app.df_snr_sal_comb is not None and app.df_prod_sal_comb is not None:
+                slide_sal_comb = prs.slides[40]
                 chart_sal_comb = None
                 for shape in slide_sal_comb.shapes:
                     if shape.has_chart:
@@ -2195,9 +2259,9 @@ def export_to_pptx(app, file_path, save_path):
 
                         update_slide_chart(chart_sal_comb, categories_sco, proceso_vals_sco, diario_vals_sco, programa_vals_sco, columna1_vals_sco, wine_color, green_color)
 
-            # --- 29. PROCESAR DIAPOSITIVA DE CRUDO TULA (DIAPOSITIVA 43) ---
-            if len(prs.slides) > 42 and app.df_data_tula_crud is not None and app.df_snr_tula_crud is not None and app.df_prod_tula_crud is not None:
-                slide_tula_crud = prs.slides[42]
+            # --- 29. PROCESAR DIAPOSITIVA DE CRUDO TULA (DIAPOSITIVA 44) ---
+            if len(prs.slides) > 43 and app.df_data_tula_crud is not None and app.df_snr_tula_crud is not None and app.df_prod_tula_crud is not None:
+                slide_tula_crud = prs.slides[43]
                 chart_tula_crud = None
                 for shape in slide_tula_crud.shapes:
                     if shape.has_chart:
@@ -2259,9 +2323,9 @@ def export_to_pptx(app, file_path, save_path):
 
                         update_slide_chart(chart_tula_crud, categories_sc, proceso_vals_sc, diario_vals_sc, programa_vals_sc, columna1_vals_sc, wine_color, green_color)
 
-            # --- 30. PROCESAR DIAPOSITIVA DE GASOLINAS TULA (DIAPOSITIVA 44) ---
-            if len(prs.slides) > 43 and app.df_data_tula_gas is not None and app.df_snr_tula_gas is not None and app.df_prod_tula_gas is not None:
-                slide_tula_gas = prs.slides[43]
+            # --- 30. PROCESAR DIAPOSITIVA DE GASOLINAS TULA (DIAPOSITIVA 45) ---
+            if len(prs.slides) > 44 and app.df_data_tula_gas is not None and app.df_snr_tula_gas is not None and app.df_prod_tula_gas is not None:
+                slide_tula_gas = prs.slides[44]
                 chart_tula_gas = None
                 for shape in slide_tula_gas.shapes:
                     if shape.has_chart:
@@ -2323,9 +2387,9 @@ def export_to_pptx(app, file_path, save_path):
 
                         update_slide_chart(chart_tula_gas, categories_sg, proceso_vals_sg, diario_vals_sg, programa_vals_sg, columna1_vals_sg, wine_color, green_color)
 
-            # --- 31. PROCESAR DIAPOSITIVA DE DIESEL TULA (DIAPOSITIVA 45) ---
-            if len(prs.slides) > 44 and app.df_data_tula_die is not None and app.df_snr_tula_die is not None and app.df_prod_tula_die is not None:
-                slide_tula_die = prs.slides[44]
+            # --- 31. PROCESAR DIAPOSITIVA DE DIESEL TULA (DIAPOSITIVA 46) ---
+            if len(prs.slides) > 45 and app.df_data_tula_die is not None and app.df_snr_tula_die is not None and app.df_prod_tula_die is not None:
+                slide_tula_die = prs.slides[45]
                 chart_tula_die = None
                 for shape in slide_tula_die.shapes:
                     if shape.has_chart:
@@ -2387,9 +2451,9 @@ def export_to_pptx(app, file_path, save_path):
 
                         update_slide_chart(chart_tula_die, categories_sd, proceso_vals_sd, diario_vals_sd, programa_vals_sd, columna1_vals_sd, wine_color, green_color)
 
-            # --- 32. PROCESAR DIAPOSITIVA DE TURBOSINA TULA (DIAPOSITIVA 46) ---
-            if len(prs.slides) > 45 and app.df_data_tula_turb is not None and app.df_snr_tula_turb is not None and app.df_prod_tula_turb is not None:
-                slide_tula_turb = prs.slides[45]
+            # --- 32. PROCESAR DIAPOSITIVA DE TURBOSINA TULA (DIAPOSITIVA 47) ---
+            if len(prs.slides) > 46 and app.df_data_tula_turb is not None and app.df_snr_tula_turb is not None and app.df_prod_tula_turb is not None:
+                slide_tula_turb = prs.slides[46]
                 chart_tula_turb = None
                 for shape in slide_tula_turb.shapes:
                     if shape.has_chart:
@@ -2451,9 +2515,9 @@ def export_to_pptx(app, file_path, save_path):
 
                         update_slide_chart(chart_tula_turb, categories_stur, proceso_vals_stur, diario_vals_stur, programa_vals_stur, columna1_vals_stur, wine_color, green_color)
 
-            # --- 33. PROCESAR DIAPOSITIVA DE COMBUSTOLEO TULA (DIAPOSITIVA 47) ---
-            if len(prs.slides) > 46 and app.df_data_tula_comb is not None and app.df_snr_tula_comb is not None and app.df_prod_tula_comb is not None:
-                slide_tula_comb = prs.slides[46]
+            # --- 33. PROCESAR DIAPOSITIVA DE COMBUSTOLEO TULA (DIAPOSITIVA 48) ---
+            if len(prs.slides) > 47 and app.df_data_tula_comb is not None and app.df_snr_tula_comb is not None and app.df_prod_tula_comb is not None:
+                slide_tula_comb = prs.slides[47]
                 chart_tula_comb = None
                 for shape in slide_tula_comb.shapes:
                     if shape.has_chart:
@@ -2515,9 +2579,9 @@ def export_to_pptx(app, file_path, save_path):
 
                         update_slide_chart(chart_tula_comb, categories_sco, proceso_vals_sco, diario_vals_sco, programa_vals_sco, columna1_vals_sco, wine_color, green_color)
 
-            # --- 34. PROCESAR DIAPOSITIVA DE CRUDO OLMECA (DIAPOSITIVA 50) ---
-            if len(prs.slides) > 49 and app.df_data_olme_crud is not None and app.df_snr_olme_crud is not None and app.df_prod_olme_crud is not None:
-                slide_olme_crud = prs.slides[49]
+            # --- 34. PROCESAR DIAPOSITIVA DE CRUDO OLMECA (DIAPOSITIVA 51) ---
+            if len(prs.slides) > 50 and app.df_data_olme_crud is not None and app.df_snr_olme_crud is not None and app.df_prod_olme_crud is not None:
+                slide_olme_crud = prs.slides[50]
                 chart_olme_crud = None
                 for shape in slide_olme_crud.shapes:
                     if shape.has_chart:
@@ -2579,9 +2643,9 @@ def export_to_pptx(app, file_path, save_path):
 
                         update_slide_chart(chart_olme_crud, categories_sc, proceso_vals_sc, diario_vals_sc, programa_vals_sc, columna1_vals_sc, wine_color, green_color)
 
-            # --- 35. PROCESAR DIAPOSITIVA DE GASOLINAS OLMECA (DIAPOSITIVA 51) ---
-            if len(prs.slides) > 50 and app.df_data_olme_gas is not None and app.df_snr_olme_gas is not None and app.df_prod_olme_gas is not None:
-                slide_olme_gas = prs.slides[50]
+            # --- 35. PROCESAR DIAPOSITIVA DE GASOLINAS OLMECA (DIAPOSITIVA 52) ---
+            if len(prs.slides) > 51 and app.df_data_olme_gas is not None and app.df_snr_olme_gas is not None and app.df_prod_olme_gas is not None:
+                slide_olme_gas = prs.slides[51]
                 chart_olme_gas = None
                 for shape in slide_olme_gas.shapes:
                     if shape.has_chart:
@@ -2643,9 +2707,9 @@ def export_to_pptx(app, file_path, save_path):
 
                         update_slide_chart(chart_olme_gas, categories_sg, proceso_vals_sg, diario_vals_sg, programa_vals_sg, columna1_vals_sg, wine_color, green_color)
 
-            # --- 36. PROCESAR DIAPOSITIVA DE DIESEL OLMECA (DIAPOSITIVA 52) ---
-            if len(prs.slides) > 51 and app.df_data_olme_die is not None and app.df_snr_olme_die is not None and app.df_prod_olme_die is not None:
-                slide_olme_die = prs.slides[51]
+            # --- 36. PROCESAR DIAPOSITIVA DE DIESEL OLMECA (DIAPOSITIVA 53) ---
+            if len(prs.slides) > 52 and app.df_data_olme_die is not None and app.df_snr_olme_die is not None and app.df_prod_olme_die is not None:
+                slide_olme_die = prs.slides[52]
                 chart_olme_die = None
                 for shape in slide_olme_die.shapes:
                     if shape.has_chart:
