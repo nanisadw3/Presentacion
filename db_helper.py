@@ -46,6 +46,13 @@ def save_extra_prod(proceso_name, anio, mes, produccion):
     conn.commit()
     conn.close()
 
+def delete_extra_prod(proceso_name, anio, mes):
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute('DELETE FROM produccion_extra WHERE proceso=? AND anio=? AND mes=?', (proceso_name, str(anio), mes))
+    conn.commit()
+    conn.close()
+
 def clear_db():
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()

@@ -24,6 +24,22 @@ def _normalizar(texto):
     return _re.sub(r"\s+", " ", texto).strip().lower()
 
 
+_MESES_ABR = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"]
+
+
+def days_in_current_month(month_label, year):
+    """Días del mes en curso (28/29/30/31) según la etiqueta del último mes con datos ('Sep', 'Feb'...).
+
+    Si la etiqueta no se reconoce, usa el mes del sistema.
+    """
+    import calendar
+    from datetime import datetime
+    now = datetime.now()
+    abr = str(month_label or "").strip().lower()[:3]
+    month = _MESES_ABR.index(abr) + 1 if abr in _MESES_ABR else now.month
+    return calendar.monthrange(int(year or now.year), month)[1]
+
+
 def classify_slide_title(text):
     """Devuelve (refinería, producto) si el texto es un título de proceso/producción, o None.
 
@@ -253,6 +269,9 @@ def export_to_pptx(app, file_path, save_path):
             if any(c.isalpha() for c in cat):
                 master_current_month = cat
 
+        # Las gráficas diarias llevan solo los días que tiene el mes en curso (no siempre 31)
+        dias_mes = days_in_current_month(master_current_month, getattr(app, "sheet_year", None))
+
         for i in range(len(prod_rows)):
             categories.append(prod_rows[i][0])
             try: proceso_vals.append(float(prod_rows[i][1]))
@@ -261,8 +280,8 @@ def export_to_pptx(app, file_path, save_path):
             programa_vals.append(None)
             columna1_vals.append(None)
 
-        # Llenar datos diarios (31 días)
-        for i in range(31):
+        # Llenar datos diarios (días del mes en curso)
+        for i in range(dias_mes):
             categories.append(str(i + 1))
             proceso_vals.append(None)
             
@@ -325,7 +344,7 @@ def export_to_pptx(app, file_path, save_path):
 
             proceso_col_cad = app.df_data_cad.columns[1]
 
-            for i in range(31):
+            for i in range(dias_mes):
                 categories_cad.append(str(i + 1))
                 proceso_vals_cad.append(None)
                 
@@ -410,7 +429,7 @@ def export_to_pptx(app, file_path, save_path):
             columna1_vals_gas.append(None)
 
         # Llenar filas diarias
-        for i in range(31):
+        for i in range(dias_mes):
             categories_gas.append(str(i + 1))
             proceso_vals_gas.append(None)
             
@@ -511,7 +530,7 @@ def export_to_pptx(app, file_path, save_path):
             columna1_vals_die.append(None)
 
         # Llenar filas diarias
-        for i in range(31):
+        for i in range(dias_mes):
             categories_die.append(str(i + 1))
             proceso_vals_die.append(None)
             
@@ -612,7 +631,7 @@ def export_to_pptx(app, file_path, save_path):
             columna1_vals_turb.append(None)
 
         # Llenar filas diarias
-        for i in range(31):
+        for i in range(dias_mes):
             categories_turb.append(str(i + 1))
             proceso_vals_turb.append(None)
             
@@ -716,7 +735,7 @@ def export_to_pptx(app, file_path, save_path):
                 columna1_vals_asf.append(None)
 
             # Llenar filas diarias
-            for i in range(31):
+            for i in range(dias_mes):
                 categories_asf.append(str(i + 1))
                 proceso_vals_asf.append(None)
 
@@ -823,7 +842,7 @@ def export_to_pptx(app, file_path, save_path):
                 columna1_vals_comb.append(None)
 
             # Llenar filas diarias
-            for i in range(31):
+            for i in range(dias_mes):
                 categories_comb.append(str(i + 1))
                 proceso_vals_comb.append(None)
 
@@ -909,8 +928,8 @@ def export_to_pptx(app, file_path, save_path):
                             programa_vals_cg.append(None)
                             columna1_vals_cg.append(None)
  
-                        # Llenar datos diarios (31 días)
-                        for i in range(31):
+                        # Llenar datos diarios (días del mes en curso)
+                        for i in range(dias_mes):
                             categories_cg.append(str(i + 1))
                             proceso_vals_cg.append(None)
                             
@@ -974,8 +993,8 @@ def export_to_pptx(app, file_path, save_path):
                                 programa_vals_cd.append(None)
                                 columna1_vals_cd.append(None)
  
-                            # Llenar datos diarios (31 días)
-                            for i in range(31):
+                            # Llenar datos diarios (días del mes en curso)
+                            for i in range(dias_mes):
                                 categories_cd.append(str(i + 1))
                                 proceso_vals_cd.append(None)
                                 
@@ -1039,8 +1058,8 @@ def export_to_pptx(app, file_path, save_path):
                                 programa_vals_cc.append(None)
                                 columna1_vals_cc.append(None)
  
-                            # Llenar datos diarios (31 días)
-                            for i in range(31):
+                            # Llenar datos diarios (días del mes en curso)
+                            for i in range(dias_mes):
                                 categories_cc.append(str(i + 1))
                                 proceso_vals_cc.append(None)
                                 
@@ -1097,7 +1116,7 @@ def export_to_pptx(app, file_path, save_path):
 
                     proceso_col_mad_crud = app.df_data_mad_crud.columns[1]
 
-                    for i in range(31):
+                    for i in range(dias_mes):
                         categories_mc.append(str(i + 1))
                         proceso_vals_mc.append(None)
                         
@@ -1161,7 +1180,7 @@ def export_to_pptx(app, file_path, save_path):
                             programa_vals_mg.append(None)
                             columna1_vals_mg.append(None)
 
-                        for i in range(31):
+                        for i in range(dias_mes):
                             categories_mg.append(str(i + 1))
                             proceso_vals_mg.append(None)
                             
@@ -1225,7 +1244,7 @@ def export_to_pptx(app, file_path, save_path):
                             programa_vals_md.append(None)
                             columna1_vals_md.append(None)
 
-                        for i in range(31):
+                        for i in range(dias_mes):
                             categories_md.append(str(i + 1))
                             proceso_vals_md.append(None)
                             
@@ -1289,7 +1308,7 @@ def export_to_pptx(app, file_path, save_path):
                             programa_vals_mtu.append(None)
                             columna1_vals_mtu.append(None)
 
-                        for i in range(31):
+                        for i in range(dias_mes):
                             categories_mtu.append(str(i + 1))
                             proceso_vals_mtu.append(None)
                             
@@ -1353,7 +1372,7 @@ def export_to_pptx(app, file_path, save_path):
                             programa_vals_mco.append(None)
                             columna1_vals_mco.append(None)
 
-                        for i in range(31):
+                        for i in range(dias_mes):
                             categories_mco.append(str(i + 1))
                             proceso_vals_mco.append(None)
                             
@@ -1417,7 +1436,7 @@ def export_to_pptx(app, file_path, save_path):
                             programa_vals_mic.append(None)
                             columna1_vals_mic.append(None)
 
-                        for i in range(31):
+                        for i in range(dias_mes):
                             categories_mic.append(str(i + 1))
                             proceso_vals_mic.append(None)
                             
@@ -1481,7 +1500,7 @@ def export_to_pptx(app, file_path, save_path):
                             programa_vals_mig.append(None)
                             columna1_vals_mig.append(None)
 
-                        for i in range(31):
+                        for i in range(dias_mes):
                             categories_mig.append(str(i + 1))
                             proceso_vals_mig.append(None)
                             
@@ -1545,7 +1564,7 @@ def export_to_pptx(app, file_path, save_path):
                             programa_vals_mid.append(None)
                             columna1_vals_mid.append(None)
 
-                        for i in range(31):
+                        for i in range(dias_mes):
                             categories_mid.append(str(i + 1))
                             proceso_vals_mid.append(None)
                             
@@ -1609,7 +1628,7 @@ def export_to_pptx(app, file_path, save_path):
                             programa_vals_mco.append(None)
                             columna1_vals_mco.append(None)
 
-                        for i in range(31):
+                        for i in range(dias_mes):
                             categories_mco.append(str(i + 1))
                             proceso_vals_mco.append(None)
                             
@@ -1673,7 +1692,7 @@ def export_to_pptx(app, file_path, save_path):
                             programa_vals_mtu.append(None)
                             columna1_vals_mtu.append(None)
 
-                        for i in range(31):
+                        for i in range(dias_mes):
                             categories_mtu.append(str(i + 1))
                             proceso_vals_mtu.append(None)
                             
@@ -1737,7 +1756,7 @@ def export_to_pptx(app, file_path, save_path):
                             programa_vals_sc.append(None)
                             columna1_vals_sc.append(None)
 
-                        for i in range(31):
+                        for i in range(dias_mes):
                             categories_sc.append(str(i + 1))
                             proceso_vals_sc.append(None)
                             
@@ -1801,7 +1820,7 @@ def export_to_pptx(app, file_path, save_path):
                             programa_vals_sg.append(None)
                             columna1_vals_sg.append(None)
 
-                        for i in range(31):
+                        for i in range(dias_mes):
                             categories_sg.append(str(i + 1))
                             proceso_vals_sg.append(None)
                             
@@ -1865,7 +1884,7 @@ def export_to_pptx(app, file_path, save_path):
                             programa_vals_sd.append(None)
                             columna1_vals_sd.append(None)
 
-                        for i in range(31):
+                        for i in range(dias_mes):
                             categories_sd.append(str(i + 1))
                             proceso_vals_sd.append(None)
                             
@@ -1929,7 +1948,7 @@ def export_to_pptx(app, file_path, save_path):
                             programa_vals_stur.append(None)
                             columna1_vals_stur.append(None)
 
-                        for i in range(31):
+                        for i in range(dias_mes):
                             categories_stur.append(str(i + 1))
                             proceso_vals_stur.append(None)
                             
@@ -1993,7 +2012,7 @@ def export_to_pptx(app, file_path, save_path):
                             programa_vals_sco.append(None)
                             columna1_vals_sco.append(None)
 
-                        for i in range(31):
+                        for i in range(dias_mes):
                             categories_sco.append(str(i + 1))
                             proceso_vals_sco.append(None)
                             
@@ -2057,7 +2076,7 @@ def export_to_pptx(app, file_path, save_path):
                             programa_vals_sc.append(None)
                             columna1_vals_sc.append(None)
 
-                        for i in range(31):
+                        for i in range(dias_mes):
                             categories_sc.append(str(i + 1))
                             proceso_vals_sc.append(None)
                             
@@ -2121,7 +2140,7 @@ def export_to_pptx(app, file_path, save_path):
                             programa_vals_sg.append(None)
                             columna1_vals_sg.append(None)
 
-                        for i in range(31):
+                        for i in range(dias_mes):
                             categories_sg.append(str(i + 1))
                             proceso_vals_sg.append(None)
                             
@@ -2185,7 +2204,7 @@ def export_to_pptx(app, file_path, save_path):
                             programa_vals_sd.append(None)
                             columna1_vals_sd.append(None)
 
-                        for i in range(31):
+                        for i in range(dias_mes):
                             categories_sd.append(str(i + 1))
                             proceso_vals_sd.append(None)
                             
@@ -2249,7 +2268,7 @@ def export_to_pptx(app, file_path, save_path):
                             programa_vals_stur.append(None)
                             columna1_vals_stur.append(None)
 
-                        for i in range(31):
+                        for i in range(dias_mes):
                             categories_stur.append(str(i + 1))
                             proceso_vals_stur.append(None)
                             
@@ -2313,7 +2332,7 @@ def export_to_pptx(app, file_path, save_path):
                             programa_vals_sco.append(None)
                             columna1_vals_sco.append(None)
 
-                        for i in range(31):
+                        for i in range(dias_mes):
                             categories_sco.append(str(i + 1))
                             proceso_vals_sco.append(None)
                             
@@ -2377,7 +2396,7 @@ def export_to_pptx(app, file_path, save_path):
                             programa_vals_sc.append(None)
                             columna1_vals_sc.append(None)
 
-                        for i in range(31):
+                        for i in range(dias_mes):
                             categories_sc.append(str(i + 1))
                             proceso_vals_sc.append(None)
                             
@@ -2441,7 +2460,7 @@ def export_to_pptx(app, file_path, save_path):
                             programa_vals_sg.append(None)
                             columna1_vals_sg.append(None)
 
-                        for i in range(31):
+                        for i in range(dias_mes):
                             categories_sg.append(str(i + 1))
                             proceso_vals_sg.append(None)
                             
@@ -2505,7 +2524,7 @@ def export_to_pptx(app, file_path, save_path):
                             programa_vals_sd.append(None)
                             columna1_vals_sd.append(None)
 
-                        for i in range(31):
+                        for i in range(dias_mes):
                             categories_sd.append(str(i + 1))
                             proceso_vals_sd.append(None)
                             
@@ -2569,7 +2588,7 @@ def export_to_pptx(app, file_path, save_path):
                             programa_vals_stur.append(None)
                             columna1_vals_stur.append(None)
 
-                        for i in range(31):
+                        for i in range(dias_mes):
                             categories_stur.append(str(i + 1))
                             proceso_vals_stur.append(None)
                             
@@ -2633,7 +2652,7 @@ def export_to_pptx(app, file_path, save_path):
                             programa_vals_sco.append(None)
                             columna1_vals_sco.append(None)
 
-                        for i in range(31):
+                        for i in range(dias_mes):
                             categories_sco.append(str(i + 1))
                             proceso_vals_sco.append(None)
                             
@@ -2697,7 +2716,7 @@ def export_to_pptx(app, file_path, save_path):
                             programa_vals_sc.append(None)
                             columna1_vals_sc.append(None)
 
-                        for i in range(31):
+                        for i in range(dias_mes):
                             categories_sc.append(str(i + 1))
                             proceso_vals_sc.append(None)
                             
@@ -2761,7 +2780,7 @@ def export_to_pptx(app, file_path, save_path):
                             programa_vals_sg.append(None)
                             columna1_vals_sg.append(None)
 
-                        for i in range(31):
+                        for i in range(dias_mes):
                             categories_sg.append(str(i + 1))
                             proceso_vals_sg.append(None)
                             
@@ -2825,7 +2844,7 @@ def export_to_pptx(app, file_path, save_path):
                             programa_vals_sd.append(None)
                             columna1_vals_sd.append(None)
 
-                        for i in range(31):
+                        for i in range(dias_mes):
                             categories_sd.append(str(i + 1))
                             proceso_vals_sd.append(None)
                             
