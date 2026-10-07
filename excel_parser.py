@@ -3,10 +3,26 @@ os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 import traceback
 import pandas as pd
+import re
 import db_helper
+
+
+def detect_sheet_year(file_path):
+    """Año que representan los meses de la hoja (Ene..Dic).
+
+    No se puede inferir de las tablas históricas: algunas terminan en el año
+    anterior (2025) y otras ya incluyen la fila del año en curso (2026), así
+    que "último año + 1" daba 2027 en estas últimas. Se toma el año del nombre
+    del archivo ("2026 Datos para MV...") y, si no lo trae, el año del sistema.
+    """
+    from datetime import datetime
+    m = re.search(r'(?<!\d)(20\d{2})(?!\d)', os.path.basename(str(file_path)))
+    return int(m.group(1)) if m else datetime.now().year
+
 
 def load_data(app, file_path):
     try:
+        app.sheet_year = detect_sheet_year(file_path)
         import warnings
         warnings.filterwarnings('ignore', category=UserWarning, module='openpyxl')
 
@@ -1705,16 +1721,7 @@ def load_data(app, file_path):
         from datetime import datetime
         now = datetime.now()
         
-        # Determinar el año que representa la hoja de cálculo (sheet_year)
-        sheet_year = 2026
-        if df_prod is not None and not df_prod.empty:
-            years_found = []
-            for idx, row_data in df_prod.iterrows():
-                val = str(row_data.iloc[0]).strip()
-                if val.isdigit() and len(val) == 4:
-                    years_found.append(int(val))
-            if years_found:
-                sheet_year = max(years_found) + 1
+        sheet_year = app.sheet_year
 
         system_year = now.year
         system_month = now.month
@@ -2670,16 +2677,7 @@ def load_data(app, file_path):
             mods = db_helper.get_modificaciones(proceso_name)
             sim_mods = mods.get("simulacion", {})
             
-            # Determinar el año que representa la hoja de cálculo (sheet_year)
-            sheet_year = 2026
-            if df_prod_val is not None and not df_prod_val.empty:
-                years_found = []
-                for r in df_prod_val.to_numpy().tolist():
-                    val = str(r[0]).strip()
-                    if val.isdigit() and len(val) == 4:
-                        years_found.append(int(val))
-                if years_found:
-                    sheet_year = max(years_found) + 1
+            sheet_year = app.sheet_year
             
             rows_sim = df_sim_val.to_numpy().tolist()
             for idx in range(12):

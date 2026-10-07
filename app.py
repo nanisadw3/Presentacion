@@ -7,6 +7,7 @@ from tkinter import filedialog, messagebox
 from CTkTable import CTkTable
 import threading
 import traceback
+from datetime import datetime
 from termcolor import colored
 import db_helper
 
@@ -1758,16 +1759,7 @@ class ExcelViewerApp(ctk.CTk):
             if df_sim is not None and hasattr(self, 'table4') and self.table4 is not None:
                 sim_mods = mods.get("simulacion", {})
                 
-                # Determinar el año que representa la hoja de cálculo (sheet_year)
-                sheet_year = 2026
-                if df_prod is not None and not df_prod.empty:
-                    years_found = []
-                    for idx, r in df_prod.iterrows():
-                        val = str(r.iloc[0]).strip()
-                        if val.isdigit() and len(val) == 4:
-                            years_found.append(int(val))
-                    if years_found:
-                        sheet_year = max(years_found) + 1
+                sheet_year = getattr(self, 'sheet_year', None) or datetime.now().year
                         
                 for r_idx in range(1, len(table_values4)):
                     mes = str(table_values4[r_idx][0]).strip()
@@ -2226,16 +2218,7 @@ class ExcelViewerApp(ctk.CTk):
                 messagebox.showwarning("No modificable", "El resultado de la multiplicación no se puede modificar directamente.")
                 return
                 
-            # Determinar el año de la simulación
-            sheet_year = 2026
-            if self.df_prod is not None and not self.df_prod.empty:
-                years_found = []
-                for r_idx, r in self.df_prod.iterrows():
-                    val = str(r.iloc[0]).strip()
-                    if val.isdigit() and len(val) == 4:
-                        years_found.append(int(val))
-                if years_found:
-                    sheet_year = max(years_found) + 1
+            sheet_year = getattr(self, 'sheet_year', None) or datetime.now().year
 
             valor_actual = str(row_data[col])
             suffix = "Prod" if col_name == "Producción" else "Dias"
