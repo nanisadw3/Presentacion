@@ -1,4 +1,5 @@
 import os
+import time
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 import customtkinter as ctk
@@ -12,98 +13,147 @@ from termcolor import colored
 import db_helper
 
 class LoadingOverlay(ctk.CTkToplevel):
+    """Overlay modal de carga: spinner con estela + barra de progreso suavizada."""
+    CARD = "#1c1f27"
+    BORDER = "#2a2e39"
+    ACCENT = "#3b82f6"
+    MUTED = "#8b93a5"
+    TEXT = "#e6e8ee"
+    TRAIL = 22   # segmentos de la estela del spinner
+
     def __init__(self, parent):
         super().__init__(parent)
         self.parent = parent
         self.title("Cargando...")
-        self.withdraw() # Iniciar oculto
-        
-        # Quitar bordes y hacerlo flotante/modal
+        self.withdraw()  # Iniciar oculto
         self.overrideredirect(True)
-        
-        # Fondo oscuro/gris para atenuar la pantalla principal
-        self.configure(fg_color=("#505050", "#0a0a0a"))
-        
-        # Tarjeta central
-        self.card = ctk.CTkFrame(self, fg_color=("#ffffff", "#1e1e1e"), corner_radius=15, width=220, height=180)
+        self.configure(fg_color="#07080b")
+
+        self.card = ctk.CTkFrame(self, fg_color=self.CARD, corner_radius=16, width=340, height=230,
+                                 border_width=1, border_color=self.BORDER)
         self.card.place(relx=0.5, rely=0.5, anchor="center")
-        self.card.pack_propagate(False) # No achicar
-        
-        # Canvas del Spinner
-        self.canvas = ctk.CTkCanvas(self.card, width=60, height=60, bg="#ffffff", highlightthickness=0)
-        self.canvas.pack(pady=(25, 10))
-        
-        # Label de texto
-        self.lbl_text = ctk.CTkLabel(self.card, text="Cargando...", font=("Roboto", 13, "bold"), text_color=("#333333", "#ffffff"))
-        self.lbl_text.pack(pady=(5, 10))
-        
+        self.card.pack_propagate(False)
+
+        self.canvas = ctk.CTkCanvas(self.card, width=72, height=72, bg=self.CARD, highlightthickness=0)
+        self.canvas.pack(pady=(26, 8))
+
+        self.lbl_text = ctk.CTkLabel(self.card, text="Cargando...", font=("Roboto", 14, "bold"),
+                                     text_color=self.TEXT, wraplength=300)
+        self.lbl_text.pack(pady=(2, 10))
+
+        self.progress = ctk.CTkProgressBar(self.card, width=260, height=6, corner_radius=3,
+                                           fg_color=self.BORDER, progress_color=self.ACCENT)
+        self.progress.set(0.0)
+        self.progress.pack()
+
+        self.lbl_pct = ctk.CTkLabel(self.card, text="0%", font=("Roboto", 11), text_color=self.MUTED)
+        self.lbl_pct.pack(pady=(8, 0))
+
         self.angle = 0
         self.animating = False
         self.alpha = 0.0
-        
+        self.shown = 0.0       # valor mostrado (se acerca suavemente al objetivo)
+        self.target = 0.0
+        self.reported = False  # ¿el proceso está reportando avance real?
+        self._tick_id = None
+
+    @staticmethod
+    def _blend(c1, c2, t):
+        a = [int(c1[i:i + 2], 16) for i in (1, 3, 5)]
+        b = [int(c2[i:i + 2], 16) for i in (1, 3, 5)]
+        return "#%02x%02x%02x" % tuple(int(a[i] + (b[i] - a[i]) * t) for i in range(3))
+
+    def set_progress(self, val):
+        """Avance real (0-1) reportado por el proceso."""
+        self.reported = True
+        self.target = max(self.target, min(1.0, float(val)))
+
     def start(self, text="Cargando..."):
         self.lbl_text.configure(text=text)
-        
+        self.shown, self.target, self.reported = 0.0, 0.04, False
+        self.progress.set(0.0)
+        self.lbl_pct.configure(text="0%")
+
         # Sincronizar posición y tamaño con la ventana principal
         self.parent.update_idletasks()
-        x = self.parent.winfo_x()
-        y = self.parent.winfo_y()
-        w = self.parent.winfo_width()
-        h = self.parent.winfo_height()
-        self.geometry(f"{w}x{h}+{x}+{y}")
-        
-        # Adaptar color del canvas al tema actual
-        bg_theme = ctk.get_appearance_mode()
-        canvas_bg = "#1e1e1e" if bg_theme == "Dark" else "#ffffff"
-        self.canvas.configure(bg=canvas_bg)
-        
-        # Reiniciar opacidad y mostrar
+        self.geometry(f"{self.parent.winfo_width()}x{self.parent.winfo_height()}+{self.parent.winfo_x()}+{self.parent.winfo_y()}")
+
         self.alpha = 0.0
         self.wm_attributes("-alpha", self.alpha)
         self.deiconify()
-        self.parent.update_idletasks()  # Asegurar que Tkinter procese la deiconificación antes del fade-in
+        self.parent.update_idletasks()
         self.lift()
         try:
-            self.grab_set() # Bloquear clics en la ventana principal
+            self.grab_set()  # Bloquear clics en la ventana principal
         except Exception:
             pass
-        
+
         self.animating = True
         self.fade_in()
-        self.animate()
-        
+        if self._tick_id is None:
+            self.tick()
+
     def stop(self):
+        if not self.animating:
+            return
+        # Completar la barra y desvanecer en vez de cortar de golpe
+        self.target = 1.0
+        self.reported = True
+        self._closing_since = time.time()
+        self._wait_full()
+
+    def _wait_full(self):
+        # Esperar (máx. 0.7 s) a que la barra llegue al 100% antes de desvanecer
+        if self.shown >= 0.985 or time.time() - self._closing_since > 0.7:
+            self.after(120, self.fade_out)
+        else:
+            self.after(16, self._wait_full)
+
+    def fade_in(self):
+        if not self.animating:
+            return
+        if self.alpha < 0.78:
+            self.alpha = min(0.78, self.alpha + 0.09)
+            self.wm_attributes("-alpha", self.alpha)
+            self.after(15, self.fade_in)
+
+    def fade_out(self):
+        if self.alpha > 0.0 and self.animating:
+            self.alpha = max(0.0, self.alpha - 0.13)
+            self.wm_attributes("-alpha", self.alpha)
+            self.after(15, self.fade_out)
+        else:
+            self._finish()
+
+    def _finish(self):
         self.animating = False
         try:
             self.grab_release()
         except Exception:
             pass
         self.withdraw()
-        
-    def fade_in(self):
+
+    def tick(self):
+        """Un solo bucle (~60 fps) para spinner y barra."""
+        self._tick_id = None
         if not self.animating:
             return
-        if self.alpha < 0.70:
-            self.alpha += 0.07
-            if self.alpha > 0.70:
-                self.alpha = 0.70
-            self.wm_attributes("-alpha", self.alpha)
-            self.after(15, self.fade_in)
-            
-    def animate(self):
-        if not self.animating:
-            return
+        # Sin avance real reportado: avanzar lento hacia ~90% para que no parezca congelado
+        if not self.reported:
+            self.target += (0.9 - self.target) * 0.004
+        self.shown += (self.target - self.shown) * (0.3 if self.target >= 1.0 else 0.12)
+        self.progress.set(self.shown)
+        self.lbl_pct.configure(text=f"{int(self.shown * 100)}%")
+
+        # Spinner con estela que se desvanece
         self.canvas.delete("all")
-        # Color del spinner: azul moderno
-        color = "#3484F0"
-        bg_theme = ctk.get_appearance_mode()
-        canvas_bg = "#1e1e1e" if bg_theme == "Dark" else "#ffffff"
-        self.canvas.configure(bg=canvas_bg)
-        
-        # Dibujar arco giratorio
-        self.canvas.create_arc(8, 8, 52, 52, start=self.angle, extent=280, width=5, outline=color, style="arc")
-        self.angle = (self.angle - 10) % 360
-        self.after(30, self.animate)
+        seg = 360 / self.TRAIL * 0.62
+        for i in range(self.TRAIL):
+            col = self._blend(self.ACCENT, self.CARD, (i / self.TRAIL) ** 0.8)
+            self.canvas.create_arc(8, 8, 64, 64, start=self.angle - i * (360 / self.TRAIL) * 0.62,
+                                   extent=seg + 2, width=5, outline=col, style="arc")
+        self.angle = (self.angle - 7) % 360
+        self._tick_id = self.after(16, self.tick)
 
 class ExcelViewerApp(ctk.CTk):
     def _get_primary_monitor_size(self):
@@ -136,37 +186,59 @@ class ExcelViewerApp(ctk.CTk):
         ctk.set_appearance_mode("Dark")
         ctk.set_default_color_theme("blue")
 
+        # ═══ Paleta ═══
+        BG = "#14161b"          # fondo de ventana
+        CARD = "#1c1f27"        # tarjetas
+        BORDER = "#2a2e39"
+        ACCENT, ACCENT_H = "#3b82f6", "#2563eb"
+        NEUTRAL, NEUTRAL_H = "#2b303b", "#363c4a"
+        MUTED, TEXT = "#8b93a5", "#e6e8ee"
+        self.configure(fg_color=BG)
+
+        def btn(parent, text, command, primary=False, width=150):
+            return ctk.CTkButton(parent, text=text, command=command,
+                                 font=("Roboto", 12, "bold"), height=34, width=width, corner_radius=8,
+                                 fg_color=ACCENT if primary else NEUTRAL,
+                                 hover_color=ACCENT_H if primary else NEUTRAL_H,
+                                 text_color="#ffffff" if primary else TEXT,
+                                 border_width=0 if primary else 1, border_color=BORDER)
+
+        def card(parent, pady=(0, 10)):
+            f = ctk.CTkFrame(parent, corner_radius=12, fg_color=CARD, border_width=1, border_color=BORDER)
+            f.pack(fill="x", pady=pady)
+            return f
+
+        def vsep(parent):
+            ctk.CTkFrame(parent, width=1, height=24, fg_color=BORDER).pack(side="left", padx=10, pady=10)
+
         # ═══ Contenedor principal ═══
         self.main_frame = ctk.CTkFrame(self, fg_color="transparent")
-        self.main_frame.pack(fill="both", expand=True, padx=15, pady=(10, 5))
+        self.main_frame.pack(fill="both", expand=True, padx=18, pady=(14, 8))
 
-        # ═══ FILA 1: Archivo + Estado ═══
-        self.row1_frame = ctk.CTkFrame(self.main_frame, corner_radius=10)
-        self.row1_frame.pack(fill="x", pady=(0, 8))
+        # ═══ Encabezado ═══
+        header = ctk.CTkFrame(self.main_frame, fg_color="transparent")
+        header.pack(fill="x", pady=(0, 12))
+        ctk.CTkLabel(header, text="Proyección y Reportes de Refinerías",
+                     font=("Roboto", 20, "bold"), text_color=TEXT).pack(side="left")
+        ctk.CTkLabel(header, text="Subdirección de Producción de Petrolíferos",
+                     font=("Roboto", 12), text_color=MUTED).pack(side="left", padx=(14, 0), pady=(6, 0))
 
-        self.btn_buscar = ctk.CTkButton(self.row1_frame, 
-                                        text="Cargar Excel", 
-                                        font=("Roboto", 13, "bold"),
-                                        command=self.load_excel,
-                                        height=36, width=150,
-                                        corner_radius=8)
-        self.btn_buscar.pack(pady=10, padx=(15, 8), side="left")
+        # ═══ Tarjeta 1: archivo + proceso ═══
+        self.row1_frame = card(self.main_frame)
 
-        self.lbl_file = ctk.CTkLabel(self.row1_frame, 
-                                     text="Sin archivo cargado",
-                                     font=("Roboto", 12),
-                                     text_color="#888888")
-        self.lbl_file.pack(pady=10, padx=10, side="left", fill="x", expand=True)
+        self.btn_buscar = btn(self.row1_frame, "Cargar Excel", self.load_excel, primary=True, width=150)
+        self.btn_buscar.pack(pady=12, padx=(14, 8), side="left")
 
-        # Separador visual
-        sep1 = ctk.CTkFrame(self.row1_frame, width=2, height=26, fg_color="#444444")
-        sep1.pack(side="left", padx=8, pady=10)
+        self.lbl_file = ctk.CTkLabel(self.row1_frame, text="Sin archivo cargado",
+                                     font=("Roboto", 12), text_color=MUTED, anchor="w")
+        self.lbl_file.pack(pady=12, padx=10, side="left", fill="x", expand=True)
 
-        # Selector de proceso
-        self.lbl_proceso = ctk.CTkLabel(self.row1_frame, text="Proceso:", font=("Roboto", 12, "bold"))
-        self.lbl_proceso.pack(pady=10, padx=(8, 4), side="left")
-        
-        self.cb_proceso = ctk.CTkComboBox(self.row1_frame, 
+        vsep(self.row1_frame)
+
+        self.lbl_proceso = ctk.CTkLabel(self.row1_frame, text="Proceso", font=("Roboto", 12, "bold"), text_color=MUTED)
+        self.lbl_proceso.pack(pady=12, padx=(4, 6), side="left")
+
+        self.cb_proceso = ctk.CTkComboBox(self.row1_frame,
                                             values=["Titulares", "Crudo", "Gasolinas", "Diesel", "Turbosina", "Asfalto", "Combustoleo",
                                                     "Cadereyta -Crudo", "Cadereyta -Gasolinas", "Cadereyta -Diesel", "Cadereyta -Combustoleo",
                                                     "Madero -Crudo", "Madero -Gasolinas", "Madero -Diesel", "Madero -Turbosina", "Madero -Combustoleo",
@@ -178,75 +250,59 @@ class ExcelViewerApp(ctk.CTk):
                                             font=("Roboto", 12),
                                             command=self.on_proceso_changed,
                                             state="readonly",
-                                            width=200,
-                                            corner_radius=8)
-        self.cb_proceso.pack(pady=10, padx=(4, 15), side="left")
+                                            width=220, height=34,
+                                            corner_radius=8,
+                                            fg_color=NEUTRAL, border_color=BORDER,
+                                            button_color=NEUTRAL_H, button_hover_color=ACCENT)
+        self.cb_proceso.pack(pady=12, padx=(0, 14), side="left")
         self.cb_proceso.set("Crudo")
 
-        # ═══ FILA 2: Herramientas ═══
-        self.row2_frame = ctk.CTkFrame(self.main_frame, corner_radius=10, fg_color="#1a1a2e")
-        self.row2_frame.pack(fill="x", pady=(0, 10))
+        # ═══ Tarjeta 2: acciones (Exportar | Datos) ═══
+        self.row2_frame = card(self.main_frame, pady=(0, 10))
 
-        lbl_tools = ctk.CTkLabel(self.row2_frame, text="Herramientas:", font=("Roboto", 11, "bold"), text_color="#777777")
-        lbl_tools.pack(pady=8, padx=15, side="left")
+        ctk.CTkLabel(self.row2_frame, text="EXPORTAR", font=("Roboto", 10, "bold"),
+                     text_color=MUTED).pack(pady=12, padx=(16, 8), side="left")
+        self.btn_powerpoint = btn(self.row2_frame, "PowerPoint", self.send_to_powerpoint, primary=True, width=140)
+        self.btn_powerpoint.pack(pady=12, padx=4, side="left")
+        self.btn_excel = btn(self.row2_frame, "Excel", self.export_to_excel, width=110)
+        self.btn_excel.pack(pady=12, padx=4, side="left")
 
-        self.btn_powerpoint = ctk.CTkButton(self.row2_frame, 
-                                            text="Exportar a PowerPoint", 
-                                            font=("Roboto", 12, "bold"),
-                                            command=self.send_to_powerpoint,
-                                            height=32, width=195,
-                                            corner_radius=8,
-                                            fg_color="#8b5cf6", hover_color="#7c3aed")
-        self.btn_powerpoint.pack(pady=8, padx=6, side="left")
+        vsep(self.row2_frame)
 
-        self.btn_select_template = ctk.CTkButton(self.row2_frame, 
-                                                text="Seleccionar Plantilla", 
-                                                font=("Roboto", 12, "bold"),
-                                                command=self.select_powerpoint_template,
-                                                height=32, width=160,
-                                                corner_radius=8,
-                                                fg_color="#6366f1", hover_color="#4f46e5")
-        self.btn_select_template.pack(pady=8, padx=6, side="left")
+        ctk.CTkLabel(self.row2_frame, text="DATOS", font=("Roboto", 10, "bold"),
+                     text_color=MUTED).pack(pady=12, padx=(4, 8), side="left")
+        self.btn_guardar = btn(self.row2_frame, "Guardar en BD", self.save_to_database, width=140)
+        self.btn_guardar.pack(pady=12, padx=4, side="left")
+        self.btn_add_year = btn(self.row2_frame, "Agregar año extra", self.open_add_year_dialog, width=150)
+        self.btn_add_year.pack(pady=12, padx=4, side="left")
+        self.btn_config_coords = btn(self.row2_frame, "Coordenadas Excel", self.open_config_coords_dialog, width=160)
+        self.btn_config_coords.pack(pady=12, padx=(4, 14), side="left")
 
-        self.btn_excel = ctk.CTkButton(self.row2_frame, 
-                                       text="Exportar a Excel", 
-                                       font=("Roboto", 12, "bold"),
-                                       command=self.export_to_excel,
-                                       height=32, width=160,
-                                       corner_radius=8,
-                                       fg_color="#107c41", hover_color="#0a5c30")
-        self.btn_excel.pack(pady=8, padx=6, side="left")
+        # ═══ Plantilla en uso ═══
+        self.row3_frame = ctk.CTkFrame(self.main_frame, fg_color="transparent")
+        self.row3_frame.pack(fill="x", pady=(0, 10))
 
-        self.btn_guardar = ctk.CTkButton(self.row2_frame, 
-                                        text="Guardar en BD", 
-                                        font=("Roboto", 12, "bold"),
-                                        command=self.save_to_database,
-                                        height=32, width=160,
-                                        corner_radius=8,
-                                        fg_color="#28a745", hover_color="#218838")
-        self.btn_guardar.pack(pady=8, padx=6, side="left")
+        ctk.CTkLabel(self.row3_frame, text="PLANTILLA", font=("Roboto", 10, "bold"),
+                     text_color=MUTED).pack(padx=(4, 10), side="left")
 
-        self.btn_add_year = ctk.CTkButton(self.row2_frame, 
-                                          text="Agregar Año Extra", 
-                                          font=("Roboto", 12, "bold"),
-                                          command=self.open_add_year_dialog,
-                                          height=32, width=175,
-                                          corner_radius=8,
-                                          fg_color="#0d6efd", hover_color="#0b5ed7")
-        self.btn_add_year.pack(pady=8, padx=6, side="left")
+        self.lbl_template = ctk.CTkLabel(self.row3_frame, text="", font=("Roboto", 12), anchor="w", justify="left")
+        self.lbl_template.pack(padx=0, side="left", fill="x", expand=True)
 
-        self.btn_config_coords = ctk.CTkButton(self.row2_frame, 
-                                              text="Coordenadas Excel", 
-                                              font=("Roboto", 12, "bold"),
-                                              command=self.open_config_coords_dialog,
-                                              height=32, width=185,
-                                              corner_radius=8,
-                                              fg_color="#6c757d", hover_color="#5a6268")
-        self.btn_config_coords.pack(pady=8, padx=6, side="left")
-
+        self.btn_reset_template = ctk.CTkButton(self.row3_frame, text="Usar por defecto",
+                                                font=("Roboto", 11, "bold"), command=self.reset_powerpoint_template,
+                                                height=28, width=130, corner_radius=8,
+                                                fg_color="transparent", border_width=1, border_color=BORDER,
+                                                hover_color=NEUTRAL_H, text_color=TEXT)
+        self.btn_reset_template.pack(padx=(8, 0), side="right")
+        self.btn_select_template = ctk.CTkButton(self.row3_frame, text="Cambiar plantilla…",
+                                                font=("Roboto", 11, "bold"), command=self.select_powerpoint_template,
+                                                height=28, width=140, corner_radius=8,
+                                                fg_color="transparent", border_width=1, border_color=BORDER,
+                                                hover_color=NEUTRAL_H, text_color=TEXT)
+        self.btn_select_template.pack(padx=(8, 0), side="right")
 
         # Scrollable Frame para contener la tabla
-        self.scroll_frame = ctk.CTkScrollableFrame(self.main_frame, corner_radius=10)
+        self.scroll_frame = ctk.CTkScrollableFrame(self.main_frame, corner_radius=12, fg_color=CARD, border_width=1, border_color=BORDER)
         self.scroll_frame.pack(fill="both", expand=True)
 
         # Función para enlazar y propagar el scroll del mousewheel/trackpad en laptops y ratones
@@ -282,8 +338,27 @@ class ExcelViewerApp(ctk.CTk):
             except Exception:
                 pass
 
+        def _on_touchpad_scroll(event):
+            # Tk 9 envía el trackpad como <TouchpadScroll> (no como <MouseWheel>);
+            # el delta viene empaquetado y PreciseScrollDeltas lo convierte a píxeles.
+            try:
+                canvas = self.scroll_frame._parent_canvas
+                _dx, dy = self.tk.call("tk::PreciseScrollDeltas", event.delta)
+                dy = float(dy)
+                bbox = canvas.bbox("all")
+                if dy and bbox and bbox[3] > 0:
+                    # El canvas solo admite 'units'/'pages'; se mueve por fracción para un scroll suave
+                    nuevo = canvas.yview()[0] - dy / bbox[3]
+                    canvas.yview_moveto(max(0.0, nuevo))
+            except Exception:
+                pass
+
         # Vincular eventos de scroll globales para que funcionen sobre cualquier widget interno
         self.bind_all("<MouseWheel>", _on_mousewheel)
+        try:
+            self.bind_all("<TouchpadScroll>", _on_touchpad_scroll)
+        except Exception:
+            pass  # Tk 8.x no tiene este evento; ahí el trackpad llega como <MouseWheel>
         # Linux usa Button-4/5 para scroll
         self.bind_all("<Button-4>", _on_linux_scroll)
         self.bind_all("<Button-5>", _on_linux_scroll)
@@ -530,6 +605,7 @@ class ExcelViewerApp(ctk.CTk):
         self.default_excel_dir = check_and_get_dir(path_excel_preferida)
         self.default_pptx_dir = check_and_get_dir(path_pptx_preferida)
         self.template_path = None
+        self.update_template_label()
 
         # Variables de caché para optimización de recargas
         self.cached_file_path = None
@@ -573,6 +649,8 @@ class ExcelViewerApp(ctk.CTk):
             self.lbl_file.configure(text=text_msg)
             if hasattr(self, 'loading_overlay') and self.loading_overlay is not None:
                 self.loading_overlay.lbl_text.configure(text=text_msg)
+        if hasattr(self, 'loading_overlay') and self.loading_overlay is not None:
+            self.loading_overlay.set_progress(val)
 
     def open_add_year_dialog(self):
         dialog = ctk.CTkToplevel(self)
@@ -1325,9 +1403,9 @@ class ExcelViewerApp(ctk.CTk):
                     row=len(table_values), 
                     column=len(table_values[0]), 
                     values=table_values,
-                    header_color="#1f538d",
-                    colors=["#2a2a2a", "#242424"],
-                    hover_color="#3a3a3a",
+                    header_color="#1e3a64",
+                    colors=["#232733", "#1f232d"],
+                    hover_color="#2f3647",
                 )
                 self.table.pack(expand=True, fill="both", padx=10, pady=10)
             return
@@ -1638,9 +1716,9 @@ class ExcelViewerApp(ctk.CTk):
             row=len(table_values), 
             column=len(table_values[0]), 
             values=table_values,
-            header_color="#1f538d",
-            colors=["#2a2a2a", "#242424"],
-            hover_color="#3a3a3a",
+            header_color="#1e3a64",
+            colors=["#232733", "#1f232d"],
+            hover_color="#2f3647",
             command=lambda cell: self.on_table_clicked("diaria", cell),
         )
         self.table.pack(expand=True, fill="both", padx=10, pady=10)
@@ -1657,9 +1735,9 @@ class ExcelViewerApp(ctk.CTk):
             row=len(table_values2), 
             column=len(table_values2[0]), 
             values=table_values2,
-            header_color="#1f538d",
-            colors=["#2a2a2a", "#242424"],
-            hover_color="#3a3a3a",
+            header_color="#1e3a64",
+            colors=["#232733", "#1f232d"],
+            hover_color="#2f3647",
             command=lambda cell: self.on_table_clicked("programa", cell),
         )
         self.table2.pack(expand=True, fill="both", padx=10, pady=10)
@@ -1676,9 +1754,9 @@ class ExcelViewerApp(ctk.CTk):
             row=len(table_values3), 
             column=len(table_values3[0]), 
             values=table_values3,
-            header_color="#1f538d",
-            colors=["#2a2a2a", "#242424"],
-            hover_color="#3a3a3a",
+            header_color="#1e3a64",
+            colors=["#232733", "#1f232d"],
+            hover_color="#2f3647",
             command=lambda cell: self.on_table_clicked("historica", cell),
         )
         self.table3.pack(expand=True, fill="both", padx=10, pady=10)
@@ -1695,9 +1773,9 @@ class ExcelViewerApp(ctk.CTk):
                 row=len(table_values4), 
                 column=len(table_values4[0]), 
                 values=table_values4,
-                header_color="#1f538d",
-                colors=["#2a2a2a", "#242424"],
-                hover_color="#3a3a3a",
+                header_color="#1e3a64",
+                colors=["#232733", "#1f232d"],
+                hover_color="#2f3647",
                 command=lambda cell: self.on_table_clicked("simulacion", cell),
             )
             self.table4.pack(expand=True, fill="both", padx=10, pady=20)
@@ -2086,7 +2164,28 @@ class ExcelViewerApp(ctk.CTk):
         )
         if file_path:
             self.template_path = file_path
-            messagebox.showinfo("Plantilla Seleccionada", f"Se seleccionó la plantilla:\n{os.path.basename(file_path)}")
+            self.update_template_label()
+            messagebox.showinfo("Plantilla Seleccionada", f"Se seleccionó la plantilla:\n{file_path}")
+
+    def reset_powerpoint_template(self):
+        self.template_path = None
+        self.update_template_label()
+
+    def update_template_label(self):
+        """Muestra la ruta de la plantilla en uso, o 'Por defecto' si no se eligió otra."""
+        if not hasattr(self, 'lbl_template'):
+            return
+        if self.template_path and os.path.exists(self.template_path):
+            path = self.template_path
+            if len(path) > 90:
+                path = "…" + path[-89:]
+            self.lbl_template.configure(text=path, text_color="#e0e0e0")
+            self.btn_reset_template.configure(state="normal")
+        else:
+            self.template_path = None
+            default = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "plantilla.pptx")
+            self.lbl_template.configure(text=f"Por defecto  ({default})", text_color="#4ade80")
+            self.btn_reset_template.configure(state="disabled")
 
     def send_to_powerpoint(self):
         if self.df_data is None or self.df_snr is None or self.df_prod is None:

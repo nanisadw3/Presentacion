@@ -8,6 +8,69 @@ from pptx.dml.color import RGBColor
 
 master_current_month = None
 
+import re as _re
+import unicodedata
+
+_PRODUCTOS = [("crudo", "crudo"), ("gasolina", "gasolinas"), ("diesel", "diesel"),
+              ("turbosina", "turbosina"), ("asfalto", "asfalto"), ("combust", "combustoleo")]
+_REFINERIAS = [("salina cruz", "salina cruz"), ("cadereyta", "cadereyta"), ("madero", "madero"),
+               ("minatit", "minatitlan"), ("salamanca", "salamanca"), ("tula", "tula"),
+               ("olmeca", "olmeca"), ("snr", "snr")]
+
+
+def _normalizar(texto):
+    texto = unicodedata.normalize("NFD", str(texto))
+    texto = "".join(c for c in texto if unicodedata.category(c) != "Mn")
+    return _re.sub(r"\s+", " ", texto).strip().lower()
+
+
+def classify_slide_title(text):
+    """Devuelve (refinería, producto) si el texto es un título de proceso/producción, o None.
+
+    Ej.: 'Producción de Gasolinas Salina Cruz Programa: 93.0 Mbd' -> ('salina cruz', 'gasolinas').
+    Ignora 'Rendimientos ...' y cualquier texto que no empiece con 'Proceso de'/'Producción de'.
+    """
+    t = _normalizar(text)
+    if not (t.startswith("proceso de") or t.startswith("produccion de")):
+        return None
+    producto = next((v for k, v in _PRODUCTOS if k in t), None)
+    refineria = next((v for k, v in _REFINERIAS if k in t), None)
+    if producto and refineria:
+        return refineria, producto
+    return None
+
+
+def build_slides_map(prs):
+    """Mapa {(refinería, producto): diapositiva} leyendo el título de cada diapositiva."""
+    slides_map, duplicated = {}, []
+    for slide in prs.slides:
+        key = None
+        for shape in slide.shapes:
+            if shape.has_text_frame:
+                key = classify_slide_title(shape.text_frame.text)
+                if key:
+                    break
+        if key:
+            if key in slides_map:
+                duplicated.append(key)
+            else:
+                slides_map[key] = slide
+    return slides_map, duplicated
+
+
+class _MissingSlide:
+    """Diapositiva ausente: sin formas, así los bloques que buscan una gráfica la omiten."""
+    shapes = []
+
+
+def find_slide(slides_map, refineria, producto):
+    return slides_map.get((refineria, producto)) or _MissingSlide()
+
+
+def slide_exists(slides_map, refineria, producto):
+    return (refineria, producto) in slides_map
+
+
 def update_slide_chart(chart, categories, proceso_vals, diario_vals, programa_vals, columna1_vals, wine_color, green_color, current_month_name=None):
     global master_current_month
     if not current_month_name:
@@ -129,11 +192,17 @@ def export_to_pptx(app, file_path, save_path):
         from pptx.dml.color import RGBColor
 
         prs = Presentation(file_path)
-        if len(prs.slides) < 53:
-            raise ValueError("La presentación debe tener al menos 53 diapositivas (incluyendo las de Madero, Minatitlán, Salamanca, Salina Cruz, Tula y Olmeca).")
+        # Las gráficas se asignan leyendo el título de cada diapositiva, no su posición.
+        slides_map, duplicated = build_slides_map(prs)
+        app.pptx_slides_found = sorted(f"{r} - {p}" for r, p in slides_map)
+        for ref, prod in duplicated:
+            print(f"[PPTX] Aviso: hay más de una diapositiva '{prod} {ref}'; se usa la primera.")
+        if not slides_map:
+            raise ValueError("No se encontró ninguna diapositiva con título de proceso o producción "
+                             "(p. ej. 'Proceso de crudo Madero' o 'Producción de Gasolinas SNR').")
  
         # --- 1. PROCESAR DIAPOSITIVA DE CRUDO (DIAPOSITIVA 2) ---
-        slide = prs.slides[1]
+        slide = find_slide(slides_map, "snr", "crudo")
         chart = None
 
         for shape in slide.shapes:
@@ -148,7 +217,7 @@ def export_to_pptx(app, file_path, save_path):
                             run.text = re.sub(r'CMP:\s*[\d\.]+', f'CMP: {cmp_val}', run.text)
 
         if not chart:
-            raise ValueError("No se encontró ninguna gráfica en la segunda diapositiva (Crudo).")
+            raise ValueError("No se encontró una diapositiva con gráfica para Crudo (el título debe ser p. ej. 'Producción de Crudo SNR').")
 
         # Columnas específicas de la tabla 1 para Crudo: 'Crudo' (0), 'Cadereyta' (1)
         # En la tabla, "Cadereyta" es la que va en la columna de proceso.
@@ -215,7 +284,7 @@ def export_to_pptx(app, file_path, save_path):
 
 
         # --- NUEVA SECCIÓN: PROCESAR DIAPOSITIVA 10 (Crudo Cadereyta) ---
-        slide_cad = prs.slides[9]
+        slide_cad = find_slide(slides_map, "cadereyta", "crudo")
         chart_cad = None
         for shape in slide_cad.shapes:
             if shape.has_chart:
@@ -273,7 +342,7 @@ def export_to_pptx(app, file_path, save_path):
 
 
         # --- 2. PROCESAR DIAPOSITIVA DE GASOLINAS (DIAPOSITIVA 3) ---
-        slide_gas = prs.slides[2]
+        slide_gas = find_slide(slides_map, "snr", "gasolinas")
         chart_gas = None
         for shape in slide_gas.shapes:
             if shape.has_chart:
@@ -287,7 +356,7 @@ def export_to_pptx(app, file_path, save_path):
                             run.text = re.sub(r'CMP\s*:\s*[\d\.]+', f'CMP : {cmp_val}', run.text)
 
         if not chart_gas:
-            raise ValueError("No se encontró ninguna gráfica en la tercera diapositiva (Gasolinas).")
+            raise ValueError("No se encontró una diapositiva con gráfica para Gasolinas (el título debe ser p. ej. 'Producción de Gasolinas SNR').")
 
         snr_col_gas = None
         for col in app.df_data_gasolinas.columns:
@@ -374,7 +443,7 @@ def export_to_pptx(app, file_path, save_path):
 
 
         # --- 3. PROCESAR DIAPOSITIVA DE DIESEL (DIAPOSITIVA 4) ---
-        slide_die = prs.slides[3]
+        slide_die = find_slide(slides_map, "snr", "diesel")
         chart_die = None
         for shape in slide_die.shapes:
             if shape.has_chart:
@@ -388,7 +457,7 @@ def export_to_pptx(app, file_path, save_path):
                             run.text = re.sub(r'CMP\s*:\s*[\d\.]+', f'CMP : {cmp_val}', run.text)
 
         if not chart_die:
-            raise ValueError("No se encontró ninguna gráfica en la cuarta diapositiva (Diesel).")
+            raise ValueError("No se encontró una diapositiva con gráfica para Diesel (el título debe ser p. ej. 'Producción de Diesel SNR').")
 
         snr_col_die = None
         for col in app.df_data_diesel.columns:
@@ -475,7 +544,7 @@ def export_to_pptx(app, file_path, save_path):
 
 
         # --- 4. PROCESAR DIAPOSITIVA DE TURBOSINA (DIAPOSITIVA 5) ---
-        slide_turb = prs.slides[4]
+        slide_turb = find_slide(slides_map, "snr", "turbosina")
         chart_turb = None
         for shape in slide_turb.shapes:
             if shape.has_chart:
@@ -489,7 +558,7 @@ def export_to_pptx(app, file_path, save_path):
                             run.text = re.sub(r'CMP\s*:\s*[\d\.]+', f'CMP : {cmp_val}', run.text)
 
         if not chart_turb:
-            raise ValueError("No se encontró ninguna gráfica en la quinta diapositiva (Turbosina).")
+            raise ValueError("No se encontró una diapositiva con gráfica para Turbosina (el título debe ser p. ej. 'Producción de Turbosina SNR').")
 
         snr_col_turb = None
         for col in app.df_data_turbosina.columns:
@@ -577,7 +646,7 @@ def export_to_pptx(app, file_path, save_path):
 
         # --- 5. PROCESAR DIAPOSITIVA DE ASFALTO (DIAPOSITIVA 6) ---
         if app.df_data_asfalto is not None and app.df_snr_asfalto is not None and app.df_prod_asfalto is not None:
-            slide_asf = prs.slides[5]
+            slide_asf = find_slide(slides_map, "snr", "asfalto")
             chart_asf = None
             for shape in slide_asf.shapes:
                 if shape.has_chart:
@@ -591,7 +660,7 @@ def export_to_pptx(app, file_path, save_path):
                                 run.text = re.sub(r'CMP\s*:\s*[\d\.]+', f'CMP : {cmp_val}', run.text)
 
             if not chart_asf:
-                raise ValueError("No se encontró ninguna gráfica en la sexta diapositiva (Asfalto).")
+                raise ValueError("No se encontró una diapositiva con gráfica para Asfalto (el título debe ser p. ej. 'Producción de Asfalto SNR').")
 
             snr_col_asf = None
             for col in app.df_data_asfalto.columns:
@@ -681,7 +750,7 @@ def export_to_pptx(app, file_path, save_path):
 
         # --- 6. PROCESAR DIAPOSITIVA DE COMBUSTOLEO (DIAPOSITIVA 7) ---
         if app.df_data_combustoleo is not None and app.df_snr_combustoleo is not None and app.df_prod_combustoleo is not None:
-            slide_comb = prs.slides[6]
+            slide_comb = find_slide(slides_map, "snr", "combustoleo")
             chart_comb = None
             for shape in slide_comb.shapes:
                 if shape.has_chart:
@@ -695,7 +764,7 @@ def export_to_pptx(app, file_path, save_path):
                                 run.text = re.sub(r'CMP\s*:\s*[\d\.]+', f'CMP : {cmp_val}', run.text)
 
             if not chart_comb:
-                raise ValueError("No se encontró ninguna gráfica en la séptima diapositiva (Combustoleo).")
+                raise ValueError("No se encontró una diapositiva con gráfica para Combustoleo (el título debe ser p. ej. 'Producción de Combustoleo SNR').")
 
             # La columna de producción diaria real es "Combustoleo" (no la de SNR)
             diario_col_comb = None
@@ -787,7 +856,7 @@ def export_to_pptx(app, file_path, save_path):
  
             # --- 7. PROCESAR DIAPOSITIVA DE GASOLINAS CADEREYTA (DIAPOSITIVA 11) ---
             if app.df_data_cad_gas is not None and app.df_snr_cad_gas is not None and app.df_prod_cad_gas is not None:
-                slide_cad_gas = prs.slides[10]
+                slide_cad_gas = find_slide(slides_map, "cadereyta", "gasolinas")
                 chart_cad_gas = None
                 for shape in slide_cad_gas.shapes:
                     if shape.has_chart:
@@ -858,7 +927,7 @@ def export_to_pptx(app, file_path, save_path):
  
                 # --- 8. PROCESAR DIAPOSITIVA DE DIESEL CADEREYTA (DIAPOSITIVA 12) ---
                 if app.df_data_cad_die is not None and app.df_snr_cad_die is not None and app.df_prod_cad_die is not None:
-                    slide_cad_die = prs.slides[11]
+                    slide_cad_die = find_slide(slides_map, "cadereyta", "diesel")
                     chart_cad_die = None
                     for shape in slide_cad_die.shapes:
                         if shape.has_chart:
@@ -922,8 +991,8 @@ def export_to_pptx(app, file_path, save_path):
                             update_slide_chart(chart_cad_die, categories_cd, proceso_vals_cd, diario_vals_cd, programa_vals_cd, columna1_vals_cd, wine_color, green_color)
 
                 # --- 9. PROCESAR DIAPOSITIVA DE COMBUSTOLEO CADEREYTA (DIAPOSITIVA 13) ---
-                if len(prs.slides) > 12 and app.df_data_cad_comb is not None and app.df_snr_cad_comb is not None and app.df_prod_cad_comb is not None:
-                    slide_cad_comb = prs.slides[12]
+                if slide_exists(slides_map, "cadereyta", "combustoleo") and app.df_data_cad_comb is not None and app.df_snr_cad_comb is not None and app.df_prod_cad_comb is not None:
+                    slide_cad_comb = find_slide(slides_map, "cadereyta", "combustoleo")
                     chart_cad_comb = None
                     for shape in slide_cad_comb.shapes:
                         if shape.has_chart:
@@ -987,8 +1056,8 @@ def export_to_pptx(app, file_path, save_path):
                             update_slide_chart(chart_cad_comb, categories_cc, proceso_vals_cc, diario_vals_cc, programa_vals_cc, columna1_vals_cc, wine_color, green_color)
 
             # --- 10. PROCESAR DIAPOSITIVA DE CRUDO MADERO (DIAPOSITIVA 16) ---
-            if len(prs.slides) > 15 and app.df_data_mad_crud is not None and app.df_snr_mad_crud is not None and app.df_prod_mad_crud is not None:
-                slide_mad_crud = prs.slides[15]
+            if slide_exists(slides_map, "madero", "crudo") and app.df_data_mad_crud is not None and app.df_snr_mad_crud is not None and app.df_prod_mad_crud is not None:
+                slide_mad_crud = find_slide(slides_map, "madero", "crudo")
                 chart_mad_crud = None
                 for shape in slide_mad_crud.shapes:
                     if shape.has_chart:
@@ -1044,8 +1113,8 @@ def export_to_pptx(app, file_path, save_path):
                     update_slide_chart(chart_mad_crud, categories_mc, proceso_vals_mc, diario_vals_mc, programa_vals_mc, columna1_vals_mc, wine_color, green_color)
 
             # --- 11. PROCESAR DIAPOSITIVA DE GASOLINAS MADERO (DIAPOSITIVA 17) ---
-            if len(prs.slides) > 16 and app.df_data_mad_gas is not None and app.df_snr_mad_gas is not None and app.df_prod_mad_gas is not None:
-                slide_mad_gas = prs.slides[16]
+            if slide_exists(slides_map, "madero", "gasolinas") and app.df_data_mad_gas is not None and app.df_snr_mad_gas is not None and app.df_prod_mad_gas is not None:
+                slide_mad_gas = find_slide(slides_map, "madero", "gasolinas")
                 chart_mad_gas = None
                 for shape in slide_mad_gas.shapes:
                     if shape.has_chart:
@@ -1108,8 +1177,8 @@ def export_to_pptx(app, file_path, save_path):
                         update_slide_chart(chart_mad_gas, categories_mg, proceso_vals_mg, diario_vals_mg, programa_vals_mg, columna1_vals_mg, wine_color, green_color)
 
             # --- 12. PROCESAR DIAPOSITIVA DE DIESEL MADERO (DIAPOSITIVA 18) ---
-            if len(prs.slides) > 17 and app.df_data_mad_die is not None and app.df_snr_mad_die is not None and app.df_prod_mad_die is not None:
-                slide_mad_die = prs.slides[17]
+            if slide_exists(slides_map, "madero", "diesel") and app.df_data_mad_die is not None and app.df_snr_mad_die is not None and app.df_prod_mad_die is not None:
+                slide_mad_die = find_slide(slides_map, "madero", "diesel")
                 chart_mad_die = None
                 for shape in slide_mad_die.shapes:
                     if shape.has_chart:
@@ -1172,8 +1241,8 @@ def export_to_pptx(app, file_path, save_path):
                         update_slide_chart(chart_mad_die, categories_md, proceso_vals_md, diario_vals_md, programa_vals_md, columna1_vals_md, wine_color, green_color)
 
             # --- 13. PROCESAR DIAPOSITIVA DE TURBOSINA MADERO (DIAPOSITIVA 19) ---
-            if len(prs.slides) > 18 and app.df_data_mad_turb is not None and app.df_snr_mad_turb is not None and app.df_prod_mad_turb is not None:
-                slide_mad_turb = prs.slides[18]
+            if slide_exists(slides_map, "madero", "turbosina") and app.df_data_mad_turb is not None and app.df_snr_mad_turb is not None and app.df_prod_mad_turb is not None:
+                slide_mad_turb = find_slide(slides_map, "madero", "turbosina")
                 chart_mad_turb = None
                 for shape in slide_mad_turb.shapes:
                     if shape.has_chart:
@@ -1236,8 +1305,8 @@ def export_to_pptx(app, file_path, save_path):
                         update_slide_chart(chart_mad_turb, categories_mtu, proceso_vals_mtu, diario_vals_mtu, programa_vals_mtu, columna1_vals_mtu, wine_color, green_color)
 
             # --- 14. PROCESAR DIAPOSITIVA DE COMBUSTOLEO MADERO (DIAPOSITIVA 20) ---
-            if len(prs.slides) > 19 and app.df_data_mad_comb is not None and app.df_snr_mad_comb is not None and app.df_prod_mad_comb is not None:
-                slide_mad_comb = prs.slides[19]
+            if slide_exists(slides_map, "madero", "combustoleo") and app.df_data_mad_comb is not None and app.df_snr_mad_comb is not None and app.df_prod_mad_comb is not None:
+                slide_mad_comb = find_slide(slides_map, "madero", "combustoleo")
                 chart_mad_comb = None
                 for shape in slide_mad_comb.shapes:
                     if shape.has_chart:
@@ -1300,8 +1369,8 @@ def export_to_pptx(app, file_path, save_path):
                         update_slide_chart(chart_mad_comb, categories_mco, proceso_vals_mco, diario_vals_mco, programa_vals_mco, columna1_vals_mco, wine_color, green_color)
 
             # --- 15. PROCESAR DIAPOSITIVA DE CRUDO MINATITLAN (DIAPOSITIVA 23) ---
-            if len(prs.slides) > 22 and app.df_data_mina_crud is not None and app.df_snr_mina_crud is not None and app.df_prod_mina_crud is not None:
-                slide_mina_crud = prs.slides[22]
+            if slide_exists(slides_map, "minatitlan", "crudo") and app.df_data_mina_crud is not None and app.df_snr_mina_crud is not None and app.df_prod_mina_crud is not None:
+                slide_mina_crud = find_slide(slides_map, "minatitlan", "crudo")
                 chart_mina_crud = None
                 for shape in slide_mina_crud.shapes:
                     if shape.has_chart:
@@ -1364,8 +1433,8 @@ def export_to_pptx(app, file_path, save_path):
                         update_slide_chart(chart_mina_crud, categories_mic, proceso_vals_mic, diario_vals_mic, programa_vals_mic, columna1_vals_mic, wine_color, green_color)
 
             # --- 16. PROCESAR DIAPOSITIVA DE GASOLINAS MINATITLAN (DIAPOSITIVA 24) ---
-            if len(prs.slides) > 23 and app.df_data_mina_gas is not None and app.df_snr_mina_gas is not None and app.df_prod_mina_gas is not None:
-                slide_mina_gas = prs.slides[23]
+            if slide_exists(slides_map, "minatitlan", "gasolinas") and app.df_data_mina_gas is not None and app.df_snr_mina_gas is not None and app.df_prod_mina_gas is not None:
+                slide_mina_gas = find_slide(slides_map, "minatitlan", "gasolinas")
                 chart_mina_gas = None
                 for shape in slide_mina_gas.shapes:
                     if shape.has_chart:
@@ -1428,8 +1497,8 @@ def export_to_pptx(app, file_path, save_path):
                         update_slide_chart(chart_mina_gas, categories_mig, proceso_vals_mig, diario_vals_mig, programa_vals_mig, columna1_vals_mig, wine_color, green_color)
 
             # --- 17. PROCESAR DIAPOSITIVA DE DIESEL MINATITLAN (DIAPOSITIVA 25) ---
-            if len(prs.slides) > 24 and app.df_data_mina_die is not None and app.df_snr_mina_die is not None and app.df_prod_mina_die is not None:
-                slide_mina_die = prs.slides[24]
+            if slide_exists(slides_map, "minatitlan", "diesel") and app.df_data_mina_die is not None and app.df_snr_mina_die is not None and app.df_prod_mina_die is not None:
+                slide_mina_die = find_slide(slides_map, "minatitlan", "diesel")
                 chart_mina_die = None
                 for shape in slide_mina_die.shapes:
                     if shape.has_chart:
@@ -1492,8 +1561,8 @@ def export_to_pptx(app, file_path, save_path):
                         update_slide_chart(chart_mina_die, categories_mid, proceso_vals_mid, diario_vals_mid, programa_vals_mid, columna1_vals_mid, wine_color, green_color)
 
             # --- 18. PROCESAR DIAPOSITIVA DE COMBUSTOLEO MINATITLAN (DIAPOSITIVA 26) ---
-            if len(prs.slides) > 25 and app.df_data_mina_comb is not None and app.df_snr_mina_comb is not None and app.df_prod_mina_comb is not None:
-                slide_mina_comb = prs.slides[25]
+            if slide_exists(slides_map, "minatitlan", "combustoleo") and app.df_data_mina_comb is not None and app.df_snr_mina_comb is not None and app.df_prod_mina_comb is not None:
+                slide_mina_comb = find_slide(slides_map, "minatitlan", "combustoleo")
                 chart_mina_comb = None
                 for shape in slide_mina_comb.shapes:
                     if shape.has_chart:
@@ -1556,8 +1625,8 @@ def export_to_pptx(app, file_path, save_path):
                         update_slide_chart(chart_mina_comb, categories_mco, proceso_vals_mco, diario_vals_mco, programa_vals_mco, columna1_vals_mco, wine_color, green_color)
 
             # --- 18.1. PROCESAR DIAPOSITIVA DE TURBOSINA MINATITLAN (DIAPOSITIVA 27) ---
-            if len(prs.slides) > 26 and getattr(app, 'df_data_mina_turb', None) is not None and getattr(app, 'df_snr_mina_turb', None) is not None and getattr(app, 'df_prod_mina_turb', None) is not None:
-                slide_mina_turb = prs.slides[26]
+            if slide_exists(slides_map, "minatitlan", "turbosina") and getattr(app, 'df_data_mina_turb', None) is not None and getattr(app, 'df_snr_mina_turb', None) is not None and getattr(app, 'df_prod_mina_turb', None) is not None:
+                slide_mina_turb = find_slide(slides_map, "minatitlan", "turbosina")
                 chart_mina_turb = None
                 for shape in slide_mina_turb.shapes:
                     if shape.has_chart:
@@ -1620,8 +1689,8 @@ def export_to_pptx(app, file_path, save_path):
                         update_slide_chart(chart_mina_turb, categories_mtu, proceso_vals_mtu, diario_vals_mtu, programa_vals_mtu, columna1_vals_mtu, wine_color, green_color)
 
             # --- 19. PROCESAR DIAPOSITIVA DE CRUDO SALAMANCA (DIAPOSITIVA 30) ---
-            if len(prs.slides) > 29 and app.df_data_sala_crud is not None and app.df_snr_sala_crud is not None and app.df_prod_sala_crud is not None:
-                slide_sala_crud = prs.slides[29]
+            if slide_exists(slides_map, "salamanca", "crudo") and app.df_data_sala_crud is not None and app.df_snr_sala_crud is not None and app.df_prod_sala_crud is not None:
+                slide_sala_crud = find_slide(slides_map, "salamanca", "crudo")
                 chart_sala_crud = None
                 for shape in slide_sala_crud.shapes:
                     if shape.has_chart:
@@ -1684,8 +1753,8 @@ def export_to_pptx(app, file_path, save_path):
                         update_slide_chart(chart_sala_crud, categories_sc, proceso_vals_sc, diario_vals_sc, programa_vals_sc, columna1_vals_sc, wine_color, green_color)
 
             # --- 20. PROCESAR DIAPOSITIVA DE GASOLINAS SALAMANCA (DIAPOSITIVA 31) ---
-            if len(prs.slides) > 30 and app.df_data_sala_gas is not None and app.df_snr_sala_gas is not None and app.df_prod_sala_gas is not None:
-                slide_sala_gas = prs.slides[30]
+            if slide_exists(slides_map, "salamanca", "gasolinas") and app.df_data_sala_gas is not None and app.df_snr_sala_gas is not None and app.df_prod_sala_gas is not None:
+                slide_sala_gas = find_slide(slides_map, "salamanca", "gasolinas")
                 chart_sala_gas = None
                 for shape in slide_sala_gas.shapes:
                     if shape.has_chart:
@@ -1748,8 +1817,8 @@ def export_to_pptx(app, file_path, save_path):
                         update_slide_chart(chart_sala_gas, categories_sg, proceso_vals_sg, diario_vals_sg, programa_vals_sg, columna1_vals_sg, wine_color, green_color)
 
             # --- 21. PROCESAR DIAPOSITIVA DE DIESEL SALAMANCA (DIAPOSITIVA 32) ---
-            if len(prs.slides) > 31 and app.df_data_sala_die is not None and app.df_snr_sala_die is not None and app.df_prod_sala_die is not None:
-                slide_sala_die = prs.slides[31]
+            if slide_exists(slides_map, "salamanca", "diesel") and app.df_data_sala_die is not None and app.df_snr_sala_die is not None and app.df_prod_sala_die is not None:
+                slide_sala_die = find_slide(slides_map, "salamanca", "diesel")
                 chart_sala_die = None
                 for shape in slide_sala_die.shapes:
                     if shape.has_chart:
@@ -1812,8 +1881,8 @@ def export_to_pptx(app, file_path, save_path):
                         update_slide_chart(chart_sala_die, categories_sd, proceso_vals_sd, diario_vals_sd, programa_vals_sd, columna1_vals_sd, wine_color, green_color)
 
             # --- 22. PROCESAR DIAPOSITIVA DE TURBOSINA SALAMANCA (DIAPOSITIVA 33) ---
-            if len(prs.slides) > 32 and app.df_data_sala_turb is not None and app.df_snr_sala_turb is not None and app.df_prod_sala_turb is not None:
-                slide_sala_turb = prs.slides[32]
+            if slide_exists(slides_map, "salamanca", "turbosina") and app.df_data_sala_turb is not None and app.df_snr_sala_turb is not None and app.df_prod_sala_turb is not None:
+                slide_sala_turb = find_slide(slides_map, "salamanca", "turbosina")
                 chart_sala_turb = None
                 for shape in slide_sala_turb.shapes:
                     if shape.has_chart:
@@ -1876,8 +1945,8 @@ def export_to_pptx(app, file_path, save_path):
                         update_slide_chart(chart_sala_turb, categories_stur, proceso_vals_stur, diario_vals_stur, programa_vals_stur, columna1_vals_stur, wine_color, green_color)
 
             # --- 23. PROCESAR DIAPOSITIVA DE COMBUSTOLEO SALAMANCA (DIAPOSITIVA 34) ---
-            if len(prs.slides) > 33 and app.df_data_sala_comb is not None and app.df_snr_sala_comb is not None and app.df_prod_sala_comb is not None:
-                slide_sala_comb = prs.slides[33]
+            if slide_exists(slides_map, "salamanca", "combustoleo") and app.df_data_sala_comb is not None and app.df_snr_sala_comb is not None and app.df_prod_sala_comb is not None:
+                slide_sala_comb = find_slide(slides_map, "salamanca", "combustoleo")
                 chart_sala_comb = None
                 for shape in slide_sala_comb.shapes:
                     if shape.has_chart:
@@ -1940,8 +2009,8 @@ def export_to_pptx(app, file_path, save_path):
                         update_slide_chart(chart_sala_comb, categories_sco, proceso_vals_sco, diario_vals_sco, programa_vals_sco, columna1_vals_sco, wine_color, green_color)
 
             # --- 24. PROCESAR DIAPOSITIVA DE CRUDO SALINA CRUZ (DIAPOSITIVA 37) ---
-            if len(prs.slides) > 36 and app.df_data_sal_crud is not None and app.df_snr_sal_crud is not None and app.df_prod_sal_crud is not None:
-                slide_sal_crud = prs.slides[36]
+            if slide_exists(slides_map, "salina cruz", "crudo") and app.df_data_sal_crud is not None and app.df_snr_sal_crud is not None and app.df_prod_sal_crud is not None:
+                slide_sal_crud = find_slide(slides_map, "salina cruz", "crudo")
                 chart_sal_crud = None
                 for shape in slide_sal_crud.shapes:
                     if shape.has_chart:
@@ -2004,8 +2073,8 @@ def export_to_pptx(app, file_path, save_path):
                         update_slide_chart(chart_sal_crud, categories_sc, proceso_vals_sc, diario_vals_sc, programa_vals_sc, columna1_vals_sc, wine_color, green_color)
 
             # --- 25. PROCESAR DIAPOSITIVA DE GASOLINAS SALINA CRUZ (DIAPOSITIVA 38) ---
-            if len(prs.slides) > 37 and app.df_data_sal_gas is not None and app.df_snr_sal_gas is not None and app.df_prod_sal_gas is not None:
-                slide_sal_gas = prs.slides[37]
+            if slide_exists(slides_map, "salina cruz", "gasolinas") and app.df_data_sal_gas is not None and app.df_snr_sal_gas is not None and app.df_prod_sal_gas is not None:
+                slide_sal_gas = find_slide(slides_map, "salina cruz", "gasolinas")
                 chart_sal_gas = None
                 for shape in slide_sal_gas.shapes:
                     if shape.has_chart:
@@ -2068,8 +2137,8 @@ def export_to_pptx(app, file_path, save_path):
                         update_slide_chart(chart_sal_gas, categories_sg, proceso_vals_sg, diario_vals_sg, programa_vals_sg, columna1_vals_sg, wine_color, green_color)
 
             # --- 26. PROCESAR DIAPOSITIVA DE DIESEL SALINA CRUZ (DIAPOSITIVA 39) ---
-            if len(prs.slides) > 38 and app.df_data_sal_die is not None and app.df_snr_sal_die is not None and app.df_prod_sal_die is not None:
-                slide_sal_die = prs.slides[38]
+            if slide_exists(slides_map, "salina cruz", "diesel") and app.df_data_sal_die is not None and app.df_snr_sal_die is not None and app.df_prod_sal_die is not None:
+                slide_sal_die = find_slide(slides_map, "salina cruz", "diesel")
                 chart_sal_die = None
                 for shape in slide_sal_die.shapes:
                     if shape.has_chart:
@@ -2132,8 +2201,8 @@ def export_to_pptx(app, file_path, save_path):
                         update_slide_chart(chart_sal_die, categories_sd, proceso_vals_sd, diario_vals_sd, programa_vals_sd, columna1_vals_sd, wine_color, green_color)
 
             # --- 27. PROCESAR DIAPOSITIVA DE TURBOSINA SALINA CRUZ (DIAPOSITIVA 40) ---
-            if len(prs.slides) > 39 and app.df_data_sal_turb is not None and app.df_snr_sal_turb is not None and app.df_prod_sal_turb is not None:
-                slide_sal_turb = prs.slides[39]
+            if slide_exists(slides_map, "salina cruz", "turbosina") and app.df_data_sal_turb is not None and app.df_snr_sal_turb is not None and app.df_prod_sal_turb is not None:
+                slide_sal_turb = find_slide(slides_map, "salina cruz", "turbosina")
                 chart_sal_turb = None
                 for shape in slide_sal_turb.shapes:
                     if shape.has_chart:
@@ -2196,8 +2265,8 @@ def export_to_pptx(app, file_path, save_path):
                         update_slide_chart(chart_sal_turb, categories_stur, proceso_vals_stur, diario_vals_stur, programa_vals_stur, columna1_vals_stur, wine_color, green_color)
 
             # --- 28. PROCESAR DIAPOSITIVA DE COMBUSTOLEO SALINA CRUZ (DIAPOSITIVA 41) ---
-            if len(prs.slides) > 40 and app.df_data_sal_comb is not None and app.df_snr_sal_comb is not None and app.df_prod_sal_comb is not None:
-                slide_sal_comb = prs.slides[40]
+            if slide_exists(slides_map, "salina cruz", "combustoleo") and app.df_data_sal_comb is not None and app.df_snr_sal_comb is not None and app.df_prod_sal_comb is not None:
+                slide_sal_comb = find_slide(slides_map, "salina cruz", "combustoleo")
                 chart_sal_comb = None
                 for shape in slide_sal_comb.shapes:
                     if shape.has_chart:
@@ -2260,8 +2329,8 @@ def export_to_pptx(app, file_path, save_path):
                         update_slide_chart(chart_sal_comb, categories_sco, proceso_vals_sco, diario_vals_sco, programa_vals_sco, columna1_vals_sco, wine_color, green_color)
 
             # --- 29. PROCESAR DIAPOSITIVA DE CRUDO TULA (DIAPOSITIVA 44) ---
-            if len(prs.slides) > 43 and app.df_data_tula_crud is not None and app.df_snr_tula_crud is not None and app.df_prod_tula_crud is not None:
-                slide_tula_crud = prs.slides[43]
+            if slide_exists(slides_map, "tula", "crudo") and app.df_data_tula_crud is not None and app.df_snr_tula_crud is not None and app.df_prod_tula_crud is not None:
+                slide_tula_crud = find_slide(slides_map, "tula", "crudo")
                 chart_tula_crud = None
                 for shape in slide_tula_crud.shapes:
                     if shape.has_chart:
@@ -2324,8 +2393,8 @@ def export_to_pptx(app, file_path, save_path):
                         update_slide_chart(chart_tula_crud, categories_sc, proceso_vals_sc, diario_vals_sc, programa_vals_sc, columna1_vals_sc, wine_color, green_color)
 
             # --- 30. PROCESAR DIAPOSITIVA DE GASOLINAS TULA (DIAPOSITIVA 45) ---
-            if len(prs.slides) > 44 and app.df_data_tula_gas is not None and app.df_snr_tula_gas is not None and app.df_prod_tula_gas is not None:
-                slide_tula_gas = prs.slides[44]
+            if slide_exists(slides_map, "tula", "gasolinas") and app.df_data_tula_gas is not None and app.df_snr_tula_gas is not None and app.df_prod_tula_gas is not None:
+                slide_tula_gas = find_slide(slides_map, "tula", "gasolinas")
                 chart_tula_gas = None
                 for shape in slide_tula_gas.shapes:
                     if shape.has_chart:
@@ -2388,8 +2457,8 @@ def export_to_pptx(app, file_path, save_path):
                         update_slide_chart(chart_tula_gas, categories_sg, proceso_vals_sg, diario_vals_sg, programa_vals_sg, columna1_vals_sg, wine_color, green_color)
 
             # --- 31. PROCESAR DIAPOSITIVA DE DIESEL TULA (DIAPOSITIVA 46) ---
-            if len(prs.slides) > 45 and app.df_data_tula_die is not None and app.df_snr_tula_die is not None and app.df_prod_tula_die is not None:
-                slide_tula_die = prs.slides[45]
+            if slide_exists(slides_map, "tula", "diesel") and app.df_data_tula_die is not None and app.df_snr_tula_die is not None and app.df_prod_tula_die is not None:
+                slide_tula_die = find_slide(slides_map, "tula", "diesel")
                 chart_tula_die = None
                 for shape in slide_tula_die.shapes:
                     if shape.has_chart:
@@ -2452,8 +2521,8 @@ def export_to_pptx(app, file_path, save_path):
                         update_slide_chart(chart_tula_die, categories_sd, proceso_vals_sd, diario_vals_sd, programa_vals_sd, columna1_vals_sd, wine_color, green_color)
 
             # --- 32. PROCESAR DIAPOSITIVA DE TURBOSINA TULA (DIAPOSITIVA 47) ---
-            if len(prs.slides) > 46 and app.df_data_tula_turb is not None and app.df_snr_tula_turb is not None and app.df_prod_tula_turb is not None:
-                slide_tula_turb = prs.slides[46]
+            if slide_exists(slides_map, "tula", "turbosina") and app.df_data_tula_turb is not None and app.df_snr_tula_turb is not None and app.df_prod_tula_turb is not None:
+                slide_tula_turb = find_slide(slides_map, "tula", "turbosina")
                 chart_tula_turb = None
                 for shape in slide_tula_turb.shapes:
                     if shape.has_chart:
@@ -2516,8 +2585,8 @@ def export_to_pptx(app, file_path, save_path):
                         update_slide_chart(chart_tula_turb, categories_stur, proceso_vals_stur, diario_vals_stur, programa_vals_stur, columna1_vals_stur, wine_color, green_color)
 
             # --- 33. PROCESAR DIAPOSITIVA DE COMBUSTOLEO TULA (DIAPOSITIVA 48) ---
-            if len(prs.slides) > 47 and app.df_data_tula_comb is not None and app.df_snr_tula_comb is not None and app.df_prod_tula_comb is not None:
-                slide_tula_comb = prs.slides[47]
+            if slide_exists(slides_map, "tula", "combustoleo") and app.df_data_tula_comb is not None and app.df_snr_tula_comb is not None and app.df_prod_tula_comb is not None:
+                slide_tula_comb = find_slide(slides_map, "tula", "combustoleo")
                 chart_tula_comb = None
                 for shape in slide_tula_comb.shapes:
                     if shape.has_chart:
@@ -2580,8 +2649,8 @@ def export_to_pptx(app, file_path, save_path):
                         update_slide_chart(chart_tula_comb, categories_sco, proceso_vals_sco, diario_vals_sco, programa_vals_sco, columna1_vals_sco, wine_color, green_color)
 
             # --- 34. PROCESAR DIAPOSITIVA DE CRUDO OLMECA (DIAPOSITIVA 51) ---
-            if len(prs.slides) > 50 and app.df_data_olme_crud is not None and app.df_snr_olme_crud is not None and app.df_prod_olme_crud is not None:
-                slide_olme_crud = prs.slides[50]
+            if slide_exists(slides_map, "olmeca", "crudo") and app.df_data_olme_crud is not None and app.df_snr_olme_crud is not None and app.df_prod_olme_crud is not None:
+                slide_olme_crud = find_slide(slides_map, "olmeca", "crudo")
                 chart_olme_crud = None
                 for shape in slide_olme_crud.shapes:
                     if shape.has_chart:
@@ -2644,8 +2713,8 @@ def export_to_pptx(app, file_path, save_path):
                         update_slide_chart(chart_olme_crud, categories_sc, proceso_vals_sc, diario_vals_sc, programa_vals_sc, columna1_vals_sc, wine_color, green_color)
 
             # --- 35. PROCESAR DIAPOSITIVA DE GASOLINAS OLMECA (DIAPOSITIVA 52) ---
-            if len(prs.slides) > 51 and app.df_data_olme_gas is not None and app.df_snr_olme_gas is not None and app.df_prod_olme_gas is not None:
-                slide_olme_gas = prs.slides[51]
+            if slide_exists(slides_map, "olmeca", "gasolinas") and app.df_data_olme_gas is not None and app.df_snr_olme_gas is not None and app.df_prod_olme_gas is not None:
+                slide_olme_gas = find_slide(slides_map, "olmeca", "gasolinas")
                 chart_olme_gas = None
                 for shape in slide_olme_gas.shapes:
                     if shape.has_chart:
@@ -2708,8 +2777,8 @@ def export_to_pptx(app, file_path, save_path):
                         update_slide_chart(chart_olme_gas, categories_sg, proceso_vals_sg, diario_vals_sg, programa_vals_sg, columna1_vals_sg, wine_color, green_color)
 
             # --- 36. PROCESAR DIAPOSITIVA DE DIESEL OLMECA (DIAPOSITIVA 53) ---
-            if len(prs.slides) > 52 and app.df_data_olme_die is not None and app.df_snr_olme_die is not None and app.df_prod_olme_die is not None:
-                slide_olme_die = prs.slides[52]
+            if slide_exists(slides_map, "olmeca", "diesel") and app.df_data_olme_die is not None and app.df_snr_olme_die is not None and app.df_prod_olme_die is not None:
+                slide_olme_die = find_slide(slides_map, "olmeca", "diesel")
                 chart_olme_die = None
                 for shape in slide_olme_die.shapes:
                     if shape.has_chart:
