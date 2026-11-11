@@ -2246,7 +2246,7 @@ class ExcelViewerApp(ctk.CTk):
         cargas_excel_path = filedialog.askopenfilename(
             title="2. Seleccionar archivo Excel de Cargas (ej. Cargas Nov 26 Auto.xlsm)",
             initialdir=initial_cargas_dir,
-            filetypes=[("Archivos Excel", "*.xlsm;*.xlsx;*.xls")]
+            filetypes=[("Archivos Excel", "*.xlsx *.xlsm *.xls"), ("Todos los archivos", "*.*")]
         )
         if not cargas_excel_path:
             return
