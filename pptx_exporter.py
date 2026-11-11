@@ -2953,3 +2953,783 @@ def export_to_pptx(app, file_path, save_path):
         err_details = traceback.format_exc()
         app.after(0, app.on_pptx_error, str(e), err_details)
 
+
+def reset_slide_mv_chart(app, template_path, save_path):
+    """Actualiza la gráfica superior de Proceso de Crudo en la diapositiva de Margen Variable.
+
+    Incluye:
+      - Únicamente el último año histórico en la BD (ej. 2025) y su valor de proceso.
+      - Los meses transcurridos con producción del año actual (Ene..).
+      - Los días del mes en curso con sus series Diario (real) y Programa.
+    """
+    try:
+        from pptx import Presentation
+        from pptx.chart.data import CategoryChartData
+        from pptx.dml.color import RGBColor
+        from pptx.util import Pt
+
+        prs = Presentation(template_path)
+
+        # 1. Encontrar la diapositiva de Seguimiento al Margen Variable
+        target_slide = None
+        for s in prs.slides:
+            for shp in s.shapes:
+                if shp.has_text_frame and "margen variable del snr" in shp.text_frame.text.lower():
+                    target_slide = s
+                    break
+            if target_slide:
+                break
+
+        if not target_slide and len(prs.slides) > 1:
+            target_slide = prs.slides[1]
+
+        if not target_slide:
+            raise ValueError("No se encontró la diapositiva de seguimiento al Margen Variable en la plantilla.")
+
+        # 2. Encontrar la gráfica superior (Proceso de Crudo)
+        chart_shapes = [s for s in target_slide.shapes if s.has_chart]
+        if not chart_shapes:
+            raise ValueError("No se encontraron gráficas en la diapositiva de Margen Variable.")
+
+        chart_shapes.sort(key=lambda s: s.top)
+        top_chart = chart_shapes[0].chart
+
+        # 3. Extraer ÚLTIMO AÑO de df_prod
+        sheet_year = getattr(app, "sheet_year", 2026)
+        hist_years = []
+        for idx, row in app.df_prod.iterrows():
+            cat = str(row.iloc[0]).strip()
+            val = row.iloc[1]
+            if not cat:
+                continue
+            if not any(c.isalpha() for c in cat):
+                try:
+                    int(cat)
+                    hist_years.append((cat, val))
+                except Exception:
+                    pass
+
+        last_year, last_year_val = hist_years[-1] if hist_years else (str(sheet_year), 1112)
+
+        # 4. Extraer meses activos del año actual
+        active_months = []
+        for idx, row in app.df_prod.iterrows():
+            cat = str(row.iloc[0]).strip()
+            val = row.iloc[1]
+            if any(c.isalpha() for c in cat):
+                if val != "" and val is not None:
+                    try:
+                        active_months.append((cat, float(val)))
+                    except Exception:
+                        pass
+
+        master_current_month = active_months[-1][0] if active_months else "Oct"
+
+        def _round(v):
+            if v is None:
+                return None
+            try:
+                return int(round(float(v)))
+            except Exception:
+                return v
+
+        categories = [str(last_year)]
+        proceso_vals = [_round(last_year_val)]
+        programa_vals = [None]
+        diario_vals = [None]
+
+        for m_name, m_val in active_months:
+            categories.append(m_name)
+            proceso_vals.append(_round(m_val))
+            programa_vals.append(None)
+            diario_vals.append(None)
+
+        dias_mes = days_in_current_month(master_current_month, sheet_year)
+        proceso_col = app.df_data.columns[1] if app.df_data.shape[1] > 1 else app.df_data.columns[0]
+
+        for i in range(dias_mes):
+            categories.append(str(i + 1))
+            proceso_vals.append(None)
+            try:
+                diario_vals.append(_round(app.df_data[proceso_col].iloc[i]))
+            except Exception:
+                diario_vals.append(None)
+            try:
+                programa_vals.append(_round(app.df_snr.iloc[i, 0]))
+            except Exception:
+                programa_vals.append(None)
+
+        # 5. Reemplazar datos en la gráfica
+        cd = CategoryChartData()
+        cd.categories = categories
+        cd.add_series("PROCESO", tuple(proceso_vals))
+        cd.add_series("Programa", tuple(programa_vals))
+        cd.add_series("Diario", tuple(diario_vals))
+
+        top_chart.replace_data(cd)
+
+        # 6. Formatear colores
+        wine_color = RGBColor(0x62, 0x11, 0x32)   # Color vino corporativo Pemex
+        green_color = RGBColor(0x24, 0x5C, 0x4F)  # Color verde corporativo Pemex
+
+        if len(top_chart.series) > 0:
+            series = top_chart.series[0]
+
+            for p_idx in range(len(series.points)):
+                if p_idx >= len(categories):
+                    break
+                cat = categories[p_idx]
+                if cat.isdigit() and len(cat) <= 2:
+                    break
+                try:
+                    point = series.points[p_idx]
+                    fill = point.format.fill
+                    fill.solid()
+
+                    if p_idx == 0:
+                        # El año pasado: DEBE SER COLOR VINO
+                        fill.fore_color.rgb = wine_color
+                        try:
+                            point.data_label.font.size = Pt(10)
+                            point.data_label.font.bold = True
+                        except Exception:
+                            pass
+                    else:
+                        # Todos los meses (incluyendo el mes actual): DEBEN SER COLOR VERDE
+                        fill.fore_color.rgb = green_color
+                        try:
+                            point.data_label.font.size = Pt(9)
+                            point.data_label.font.bold = False
+                        except Exception:
+                            pass
+                except Exception:
+                    pass
+
+        # 7. Asegurar etiquetas de mes en la parte inferior de la gráfica
+        try:
+            existing_month_boxes = {}
+            oct_box = None
+            for s in target_slide.shapes:
+                if s.has_text_frame and 2900000 < s.top < 3150000:
+                    txt = s.text_frame.text.strip()
+                    existing_month_boxes[txt] = s
+                    if txt == "Oct":
+                        oct_box = s
+
+            # Actualizar caja del año si existe manteniendo tipografía y tamaño exacto (Montserrat 9pt negrita)
+            for yr_key in ["2024", "2025", "2026", "2027"]:
+                if yr_key in existing_month_boxes:
+                    yr_box = existing_month_boxes[yr_key]
+                    if len(yr_box.text_frame.paragraphs) > 0:
+                        p = yr_box.text_frame.paragraphs[0]
+                        if len(p.runs) > 0:
+                            p.runs[0].text = str(last_year)
+                            p.runs[0].font.name = "Montserrat"
+                            p.runs[0].font.size = Pt(9)
+                            p.runs[0].font.bold = True
+                        else:
+                            r = p.add_run()
+                            r.text = str(last_year)
+                            r.font.name = "Montserrat"
+                            r.font.size = Pt(9)
+                            r.font.bold = True
+
+            # Para cada mes activo, si no tiene cuadro de texto abajo, crearlo
+            all_meses_abr = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
+            step = 291605
+            if oct_box is not None:
+                oct_left = oct_box.left
+                oct_top = oct_box.top
+                oct_w = oct_box.width
+                oct_h = oct_box.height
+                oct_idx = all_meses_abr.index("Oct")
+
+                import copy
+                ns = {
+                    'a': 'http://schemas.openxmlformats.org/drawingml/2006/main',
+                    'p': 'http://schemas.openxmlformats.org/presentationml/2006/main'
+                }
+                for m_name, _ in active_months:
+                    if m_name not in existing_month_boxes and m_name in all_meses_abr:
+                        m_idx = all_meses_abr.index(m_name)
+                        offset = m_idx - oct_idx
+                        new_left = oct_left + (step * offset)
+
+                        # Clonar el shape XML de Octubre para heredar exactamente la rotación, márgenes, centrado y tipografía
+                        clone_sp = copy.deepcopy(oct_box._element)
+                        cNvPr = clone_sp.find('.//p:cNvPr', ns)
+                        if cNvPr is not None:
+                            cNvPr.attrib['id'] = str(5000 + m_idx)
+                            cNvPr.attrib['name'] = f"{m_name} CuadroTexto"
+
+                        off = clone_sp.find('.//a:off', ns)
+                        if off is not None:
+                            off.attrib['x'] = str(new_left)
+
+                        for t in clone_sp.findall('.//a:t', ns):
+                            t.text = m_name
+
+                        target_slide.shapes._spTree.append(clone_sp)
+                        existing_month_boxes[m_name] = clone_sp
+        except Exception as e_lbl:
+            print("Aviso al colocar etiquetas de mes inferiores:", e_lbl)
+
+        # 8. Limpiar cuadros de texto sobre las gráficas de las diapositivas 4 a 10 y dejar un cuadro 'prueba' en la esquina inferior izquierda
+        try:
+            for s_idx in range(3, min(10, len(prs.slides))):
+                slide = prs.slides[s_idx]
+                charts = [s for s in slide.shapes if s.has_chart]
+                if not charts:
+                    continue
+                chart_shp = charts[0]
+                c_left = chart_shp.left
+                c_right = chart_shp.left + chart_shp.width
+                c_top = chart_shp.top
+                c_bottom = chart_shp.top + chart_shp.height
+
+                # Eliminar figuras de texto superpuestas en la gráfica
+                for shp in list(slide.shapes):
+                    if shp == chart_shp:
+                        continue
+                    if shp.has_text_frame and not shp.has_table:
+                        s_cx = shp.left + shp.width / 2
+                        s_cy = shp.top + shp.height / 2
+                        if c_left <= s_cx <= c_right and c_top <= s_cy <= c_bottom:
+                            el = shp._element
+                            el.getparent().remove(el)
+
+                # Agregar un solo cuadro de texto en la esquina inferior izquierda que diga "prueba"
+                tb_left = c_left + 25000
+                tb_top = c_bottom - 360000
+                tb_w = 1100000
+                tb_h = 300000
+                txBox = slide.shapes.add_textbox(tb_left, tb_top, tb_w, tb_h)
+                txBox.line.color.rgb = RGBColor(0x6E, 0x15, 0x2E)
+                txBox.line.width = Pt(1)
+                tf = txBox.text_frame
+                tf.margin_left = Pt(4)
+                tf.margin_top = Pt(2)
+                tf.margin_right = Pt(4)
+                tf.margin_bottom = Pt(2)
+                p = tf.paragraphs[0]
+                p.text = "prueba"
+                p.font.name = "Montserrat"
+                p.font.size = Pt(9)
+                p.font.bold = True
+                p.font.color.rgb = RGBColor(0x00, 0x00, 0x00)
+        except Exception as e_clean:
+            print("Aviso al limpiar cuadros de texto sobre gráficas de refinerías:", e_clean)
+
+        # 9. Extraer CMP desde el Excel (columnas AA y AB), realizar barrido de tablas y resetear gráficas de las 7 refinerías
+        try:
+            excel_path = getattr(app, "current_file_path", None)
+            if not excel_path or not os.path.exists(excel_path):
+                cand = "assets/2026 Datos para MV Nov comparativo con rend.xlsm"
+                if os.path.exists(cand):
+                    excel_path = cand
+
+            # Barrido completo de tablas en las 7 refinerías
+            updated_tables_count, cmp_data = sweep_and_update_refinery_tables(prs, excel_path=excel_path)
+
+            # Si hay archivo de Cargas disponible, también actualizar tablas de Cargas, Productos e Insumos
+            cargas_file = getattr(app, "cargas_excel_path", None)
+            if not cargas_file or not os.path.exists(cargas_file):
+                cand_cargas = "assets/Cargas Nov 26 Auto.xlsm"
+                if os.path.exists(cand_cargas):
+                    cargas_file = cand_cargas
+            if cargas_file and os.path.exists(cargas_file):
+                try:
+                    sweep_and_update_cargas_tables(prs, cargas_file)
+                except Exception as e_cargas:
+                    print("Aviso al actualizar tablas de cargas en reseteo:", e_cargas)
+
+            # Resetear las gráficas en las diapositivas de cada refinería
+            for s_idx, slide in enumerate(prs.slides):
+                matched_ref = None
+                for s in slide.shapes:
+                    if s.has_text_frame and s.text_frame.text:
+                        txt = s.text_frame.text.lower()
+                        for ref_key in cmp_data:
+                            if ref_key in txt:
+                                matched_ref = ref_key
+                                break
+                    if matched_ref:
+                        break
+
+                if not matched_ref:
+                    for ref_key, info in cmp_data.items():
+                        if info.get("slide_idx") == s_idx:
+                            matched_ref = ref_key
+                            break
+
+                if not matched_ref:
+                    continue
+
+                ref_info = cmp_data[matched_ref]
+                val_aa = ref_info.get("val_aa")
+
+                charts = [s for s in slide.shapes if s.has_chart]
+                if charts:
+                    chart_shp = charts[0]
+                    chart_elem = chart_shp.chart._element
+                    line_chart = chart_elem.find('.//{http://schemas.openxmlformats.org/drawingml/2006/chart}lineChart')
+                    if line_chart is not None:
+                        ser_list = line_chart.findall('{http://schemas.openxmlformats.org/drawingml/2006/chart}ser')
+                        if ser_list:
+                            # Serie 0: CMP constante en todos los días
+                            ser0 = ser_list[0]
+                            val0 = ser0.find('{http://schemas.openxmlformats.org/drawingml/2006/chart}val')
+                            if val0 is not None and val_aa is not None:
+                                str_aa = str(val_aa)
+                                for pt in val0.findall('.//{http://schemas.openxmlformats.org/drawingml/2006/chart}pt'):
+                                    v = pt.find('{http://schemas.openxmlformats.org/drawingml/2006/chart}v')
+                                    if v is not None:
+                                        v.text = str_aa
+
+                            # Series 1+: valores reales a quitar
+                            for ser in ser_list[1:]:
+                                # Quitar etiquetas de datos (data labels)
+                                dlbls = ser.find('{http://schemas.openxmlformats.org/drawingml/2006/chart}dLbls')
+                                if dlbls is not None:
+                                    for dlbl in dlbls.findall('{http://schemas.openxmlformats.org/drawingml/2006/chart}dLbl'):
+                                        dlbls.remove(dlbl)
+
+                                # Quitar puntos
+                                val = ser.find('{http://schemas.openxmlformats.org/drawingml/2006/chart}val')
+                                if val is not None:
+                                    cache = val.find('.//{http://schemas.openxmlformats.org/drawingml/2006/chart}numCache')
+                                    if cache is not None:
+                                        pt_count = cache.find('{http://schemas.openxmlformats.org/drawingml/2006/chart}ptCount')
+                                        if pt_count is not None:
+                                            pt_count.set('val', '0')
+                                        for pt in cache.findall('{http://schemas.openxmlformats.org/drawingml/2006/chart}pt'):
+                                            cache.remove(pt)
+                                    lit = val.find('.//{http://schemas.openxmlformats.org/drawingml/2006/chart}numLit')
+                                    if lit is not None:
+                                        pt_count = lit.find('{http://schemas.openxmlformats.org/drawingml/2006/chart}ptCount')
+                                        if pt_count is not None:
+                                            pt_count.set('val', '0')
+                                        for pt in lit.findall('{http://schemas.openxmlformats.org/drawingml/2006/chart}pt'):
+                                            lit.remove(pt)
+        except Exception as e_cmp:
+            print("Aviso al actualizar CMP y resetear gráficas de refinerías:", e_cmp)
+
+        prs.save(save_path)
+        app.after(0, app.on_reset_slide_success, save_path)
+
+    except Exception as e:
+        err_details = traceback.format_exc()
+        app.after(0, app.on_reset_slide_error, str(e), err_details)
+
+
+def _detect_slide_refinery(slide, s_idx, keys, default_idx_map):
+    """Devuelve la clave de refinería de una diapositiva.
+
+    Primero busca un cuadro de texto cuyo contenido (normalizado) sea el nombre de la
+    refinería (el título de la diapositiva). Si no hay título, usa la posición por defecto
+    (diapositivas 4-10). No busca el nombre dentro de textos largos para no confundir
+    diapositivas de resumen (p. ej. la 2) con diapositivas de refinería.
+    """
+    def _n(t):
+        t = unicodedata.normalize("NFKD", str(t or "").strip())
+        t = "".join(c for c in t if not unicodedata.combining(c))
+        return _re.sub(r"\s+", " ", t).lower()
+
+    for sh in slide.shapes:
+        if sh.has_text_frame and sh.text_frame.text.strip():
+            t = _n(sh.text_frame.text)
+            if len(t) > 25:
+                continue
+            for k in keys:
+                if t == k:
+                    return k
+    for k, idx in default_idx_map.items():
+        if idx == s_idx and k in keys:
+            return k
+    return None
+
+
+def sweep_and_update_refinery_tables(prs, excel_path=None, cmp_data=None):
+    """Realiza el barrido de tablas de Margen Variable y Utilidad en las diapositivas de cada refinería.
+
+    Para cada refinería (Cadereyta, Madero, Minatitlán, Salamanca, Salina Cruz, Tula, Olmeca):
+    - Extrae de las columnas AA y AB del Excel los valores CMP correspondientes:
+        Cadereyta (Fila 124), Madero (Fila 129), Minatitlán (Fila 134), Salamanca (Fila 139),
+        Salina Cruz (Fila 144), Tula (Fila 149), Olmeca (Fila 154)
+    - Busca la tabla con encabezado 'Margen Variable' y 'Utilidad'
+    - Actualiza la fila CMP con los valores de AA y AB conservando formato tipográfico original.
+    Retorna (updated_count, cmp_data).
+    """
+    import openpyxl
+
+    if cmp_data is None:
+        if not excel_path or not os.path.exists(excel_path):
+            cand = "assets/2026 Datos para MV Nov comparativo con rend.xlsm"
+            if os.path.exists(cand):
+                excel_path = cand
+
+        if not excel_path or not os.path.exists(excel_path):
+            raise ValueError("No se encontró el archivo Excel de Margen Variable para extraer los valores CMP.")
+
+        wb = openpyxl.load_workbook(excel_path, data_only=True, read_only=True)
+        target_sheet = None
+        for s_name in ["EnvioCalculoPromedio", "Calculo promedio", "Calculo MV SNR"]:
+            if s_name in wb.sheetnames:
+                ws_cand = wb[s_name]
+                if ws_cand.cell(row=124, column=27).value is not None:
+                    target_sheet = ws_cand
+                    break
+        if target_sheet is None:
+            for s_name in wb.sheetnames:
+                ws_cand = wb[s_name]
+                v = ws_cand.cell(row=124, column=27).value
+                if v is not None and isinstance(v, (int, float)):
+                    target_sheet = ws_cand
+                    break
+
+        if target_sheet is None:
+            raise ValueError("No se encontró la hoja con los datos CMP (filas 124..154, cols AA/AB) en el Excel.")
+
+        refineries_cfg = [
+            {"name": "cadereyta", "row": 124, "slide_idx": 3},
+            {"name": "madero", "row": 129, "slide_idx": 4},
+            {"name": "minatitl", "row": 134, "slide_idx": 5},
+            {"name": "salamanca", "row": 139, "slide_idx": 6},
+            {"name": "salina cruz", "row": 144, "slide_idx": 7},
+            {"name": "tula", "row": 149, "slide_idx": 8},
+            {"name": "olmeca", "row": 154, "slide_idx": 9},
+        ]
+
+        cmp_data = {}
+        for cfg in refineries_cfg:
+            val_aa = target_sheet.cell(row=cfg["row"], column=27).value
+            val_ab = target_sheet.cell(row=cfg["row"], column=28).value
+            cmp_data[cfg["name"]] = {
+                "val_aa": val_aa,
+                "val_ab": val_ab,
+                "slide_idx": cfg["slide_idx"],
+            }
+
+    def _update_table_cell(cell, new_val_str):
+        if cell.text_frame.paragraphs and cell.text_frame.paragraphs[0].runs:
+            cell.text_frame.paragraphs[0].runs[0].text = new_val_str
+        else:
+            cell.text = new_val_str
+
+    updated_count = 0
+    default_map = {k: v.get("slide_idx") for k, v in cmp_data.items()}
+    for s_idx, slide in enumerate(prs.slides):
+        matched_ref = _detect_slide_refinery(slide, s_idx, list(cmp_data.keys()), default_map)
+        if not matched_ref:
+            continue
+
+        ref_info = cmp_data[matched_ref]
+        val_aa = ref_info.get("val_aa")
+        val_ab = ref_info.get("val_ab")
+
+        for shp in slide.shapes:
+            if shp.has_table:
+                tbl = shp.table
+                if len(tbl.rows) >= 2 and len(tbl.columns) >= 3:
+                    header_txt = tbl.cell(0, 1).text.lower()
+                    if "margen variable" in header_txt or "variable" in header_txt or "utilidad" in header_txt:
+                        # Fila 1 es CMP
+                        if val_aa is not None:
+                            try:
+                                txt_aa = f"{float(val_aa):.2f}"
+                            except Exception:
+                                txt_aa = str(val_aa)
+                            _update_table_cell(tbl.cell(1, 1), txt_aa)
+
+                        if val_ab is not None:
+                            try:
+                                txt_ab = f"{float(val_ab):.3f}"
+                            except Exception:
+                                txt_ab = str(val_ab)
+                            _update_table_cell(tbl.cell(1, 2), txt_ab)
+
+                        updated_count += 1
+
+    return updated_count, cmp_data
+
+
+def sweep_and_update_cargas_tables(prs, cargas_excel_path, warnings=None):
+    """Lee la hoja 'Tablas' del Excel de Cargas (ej. Cargas Nov 26 Auto.xlsm) y actualiza
+    las tablas de Cargas, Productos e Insumos en las diapositivas de cada refinería.
+
+    Excluye estrictamente la sección 'Variación de Inventarios Intermedios / Transferencias'.
+    """
+    import openpyxl
+
+    wb = openpyxl.load_workbook(cargas_excel_path, data_only=True, read_only=True)
+    if "Tablas" not in wb.sheetnames:
+        raise ValueError(f"No se encontró la hoja 'Tablas' en {os.path.basename(cargas_excel_path)}")
+
+    _rows = [list(r) for r in wb["Tablas"].iter_rows(values_only=True)]
+
+    # El Excel usa TODAY()-1 como fecha de corte (Cadereyta!D2). openpyxl solo lee los valores
+    # guardados la última vez en Excel; si el archivo no se guardó hoy, los números quedan viejos.
+    if warnings is not None and "Cadereyta" in wb.sheetnames:
+        try:
+            import datetime as _dt
+            d2 = next(wb["Cadereyta"].iter_rows(min_row=2, max_row=2, min_col=4, max_col=4, values_only=True))[0]
+            if isinstance(d2, _dt.datetime):
+                d2 = d2.date()
+            expected = _dt.date.today() - _dt.timedelta(days=1)
+            if isinstance(d2, _dt.date) and d2 < expected:
+                warnings.append(
+                    f"El Excel de Cargas fue guardado con fecha de corte {d2:%d/%m/%Y}, pero hoy el corte sería "
+                    f"{expected:%d/%m/%Y}. Los valores pueden diferir de lo que ves en pantalla: abre el Excel, "
+                    f"guárdalo (Cmd+S) y vuelve a enviar las tablas."
+                )
+        except Exception:
+            pass
+
+    class _WS:
+        max_row = len(_rows)
+
+        @staticmethod
+        def cell(row, column):
+            class _C:
+                pass
+            c = _C()
+            try:
+                c.value = _rows[row - 1][column - 1]
+            except IndexError:
+                c.value = None
+            return c
+
+    ws = _WS()
+
+    def _norm(s):
+        if s is None:
+            return ""
+        s = str(s).strip()
+        s = unicodedata.normalize("NFKD", s)
+        s = "".join(c for c in s if not unicodedata.combining(c))
+        s = _re.sub(r"\s+", " ", s)
+        return s.lower()
+
+    def _format_val(val, is_pct=False):
+        if val is None or val == "":
+            return ""
+        if isinstance(val, str):
+            val_str = val.strip()
+            if val_str in [">100", "NA"]:
+                return val_str
+            if "#" in val_str:
+                return "NA"
+            try:
+                val = float(val_str)
+            except ValueError:
+                return val_str
+        try:
+            f_val = float(val)
+            if is_pct and f_val > 100:
+                return ">100"
+            out = f"{f_val:.1f}"
+            return "0.0" if out == "-0.0" else out
+        except Exception:
+            return str(val)
+
+    def _update_cell(cell, text):
+        p = cell.text_frame.paragraphs[0] if cell.text_frame.paragraphs else cell.text_frame.add_paragraph()
+        if p.runs:
+            p.runs[0].text = str(text)
+            for r in p.runs[1:]:
+                r.text = ""
+        else:
+            cell.text = str(text)
+
+    # 1. Detectar inicio de cada refinería en la hoja Tablas
+    ref_names = ["cadereyta", "madero", "minatitlan", "salamanca", "salina cruz", "tula", "olmeca"]
+    starts = {}
+    max_scan = ws.max_row + 1
+    for r in range(1, max_scan):
+        b = _norm(ws.cell(row=r, column=2).value)
+        h = _norm(ws.cell(row=r, column=8).value)
+        for ref in ref_names:
+            if ref not in starts and (ref in b or ref in h):
+                starts[ref] = r
+
+    sorted_starts = sorted(starts.items(), key=lambda x: x[1])
+    ref_ranges = {}
+    for idx, (ref, start_r) in enumerate(sorted_starts):
+        end_r = sorted_starts[idx + 1][1] - 1 if idx + 1 < len(sorted_starts) else min(start_r + 30, ws.max_row)
+        ref_ranges[ref] = (start_r, end_r)
+
+    # 2. Extraer datos para cada refinería
+    cargas_by_ref = {}
+    for ref, (r_start, r_end) in ref_ranges.items():
+        cargas = {}
+        productos = {}
+        insumos = {}
+        for r in range(r_start, r_end + 1):
+            # Columna 2: Cargas
+            b = ws.cell(row=r, column=2).value
+            if b and "proceso" not in _norm(b) and _norm(b) != ref:
+                cargas[_norm(b)] = {
+                    "cmp": ws.cell(row=r, column=3).value,
+                    "real": ws.cell(row=r, column=4).value,
+                    "pct": ws.cell(row=r, column=5).value,
+                    "cap": ws.cell(row=r, column=6).value,
+                }
+
+            # Columna 8: Productos
+            h = ws.cell(row=r, column=8).value
+            if h and "producto" not in _norm(h) and _norm(h) != ref:
+                productos[_norm(h)] = {
+                    "cmp": ws.cell(row=r, column=9).value,
+                    "real": ws.cell(row=r, column=10).value,
+                    "pct": ws.cell(row=r, column=11).value,
+                    "rend": ws.cell(row=r, column=12).value,
+                }
+
+            # Columna 14: Insumos
+            n = ws.cell(row=r, column=14).value
+            if n and "insumos" not in _norm(n) and _norm(n) != ref:
+                insumos[_norm(n)] = {
+                    "cmp": ws.cell(row=r, column=15).value,
+                    "real": ws.cell(row=r, column=16).value,
+                    "pct": ws.cell(row=r, column=17).value,
+                }
+
+        cargas_by_ref[ref] = {
+            "cargas": cargas,
+            "productos": productos,
+            "insumos": insumos,
+        }
+
+    # 3. Mapear a diapositivas y actualizar tablas
+    updated_ref_count = 0
+    slide_ref_map = {
+        "cadereyta": 3,
+        "madero": 4,
+        "minatitlan": 5,
+        "salamanca": 6,
+        "salina cruz": 7,
+        "tula": 8,
+        "olmeca": 9,
+    }
+
+    for s_idx, slide in enumerate(prs.slides):
+        matched_ref = _detect_slide_refinery(slide, s_idx, ref_names, slide_ref_map)
+        if not matched_ref or matched_ref not in cargas_by_ref:
+            continue
+
+        ref_data = cargas_by_ref[matched_ref]
+        cargas_dict = ref_data["cargas"]
+        prod_dict = ref_data["productos"]
+        insumo_dict = ref_data["insumos"]
+
+        for shp in slide.shapes:
+            if not shp.has_table:
+                continue
+            tbl = shp.table
+            h0 = _norm(tbl.cell(0, 0).text)
+
+            # A. Tabla de Cumplimiento del programa de Cargas
+            if "cumplimiento" in h0 or "cargas" in h0:
+                for r_i in range(1, len(tbl.rows)):
+                    proc = _norm(tbl.cell(r_i, 0).text)
+                    if not proc or "proceso" in proc:
+                        continue
+                    if proc in cargas_dict:
+                        info = cargas_dict[proc]
+                        if info.get("cmp") is not None and len(tbl.columns) > 1:
+                            _update_cell(tbl.cell(r_i, 1), _format_val(info["cmp"]))
+                        if info.get("real") is not None and len(tbl.columns) > 2:
+                            _update_cell(tbl.cell(r_i, 2), _format_val(info["real"]))
+                        if info.get("pct") is not None and len(tbl.columns) > 3:
+                            _update_cell(tbl.cell(r_i, 3), _format_val(info["pct"], is_pct=True))
+                        if info.get("cap") is not None and len(tbl.columns) > 4:
+                            _update_cell(tbl.cell(r_i, 4), _format_val(info["cap"]))
+
+            # B. Tabla de Productos e Insumos
+            elif "producto" in h0:
+                skip_inv = False
+                in_insumos = False
+                for r_i in range(1, len(tbl.rows)):
+                    p_name = _norm(tbl.cell(r_i, 0).text)
+
+                    # Omitir sección de Variación de Inventarios Intermedios / Transferencias
+                    if "variacion de inventarios" in p_name:
+                        skip_inv = True
+                        continue
+
+                    if skip_inv:
+                        if p_name in insumo_dict or "insumos" in p_name or p_name in ["mtbe", "metanol", "isobutano", "duba", "muba zmm", "muba rp", "hidrogeno", "propano", "mezcla licuables", "premium uba zmvm imp."]:
+                            skip_inv = False
+                            in_insumos = True
+                        else:
+                            continue
+
+                    if not p_name or "producciones" in p_name or "insumos" in p_name:
+                        if "insumos" in p_name:
+                            in_insumos = True
+                        continue
+
+                    # Si estamos en la sección de insumos, priorizar insumos
+                    info = None
+                    if in_insumos:
+                        info = insumo_dict.get(p_name) or prod_dict.get(p_name)
+                    else:
+                        info = prod_dict.get(p_name) or insumo_dict.get(p_name)
+
+                    if info:
+                        if info.get("cmp") is not None and len(tbl.columns) > 1:
+                            _update_cell(tbl.cell(r_i, 1), _format_val(info["cmp"]))
+                        if info.get("real") is not None and len(tbl.columns) > 2:
+                            _update_cell(tbl.cell(r_i, 2), _format_val(info["real"]))
+                        if info.get("pct") is not None and len(tbl.columns) > 3:
+                            _update_cell(tbl.cell(r_i, 3), _format_val(info["pct"], is_pct=True))
+                        if info.get("rend") is not None and len(tbl.columns) > 4 and not in_insumos:
+                            _update_cell(tbl.cell(r_i, 4), _format_val(info["rend"]))
+
+        updated_ref_count += 1
+
+    return updated_ref_count
+
+
+def update_refinery_tables_mv(app, pptx_path, save_path, cargas_excel_path=None):
+    """Actualiza las tablas de las refinerías en la presentación.
+
+    1. Actualiza la tabla CMP (Margen Variable / Utilidad) con columnas AA y AB del Excel de Margen Variable.
+    2. Si se proporciona cargas_excel_path, actualiza las tablas de Cargas, Productos e Insumos
+       leyendo la hoja 'Tablas' (excluyendo Variación de Inventarios Intermedios / Transferencias).
+    """
+    try:
+        from pptx import Presentation
+
+        prs = Presentation(pptx_path)
+
+        # 1. Tablas de Cargas / Productos / Insumos (hoja 'Tablas' del Excel de Cargas)
+        stale_warnings = []
+        cargas_count = 0
+        if cargas_excel_path and os.path.exists(cargas_excel_path):
+            cargas_count = sweep_and_update_cargas_tables(prs, cargas_excel_path, warnings=stale_warnings)
+
+        # 2. Tabla CMP Margen Variable / Utilidad (opcional: si falla no bloquea el paso 1)
+        updated_cmp_count = 0
+        warning = ""
+        try:
+            excel_path = getattr(app, "current_file_path", None)
+            if not excel_path or not os.path.exists(excel_path):
+                cand = "assets/2026 Datos para MV Nov comparativo con rend.xlsm"
+                excel_path = cand if os.path.exists(cand) else None
+            if not excel_path:
+                raise ValueError("No se encontró el Excel de Margen Variable.")
+            updated_cmp_count, _ = sweep_and_update_refinery_tables(prs, excel_path=excel_path)
+        except Exception as e_cmp:
+            warning = f"No se actualizó la tabla de Margen Variable/Utilidad: {e_cmp}"
+            print("Aviso:", warning)
+        warning = "\n".join(stale_warnings + ([warning] if warning else []))
+
+        prs.save(save_path)
+        app.after(0, app.on_enviar_tablas_success, save_path, updated_cmp_count, cargas_count, warning)
+
+    except Exception as e:
+        err_details = traceback.format_exc()
+        app.after(0, app.on_enviar_tablas_error, str(e), err_details)
+
+

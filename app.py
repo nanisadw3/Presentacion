@@ -217,365 +217,11 @@ class ExcelViewerApp(ctk.CTk):
 
         # ═══ Encabezado ═══
         header = ctk.CTkFrame(self.main_frame, fg_color="transparent")
-        header.pack(fill="x", pady=(0, 12))
+        header.pack(fill="x", pady=(0, 10))
         ctk.CTkLabel(header, text="Proyección y Reportes de Refinerías",
                      font=("Roboto", 20, "bold"), text_color=TEXT).pack(side="left")
         ctk.CTkLabel(header, text="Subdirección de Producción de Petrolíferos",
                      font=("Roboto", 12), text_color=MUTED).pack(side="left", padx=(14, 0), pady=(6, 0))
-
-        # ═══ Tarjeta 1: archivo + proceso ═══
-        self.row1_frame = card(self.main_frame)
-
-        self.btn_buscar = btn(self.row1_frame, "Cargar Excel", self.load_excel, primary=True, width=150)
-        self.btn_buscar.pack(pady=12, padx=(14, 8), side="left")
-
-        self.lbl_file = ctk.CTkLabel(self.row1_frame, text="Sin archivo cargado",
-                                     font=("Roboto", 12), text_color=MUTED, anchor="w")
-        self.lbl_file.pack(pady=12, padx=10, side="left", fill="x", expand=True)
-
-        vsep(self.row1_frame)
-
-        self.lbl_proceso = ctk.CTkLabel(self.row1_frame, text="Proceso", font=("Roboto", 12, "bold"), text_color=MUTED)
-        self.lbl_proceso.pack(pady=12, padx=(4, 6), side="left")
-
-        self.cb_proceso = ctk.CTkComboBox(self.row1_frame,
-                                            values=["Titulares", "Crudo", "Gasolinas", "Diesel", "Turbosina", "Asfalto", "Combustoleo",
-                                                    "Cadereyta -Crudo", "Cadereyta -Gasolinas", "Cadereyta -Diesel", "Cadereyta -Combustoleo",
-                                                    "Madero -Crudo", "Madero -Gasolinas", "Madero -Diesel", "Madero -Turbosina", "Madero -Combustoleo",
-                                                    "Minatitlan -Crudo", "Minatitlan -Gasolinas", "Minatitlan -Diesel", "Minatitlan -Turbosina", "Minatitlan -Combustoleo",
-                                                    "Salamanca -Crudo", "Salamanca -Gasolinas", "Salamanca -Diesel", "Salamanca -Turbosina", "Salamanca -Combustoleo",
-                                                    "Salina Cruz -Crudo", "Salina Cruz -Gasolinas", "Salina Cruz -Diesel", "Salina Cruz -Turbosina", "Salina Cruz -Combustoleo",
-                                                    "Tula -Crudo", "Tula -Gasolinas", "Tula -Diesel", "Tula -Turbosina", "Tula -Combustoleo",
-                                                    "Olmeca -Crudo", "Olmeca -Gasolinas", "Olmeca -Diesel"],
-                                            font=("Roboto", 12),
-                                            command=self.on_proceso_changed,
-                                            state="readonly",
-                                            width=220, height=34,
-                                            corner_radius=8,
-                                            fg_color=NEUTRAL, border_color=BORDER,
-                                            button_color=NEUTRAL_H, button_hover_color=ACCENT)
-        self.cb_proceso.pack(pady=12, padx=(0, 14), side="left")
-        self.cb_proceso.set("Crudo")
-
-        # ═══ Tarjeta 2: acciones (Exportar | Datos) ═══
-        self.row2_frame = card(self.main_frame, pady=(0, 10))
-
-        ctk.CTkLabel(self.row2_frame, text="EXPORTAR", font=("Roboto", 10, "bold"),
-                     text_color=MUTED).pack(pady=12, padx=(16, 8), side="left")
-        self.btn_powerpoint = btn(self.row2_frame, "PowerPoint", self.send_to_powerpoint, primary=True, width=140)
-        self.btn_powerpoint.pack(pady=12, padx=4, side="left")
-        self.btn_excel = btn(self.row2_frame, "Excel", self.export_to_excel, width=110)
-        self.btn_excel.pack(pady=12, padx=4, side="left")
-
-        vsep(self.row2_frame)
-
-        ctk.CTkLabel(self.row2_frame, text="DATOS", font=("Roboto", 10, "bold"),
-                     text_color=MUTED).pack(pady=12, padx=(4, 8), side="left")
-        self.btn_guardar = btn(self.row2_frame, "Guardar en BD", self.save_to_database, width=140)
-        self.btn_guardar.pack(pady=12, padx=4, side="left")
-        self.btn_add_year = btn(self.row2_frame, "Agregar año extra", self.open_add_year_dialog, width=150)
-        self.btn_add_year.pack(pady=12, padx=4, side="left")
-        self.btn_config_coords = btn(self.row2_frame, "Coordenadas Excel", self.open_config_coords_dialog, width=160)
-        self.btn_config_coords.pack(pady=12, padx=(4, 14), side="left")
-
-        # ═══ Plantilla en uso ═══
-        self.row3_frame = ctk.CTkFrame(self.main_frame, fg_color="transparent")
-        self.row3_frame.pack(fill="x", pady=(0, 10))
-
-        ctk.CTkLabel(self.row3_frame, text="PLANTILLA", font=("Roboto", 10, "bold"),
-                     text_color=MUTED).pack(padx=(4, 10), side="left")
-
-        self.lbl_template = ctk.CTkLabel(self.row3_frame, text="", font=("Roboto", 12), anchor="w", justify="left")
-        self.lbl_template.pack(padx=0, side="left", fill="x", expand=True)
-
-        self.btn_reset_template = ctk.CTkButton(self.row3_frame, text="Usar por defecto",
-                                                font=("Roboto", 11, "bold"), command=self.reset_powerpoint_template,
-                                                height=28, width=130, corner_radius=8,
-                                                fg_color="transparent", border_width=1, border_color=BORDER,
-                                                hover_color=NEUTRAL_H, text_color=TEXT)
-        self.btn_reset_template.pack(padx=(8, 0), side="right")
-        self.btn_select_template = ctk.CTkButton(self.row3_frame, text="Cambiar plantilla…",
-                                                font=("Roboto", 11, "bold"), command=self.select_powerpoint_template,
-                                                height=28, width=140, corner_radius=8,
-                                                fg_color="transparent", border_width=1, border_color=BORDER,
-                                                hover_color=NEUTRAL_H, text_color=TEXT)
-        self.btn_select_template.pack(padx=(8, 0), side="right")
-
-        # Scrollable Frame para contener la tabla
-        self.scroll_frame = ctk.CTkScrollableFrame(self.main_frame, corner_radius=12, fg_color=CARD, border_width=1, border_color=BORDER)
-        self.scroll_frame.pack(fill="both", expand=True)
-
-        # Función para enlazar y propagar el scroll del mousewheel/trackpad en laptops y ratones
-        import platform
-        _is_macos = platform.system() == "Darwin"
-        
-        def _on_mousewheel(event):
-            try:
-                canvas = self.scroll_frame._parent_canvas
-                if _is_macos:
-                    # macOS: delta ya viene en la dirección correcta
-                    # En algunos mouses/trackpads macOS, delta puede ser flotante o pequeño, por lo que usamos su signo
-                    if event.delta > 0:
-                        canvas.yview_scroll(-2, "units")
-                    elif event.delta < 0:
-                        canvas.yview_scroll(2, "units")
-                else:
-                    # Windows: delta suele ser +/- 120 o valores pequeños en trackpads de laptops
-                    if event.delta > 0:
-                        canvas.yview_scroll(-2, "units")
-                    elif event.delta < 0:
-                        canvas.yview_scroll(2, "units")
-            except Exception:
-                pass
-        
-        def _on_linux_scroll(event):
-            try:
-                canvas = self.scroll_frame._parent_canvas
-                if event.num == 4:
-                    canvas.yview_scroll(-2, "units")
-                elif event.num == 5:
-                    canvas.yview_scroll(2, "units")
-            except Exception:
-                pass
-
-        def _on_touchpad_scroll(event):
-            # Tk 9 envía el trackpad como <TouchpadScroll> (no como <MouseWheel>);
-            # el delta viene empaquetado y PreciseScrollDeltas lo convierte a píxeles.
-            try:
-                canvas = self.scroll_frame._parent_canvas
-                _dx, dy = self.tk.call("tk::PreciseScrollDeltas", event.delta)
-                dy = float(dy)
-                bbox = canvas.bbox("all")
-                if dy and bbox and bbox[3] > 0:
-                    # El canvas solo admite 'units'/'pages'; se mueve por fracción para un scroll suave
-                    nuevo = canvas.yview()[0] - dy / bbox[3]
-                    canvas.yview_moveto(max(0.0, nuevo))
-            except Exception:
-                pass
-
-        # Vincular eventos de scroll globales para que funcionen sobre cualquier widget interno
-        self.bind_all("<MouseWheel>", _on_mousewheel)
-        try:
-            self.bind_all("<TouchpadScroll>", _on_touchpad_scroll)
-        except Exception:
-            pass  # Tk 8.x no tiene este evento; ahí el trackpad llega como <MouseWheel>
-        # Linux usa Button-4/5 para scroll
-        self.bind_all("<Button-4>", _on_linux_scroll)
-        self.bind_all("<Button-5>", _on_linux_scroll)
-
-        self.table = None
-        self.df_data = None # Para la primera tabla
-        self.df_snr = None  # Para la segunda tabla (AE-AF)
-        self.df_prod = None # Para la tercera tabla (AE-AF, 21-40)
-        self.df_sim = None  # Para la cuarta tabla (Simulación 12 meses)
-        
-        # Datos de Gasolinas
-        self.df_data_gasolinas = None
-        self.df_snr_gasolinas = None
-        self.df_prod_gasolinas = None
-        self.df_sim_gasolinas = None
-
-        # Datos de Diesel
-        self.df_data_diesel = None
-        self.df_snr_diesel = None
-        self.df_prod_diesel = None
-        self.df_sim_diesel = None
- 
-        # Datos de Cadereyta -Gasolinas
-        self.df_data_cad_gas = None
-        self.df_snr_cad_gas = None
-        self.df_prod_cad_gas = None
-        self.df_sim_cad_gas = None
-
-        # Datos de Cadereyta -Diesel
-        self.df_data_cad_die = None
-        self.df_snr_cad_die = None
-        self.df_prod_cad_die = None
-        self.df_sim_cad_die = None
-        self.df_data_cad_comb = None
-        self.df_snr_cad_comb = None
-        self.df_prod_cad_comb = None
-        self.df_sim_cad_comb = None
-        # Datos de Cadereyta -Crudo
-        self.df_data_cad = None
-        self.df_snr_cad = None
-        self.df_prod_cad = None
-        self.df_sim_cad = None
-
-        # Datos de Madero -Crudo
-        self.df_data_mad_crud = None
-        self.df_snr_mad_crud = None
-        self.df_prod_mad_crud = None
-        self.df_sim_mad_crud = None
-
-        # Datos de Madero -Gasolinas
-        self.df_data_mad_gas = None
-        self.df_snr_mad_gas = None
-        self.df_prod_mad_gas = None
-        self.df_sim_mad_gas = None
-
-        # Datos de Madero -Diesel
-        self.df_data_mad_die = None
-        self.df_snr_mad_die = None
-        self.df_prod_mad_die = None
-        self.df_sim_mad_die = None
-
-        # Datos de Madero -Turbosina
-        self.df_data_mad_turb = None
-        self.df_snr_mad_turb = None
-        self.df_prod_mad_turb = None
-        self.df_sim_mad_turb = None
-
-        # Datos de Madero -Combustoleo
-        self.df_data_mad_comb = None
-        self.df_snr_mad_comb = None
-        self.df_prod_mad_comb = None
-        self.df_sim_mad_comb = None
-
-        # Datos de Minatitlan -Crudo
-        self.df_data_mina_crud = None
-        self.df_snr_mina_crud = None
-        self.df_prod_mina_crud = None
-        self.df_sim_mina_crud = None
-
-        # Datos de Minatitlan -Gasolinas
-        self.df_data_mina_gas = None
-        self.df_snr_mina_gas = None
-        self.df_prod_mina_gas = None
-        self.df_sim_mina_gas = None
-
-        # Datos de Minatitlan -Diesel
-        self.df_data_mina_die = None
-        self.df_snr_mina_die = None
-        self.df_prod_mina_die = None
-        self.df_sim_mina_die = None
-
-        # Datos de Minatitlan -Combustoleo
-        self.df_data_mina_comb = None
-        self.df_snr_mina_comb = None
-        self.df_prod_mina_comb = None
-        self.df_sim_mina_comb = None
-
-        # Datos de Minatitlan -Turbosina
-        self.df_data_mina_turb = None
-        self.df_snr_mina_turb = None
-        self.df_prod_mina_turb = None
-        self.df_sim_mina_turb = None
-
-        # Datos de Salamanca -Crudo
-        self.df_data_sala_crud = None
-        self.df_snr_sala_crud = None
-        self.df_prod_sala_crud = None
-        self.df_sim_sala_crud = None
-
-        # Datos de Salamanca -Gasolinas
-        self.df_data_sala_gas = None
-        self.df_snr_sala_gas = None
-        self.df_prod_sala_gas = None
-        self.df_sim_sala_gas = None
-
-        # Datos de Salamanca -Diesel
-        self.df_data_sala_die = None
-        self.df_snr_sala_die = None
-        self.df_prod_sala_die = None
-        self.df_sim_sala_die = None
-
-        # Datos de Salamanca -Turbosina
-        self.df_data_sala_turb = None
-        self.df_snr_sala_turb = None
-        self.df_prod_sala_turb = None
-        self.df_sim_sala_turb = None
-
-        # Datos de Salamanca -Combustoleo
-        self.df_data_sala_comb = None
-        self.df_snr_sala_comb = None
-        self.df_prod_sala_comb = None
-        self.df_sim_sala_comb = None
-
-        # Datos de Salina Cruz -Crudo
-        self.df_data_sal_crud = None
-        self.df_snr_sal_crud = None
-        self.df_prod_sal_crud = None
-        self.df_sim_sal_crud = None
-
-        # Datos de Salina Cruz -Gasolinas
-        self.df_data_sal_gas = None
-        self.df_snr_sal_gas = None
-        self.df_prod_sal_gas = None
-        self.df_sim_sal_gas = None
-
-        # Datos de Salina Cruz -Diesel
-        self.df_data_sal_die = None
-        self.df_snr_sal_die = None
-        self.df_prod_sal_die = None
-        self.df_sim_sal_die = None
-
-        # Datos de Salina Cruz -Turbosina
-        self.df_data_sal_turb = None
-        self.df_snr_sal_turb = None
-        self.df_prod_sal_turb = None
-        self.df_sim_sal_turb = None
-
-        # Datos de Salina Cruz -Combustoleo
-        self.df_data_sal_comb = None
-        self.df_snr_sal_comb = None
-        self.df_prod_sal_comb = None
-        self.df_sim_sal_comb = None
-
-        # Datos de Tula -Crudo
-        self.df_data_tula_crud = None
-        self.df_snr_tula_crud = None
-        self.df_prod_tula_crud = None
-        self.df_sim_tula_crud = None
-
-        # Datos de Tula -Gasolinas
-        self.df_data_tula_gas = None
-        self.df_snr_tula_gas = None
-        self.df_prod_tula_gas = None
-        self.df_sim_tula_gas = None
-
-        # Datos de Tula -Diesel
-        self.df_data_tula_die = None
-        self.df_snr_tula_die = None
-        self.df_prod_tula_die = None
-        self.df_sim_tula_die = None
-
-        # Datos de Tula -Turbosina
-        self.df_data_tula_turb = None
-        self.df_snr_tula_turb = None
-        self.df_prod_tula_turb = None
-        self.df_sim_tula_turb = None
-
-        # Datos de Tula -Combustoleo
-        self.df_data_tula_comb = None
-        self.df_snr_tula_comb = None
-        self.df_prod_tula_comb = None
-        self.df_sim_tula_comb = None
-
-        # Datos de Olmeca -Crudo
-        self.df_data_olme_crud = None
-        self.df_snr_olme_crud = None
-        self.df_prod_olme_crud = None
-        self.df_sim_olme_crud = None
-
-        # Datos de Olmeca -Gasolinas
-        self.df_data_olme_gas = None
-        self.df_snr_olme_gas = None
-        self.df_prod_olme_gas = None
-        self.df_sim_olme_gas = None
-
-        # Datos de Olmeca -Diesel
-        self.df_data_olme_die = None
-        self.df_snr_olme_die = None
-        self.df_prod_olme_die = None
-        self.df_sim_olme_die = None
- 
-        # Datos de Turbosina
-        self.df_data_turbosina = None
-
-        self.df_snr_turbosina = None
-        self.df_prod_turbosina = None
-        self.df_sim_turbosina = None
 
         # Definir directorios por defecto con sus respectivas rutas preferidas y fallback
         path_excel_preferida = "/mnt/d/Datos_Perfil/400131/OneDrive - PETROLEOS MEXICANOS/Disco D/Margen 2026"
@@ -604,21 +250,311 @@ class ExcelViewerApp(ctk.CTk):
 
         self.default_excel_dir = check_and_get_dir(path_excel_preferida)
         self.default_pptx_dir = check_and_get_dir(path_pptx_preferida)
-        self.template_path = None
-        self.update_template_label()
+
+        # ═══ Pestañas de Presentaciones ═══
+        self.TAB_PROCESO = "Proceso y Producciones"
+        self.TAB_MARGEN = "Margen Variable"
+        self.tab_names = [self.TAB_PROCESO, self.TAB_MARGEN]
+
+        self._df_attr_names = [
+            "df_data", "df_snr", "df_prod", "df_sim",
+            "df_data_gasolinas", "df_snr_gasolinas", "df_prod_gasolinas", "df_sim_gasolinas",
+            "df_data_diesel", "df_snr_diesel", "df_prod_diesel", "df_sim_diesel",
+            "df_data_turbosina", "df_snr_turbosina", "df_prod_turbosina", "df_sim_turbosina",
+            "df_data_asfalto", "df_snr_asfalto", "df_prod_asfalto", "df_sim_asfalto",
+            "df_data_combustoleo", "df_snr_combustoleo", "df_prod_combustoleo", "df_sim_combustoleo",
+            "df_data_cad_gas", "df_snr_cad_gas", "df_prod_cad_gas", "df_sim_cad_gas",
+            "df_data_cad_die", "df_snr_cad_die", "df_prod_cad_die", "df_sim_cad_die",
+            "df_data_cad_comb", "df_snr_cad_comb", "df_prod_cad_comb", "df_sim_cad_comb",
+            "df_data_cad", "df_snr_cad", "df_prod_cad", "df_sim_cad",
+            "df_data_mad_crud", "df_snr_mad_crud", "df_prod_mad_crud", "df_sim_mad_crud",
+            "df_data_mad_gas", "df_snr_mad_gas", "df_prod_mad_gas", "df_sim_mad_gas",
+            "df_data_mad_die", "df_snr_mad_die", "df_prod_mad_die", "df_sim_mad_die",
+            "df_data_mad_turb", "df_snr_mad_turb", "df_prod_mad_turb", "df_sim_mad_turb",
+            "df_data_mad_comb", "df_snr_mad_comb", "df_prod_mad_comb", "df_sim_mad_comb",
+            "df_data_mina_crud", "df_snr_mina_crud", "df_prod_mina_crud", "df_sim_mina_crud",
+            "df_data_mina_gas", "df_snr_mina_gas", "df_prod_mina_gas", "df_sim_mina_gas",
+            "df_data_mina_die", "df_snr_mina_die", "df_prod_mina_die", "df_sim_mina_die",
+            "df_data_mina_comb", "df_snr_mina_comb", "df_prod_mina_comb", "df_sim_mina_comb",
+            "df_data_mina_turb", "df_snr_mina_turb", "df_prod_mina_turb", "df_sim_mina_turb",
+            "df_data_sala_crud", "df_snr_sala_crud", "df_prod_sala_crud", "df_sim_sala_crud",
+            "df_data_sala_gas", "df_snr_sala_gas", "df_prod_sala_gas", "df_sim_sala_gas",
+            "df_data_sala_die", "df_snr_sala_die", "df_prod_sala_die", "df_sim_sala_die",
+            "df_data_sala_turb", "df_snr_sala_turb", "df_prod_sala_turb", "df_sim_sala_turb",
+            "df_data_sala_comb", "df_snr_sala_comb", "df_prod_sala_comb", "df_sim_sala_comb",
+            "df_data_sal_crud", "df_snr_sal_crud", "df_prod_sal_crud", "df_sim_sal_crud",
+            "df_data_sal_gas", "df_snr_sal_gas", "df_prod_sal_gas", "df_sim_sal_gas",
+            "df_data_sal_die", "df_snr_sal_die", "df_prod_sal_die", "df_sim_sal_die",
+            "df_data_sal_turb", "df_snr_sal_turb", "df_prod_sal_turb", "df_sim_sal_turb",
+            "df_data_sal_comb", "df_snr_sal_comb", "df_prod_sal_comb", "df_sim_sal_comb",
+            "df_data_tula_crud", "df_snr_tula_crud", "df_prod_tula_crud", "df_sim_tula_crud",
+            "df_data_tula_gas", "df_snr_tula_gas", "df_prod_tula_gas", "df_sim_tula_gas",
+            "df_data_tula_die", "df_snr_tula_die", "df_prod_tula_die", "df_sim_tula_die",
+            "df_data_tula_turb", "df_snr_tula_turb", "df_prod_tula_turb", "df_sim_tula_turb",
+            "df_data_tula_comb", "df_snr_tula_comb", "df_prod_tula_comb", "df_sim_tula_comb",
+            "df_data_olme_crud", "df_snr_olme_crud", "df_prod_olme_crud", "df_sim_olme_crud",
+            "df_data_olme_gas", "df_snr_olme_gas", "df_prod_olme_gas", "df_sim_olme_gas",
+            "df_data_olme_die", "df_snr_olme_die", "df_prod_olme_die", "df_sim_olme_die",
+            "df_envio",
+        ]
+        self._state_attr_names = [
+            "template_path", "current_file_path", "cambios_sin_guardar", "sheet_year",
+            "table", "table2", "table3", "table4",
+            "lbl_table1", "lbl_table2", "lbl_table3", "lbl_table4",
+        ] + self._df_attr_names
+        self._widget_attr_names = [
+            "row1_frame", "btn_buscar", "lbl_file", "lbl_proceso", "cb_proceso", "progress_bar",
+            "row2_frame", "btn_powerpoint", "btn_excel", "btn_reset_slide", "btn_enviar_tablas", "btn_guardar", "btn_add_year", "btn_config_coords",
+            "row3_frame", "lbl_template", "btn_reset_template", "btn_select_template", "scroll_frame",
+        ]
+
+        # Barra de pestañas
+        self.tabs_bar = ctk.CTkFrame(self.main_frame, fg_color=CARD, corner_radius=10, border_width=1, border_color=BORDER)
+        self.tabs_bar.pack(fill="x", pady=(0, 10))
+        self.tab_buttons = {}
+        for t_name in self.tab_names:
+            b = ctk.CTkButton(
+                self.tabs_bar,
+                text=t_name,
+                command=lambda n=t_name: self.switch_presentation_tab(n),
+                font=("Roboto", 13, "bold"),
+                height=36,
+                corner_radius=8,
+                fg_color=ACCENT if t_name == self.TAB_PROCESO else "transparent",
+                hover_color=ACCENT_H if t_name == self.TAB_PROCESO else NEUTRAL_H,
+                text_color="#ffffff" if t_name == self.TAB_PROCESO else MUTED,
+            )
+            b.pack(side="left", fill="x", expand=True, padx=4, pady=4)
+            self.tab_buttons[t_name] = b
+
+        proceso_values = [
+            "Titulares", "Crudo", "Gasolinas", "Diesel", "Turbosina", "Asfalto", "Combustoleo",
+            "Cadereyta -Crudo", "Cadereyta -Gasolinas", "Cadereyta -Diesel", "Cadereyta -Combustoleo",
+            "Madero -Crudo", "Madero -Gasolinas", "Madero -Diesel", "Madero -Turbosina", "Madero -Combustoleo",
+            "Minatitlan -Crudo", "Minatitlan -Gasolinas", "Minatitlan -Diesel", "Minatitlan -Turbosina", "Minatitlan -Combustoleo",
+            "Salamanca -Crudo", "Salamanca -Gasolinas", "Salamanca -Diesel", "Salamanca -Turbosina", "Salamanca -Combustoleo",
+            "Salina Cruz -Crudo", "Salina Cruz -Gasolinas", "Salina Cruz -Diesel", "Salina Cruz -Turbosina", "Salina Cruz -Combustoleo",
+            "Tula -Crudo", "Tula -Gasolinas", "Tula -Diesel", "Tula -Turbosina", "Tula -Combustoleo",
+            "Olmeca -Crudo", "Olmeca -Gasolinas", "Olmeca -Diesel"
+        ]
+
+        def build_tab_ui(parent_container, t_name):
+            w = {}
+            # ═══ Tarjeta 1: archivo + proceso ═══
+            w["row1_frame"] = card(parent_container)
+
+            w["btn_buscar"] = btn(w["row1_frame"], "Cargar Excel", self.load_excel, primary=True, width=150)
+            w["btn_buscar"].pack(pady=12, padx=(14, 8), side="left")
+
+            w["lbl_file"] = ctk.CTkLabel(w["row1_frame"], text="Sin archivo cargado",
+                                         font=("Roboto", 12), text_color=MUTED, anchor="w")
+            w["lbl_file"].pack(pady=12, padx=10, side="left", fill="x", expand=True)
+
+            vsep(w["row1_frame"])
+
+            w["lbl_proceso"] = ctk.CTkLabel(w["row1_frame"], text="Proceso", font=("Roboto", 12, "bold"), text_color=MUTED)
+            w["lbl_proceso"].pack(pady=12, padx=(4, 6), side="left")
+
+            w["cb_proceso"] = ctk.CTkComboBox(w["row1_frame"],
+                                              values=proceso_values,
+                                              font=("Roboto", 12),
+                                              command=self.on_proceso_changed,
+                                              state="readonly",
+                                              width=220, height=34,
+                                              corner_radius=8,
+                                              fg_color=NEUTRAL, border_color=BORDER,
+                                              button_color=NEUTRAL_H, button_hover_color=ACCENT)
+            w["cb_proceso"].pack(pady=12, padx=(0, 14), side="left")
+            w["cb_proceso"].set("Crudo")
+
+            w["progress_bar"] = ctk.CTkProgressBar(w["row1_frame"], width=200)
+            w["progress_bar"].set(0.0)
+
+            # ═══ Tarjeta 2: acciones (Exportar | Datos) ═══
+            w["row2_frame"] = card(parent_container, pady=(0, 10))
+
+            ctk.CTkLabel(w["row2_frame"], text="EXPORTAR", font=("Roboto", 10, "bold"),
+                         text_color=MUTED).pack(pady=12, padx=(16, 8), side="left")
+            w["btn_powerpoint"] = btn(w["row2_frame"], "PowerPoint", self.send_to_powerpoint, primary=True, width=140)
+            w["btn_powerpoint"].pack(pady=12, padx=4, side="left")
+
+            if t_name == self.TAB_MARGEN:
+                w["btn_reset_slide"] = btn(w["row2_frame"], "Resetear diapositiva", self.resetear_diapositiva_mv, primary=True, width=170)
+                w["btn_reset_slide"].pack(pady=12, padx=4, side="left")
+                w["btn_enviar_tablas"] = btn(w["row2_frame"], "Enviar tablas", self.enviar_tablas_mv, primary=True, width=140)
+                w["btn_enviar_tablas"].pack(pady=12, padx=4, side="left")
+            else:
+                w["btn_reset_slide"] = None
+                w["btn_enviar_tablas"] = None
+
+            w["btn_excel"] = btn(w["row2_frame"], "Excel", self.export_to_excel, width=110)
+            w["btn_excel"].pack(pady=12, padx=4, side="left")
+
+            vsep(w["row2_frame"])
+
+            ctk.CTkLabel(w["row2_frame"], text="DATOS", font=("Roboto", 10, "bold"),
+                         text_color=MUTED).pack(pady=12, padx=(4, 8), side="left")
+            w["btn_guardar"] = btn(w["row2_frame"], "Guardar en BD", self.save_to_database, width=140)
+            w["btn_guardar"].pack(pady=12, padx=4, side="left")
+            w["btn_add_year"] = btn(w["row2_frame"], "Agregar año extra", self.open_add_year_dialog, width=150)
+            w["btn_add_year"].pack(pady=12, padx=4, side="left")
+            w["btn_config_coords"] = btn(w["row2_frame"], "Coordenadas Excel", self.open_config_coords_dialog, width=160)
+            w["btn_config_coords"].pack(pady=12, padx=(4, 14), side="left")
+
+            # ═══ Plantilla en uso ═══
+            w["row3_frame"] = ctk.CTkFrame(parent_container, fg_color="transparent")
+            w["row3_frame"].pack(fill="x", pady=(0, 10))
+
+            ctk.CTkLabel(w["row3_frame"], text="PLANTILLA", font=("Roboto", 10, "bold"),
+                         text_color=MUTED).pack(padx=(4, 10), side="left")
+
+            w["lbl_template"] = ctk.CTkLabel(w["row3_frame"], text="", font=("Roboto", 12), anchor="w", justify="left")
+            w["lbl_template"].pack(padx=0, side="left", fill="x", expand=True)
+
+            w["btn_reset_template"] = ctk.CTkButton(w["row3_frame"], text="Usar por defecto",
+                                                    font=("Roboto", 11, "bold"), command=self.reset_powerpoint_template,
+                                                    height=28, width=130, corner_radius=8,
+                                                    fg_color="transparent", border_width=1, border_color=BORDER,
+                                                    hover_color=NEUTRAL_H, text_color=TEXT)
+            w["btn_reset_template"].pack(padx=(8, 0), side="right")
+            w["btn_select_template"] = ctk.CTkButton(w["row3_frame"], text="Cambiar plantilla…",
+                                                     font=("Roboto", 11, "bold"), command=self.select_powerpoint_template,
+                                                     height=28, width=140, corner_radius=8,
+                                                     fg_color="transparent", border_width=1, border_color=BORDER,
+                                                     hover_color=NEUTRAL_H, text_color=TEXT)
+            w["btn_select_template"].pack(padx=(8, 0), side="right")
+
+            # Scrollable Frame para contener la tabla
+            w["scroll_frame"] = ctk.CTkScrollableFrame(parent_container, corner_radius=12, fg_color=CARD, border_width=1, border_color=BORDER)
+            w["scroll_frame"].pack(fill="both", expand=True)
+            return w
+
+        self.tab_containers = {}
+        self.tab_states = {}
+        for t_name in self.tab_names:
+            container = ctk.CTkFrame(self.main_frame, fg_color="transparent")
+            widgets = build_tab_ui(container, t_name)
+            state = {k: None for k in self._state_attr_names}
+            state["cambios_sin_guardar"] = False
+            state.update(widgets)
+            self.tab_containers[t_name] = container
+            self.tab_states[t_name] = state
+
+        self.active_tab = None
+
+        # Inicializar las etiquetas de plantilla en todas las pestañas y activar la primera
+        for t_name in self.tab_names:
+            self._apply_tab_to_self(t_name)
+            self.update_template_label()
+            self._save_self_to_tab(t_name)
+
+        self.switch_presentation_tab(self.TAB_PROCESO)
+
+        # Función para enlazar y propagar el scroll del mousewheel/trackpad en laptops y ratones
+        import platform
+        _is_macos = platform.system() == "Darwin"
+        
+        def _on_mousewheel(event):
+            try:
+                canvas = self.scroll_frame._parent_canvas
+                if _is_macos:
+                    if event.delta > 0:
+                        canvas.yview_scroll(-2, "units")
+                    elif event.delta < 0:
+                        canvas.yview_scroll(2, "units")
+                else:
+                    if event.delta > 0:
+                        canvas.yview_scroll(-2, "units")
+                    elif event.delta < 0:
+                        canvas.yview_scroll(2, "units")
+            except Exception:
+                pass
+        
+        def _on_linux_scroll(event):
+            try:
+                canvas = self.scroll_frame._parent_canvas
+                if event.num == 4:
+                    canvas.yview_scroll(-2, "units")
+                elif event.num == 5:
+                    canvas.yview_scroll(2, "units")
+            except Exception:
+                pass
+
+        def _on_touchpad_scroll(event):
+            try:
+                canvas = self.scroll_frame._parent_canvas
+                _dx, dy = self.tk.call("tk::PreciseScrollDeltas", event.delta)
+                dy = float(dy)
+                bbox = canvas.bbox("all")
+                if dy and bbox and bbox[3] > 0:
+                    nuevo = canvas.yview()[0] - dy / bbox[3]
+                    canvas.yview_moveto(max(0.0, nuevo))
+            except Exception:
+                pass
+
+        # Vincular eventos de scroll globales para que funcionen sobre cualquier widget interno
+        self.bind_all("<MouseWheel>", _on_mousewheel)
+        try:
+            self.bind_all("<TouchpadScroll>", _on_touchpad_scroll)
+        except Exception:
+            pass  # Tk 8.x no tiene este evento; ahí el trackpad llega como <MouseWheel>
+        # Linux usa Button-4/5 para scroll
+        self.bind_all("<Button-4>", _on_linux_scroll)
+        self.bind_all("<Button-5>", _on_linux_scroll)
 
         # Variables de caché para optimización de recargas
         self.cached_file_path = None
         self.cached_df_sheet = None
         self.cached_sheet_name = None
 
-        # Barra de progreso (inicialmente oculta)
-        self.progress_bar = ctk.CTkProgressBar(self.row1_frame, width=200)
-        self.progress_bar.set(0.0)
-
         # Inicializar overlay de carga
         self.loading_overlay = LoadingOverlay(self)
-        self.cambios_sin_guardar = False
+
+    def _save_self_to_tab(self, tab_name):
+        if not tab_name or tab_name not in self.tab_states:
+            return
+        st = self.tab_states[tab_name]
+        for k in self._state_attr_names:
+            st[k] = getattr(self, k, None)
+
+    def _apply_tab_to_self(self, tab_name):
+        st = self.tab_states[tab_name]
+        for k in self._widget_attr_names:
+            setattr(self, k, st[k])
+        for k in self._state_attr_names:
+            setattr(self, k, st.get(k, None))
+
+    def switch_presentation_tab(self, tab_name):
+        if self.active_tab == tab_name:
+            return
+        if self.active_tab is not None:
+            self._save_self_to_tab(self.active_tab)
+            self.tab_containers[self.active_tab].pack_forget()
+
+        # Si la pestaña destino no tiene datos cargados pero la actual sí, sincronizarlos
+        if self.active_tab is not None:
+            curr_state = self.tab_states[self.active_tab]
+            target_state = self.tab_states[tab_name]
+            if curr_state.get("df_data") is not None and target_state.get("df_data") is None:
+                for k in self._df_attr_names + ["current_file_path", "sheet_year"]:
+                    target_state[k] = curr_state.get(k)
+
+        self.active_tab = tab_name
+        self._apply_tab_to_self(tab_name)
+        self.tab_containers[tab_name].pack(fill="both", expand=True)
+
+        if self.current_file_path and hasattr(self, 'lbl_file') and self.lbl_file:
+            self.lbl_file.configure(text=f"Archivo: {os.path.basename(self.current_file_path)}")
+
+        # Actualizar estilo visual de los botones de pestaña
+        for t_name, btn_w in self.tab_buttons.items():
+            is_sel = (t_name == tab_name)
+            btn_w.configure(
+                fg_color="#3b82f6" if is_sel else "transparent",
+                hover_color="#2563eb" if is_sel else "#363c4a",
+                text_color="#ffffff" if is_sel else "#8b93a5",
+            )
+        self.update_template_label()
 
     def report_callback_exception(self, exc, val, tb):
         import traceback
@@ -633,15 +569,27 @@ class ExcelViewerApp(ctk.CTk):
             self.btn_buscar.configure(state="disabled")
             self.btn_guardar.configure(state="disabled")
             self.btn_powerpoint.configure(state="disabled")
-            if hasattr(self, 'btn_excel'):
+            if hasattr(self, 'btn_excel') and self.btn_excel:
                 self.btn_excel.configure(state="disabled")
+            if hasattr(self, 'btn_reset_slide') and self.btn_reset_slide:
+                self.btn_reset_slide.configure(state="disabled")
+            if hasattr(self, 'btn_enviar_tablas') and self.btn_enviar_tablas:
+                self.btn_enviar_tablas.configure(state="disabled")
+            for b in getattr(self, 'tab_buttons', {}).values():
+                b.configure(state="disabled")
             self.loading_overlay.start(loading_text)
         else:
             self.btn_buscar.configure(state="normal")
             self.btn_guardar.configure(state="normal")
             self.btn_powerpoint.configure(state="normal")
-            if hasattr(self, 'btn_excel'):
+            if hasattr(self, 'btn_excel') and self.btn_excel:
                 self.btn_excel.configure(state="normal")
+            if hasattr(self, 'btn_reset_slide') and self.btn_reset_slide:
+                self.btn_reset_slide.configure(state="normal")
+            if hasattr(self, 'btn_enviar_tablas') and self.btn_enviar_tablas:
+                self.btn_enviar_tablas.configure(state="normal")
+            for b in getattr(self, 'tab_buttons', {}).values():
+                b.configure(state="normal")
             self.loading_overlay.stop()
 
     def update_progress(self, val, text_msg=None):
@@ -2060,6 +2008,45 @@ class ExcelViewerApp(ctk.CTk):
         print(f"Error exportando a Excel:\n{error_details}")
         messagebox.showerror("Error", f"Ocurrió un error al exportar el reporte a Excel:\n{err_msg}")
 
+    def get_default_template_path(self, tab_name=None):
+        """Devuelve la ruta de la plantilla por defecto según la pestaña activa."""
+        import unicodedata
+        if tab_name is None:
+            tab_name = getattr(self, "active_tab", self.TAB_PROCESO)
+        app_dir = os.path.dirname(os.path.abspath(__file__))
+
+        if tab_name == self.TAB_MARGEN:
+            target_filename = "Presentación Seguimiento 01-31 Octubre 2026 FT.pptx"
+            target_nfd = unicodedata.normalize("NFD", target_filename)
+            target_nfc = unicodedata.normalize("NFC", target_filename)
+            downloads_dir = os.path.join(os.path.expanduser("~"), "Downloads")
+            search_dirs = [
+                downloads_dir,
+                getattr(self, "default_pptx_dir", downloads_dir),
+                os.path.join(app_dir, "assets"),
+            ]
+            for d in search_dirs:
+                if not d:
+                    continue
+                for fname in (target_nfc, target_nfd):
+                    candidate = os.path.join(d, fname)
+                    if os.path.exists(candidate):
+                        return candidate
+                try:
+                    for entry in os.listdir(d):
+                        if unicodedata.normalize("NFC", entry) == target_nfc:
+                            return os.path.join(d, entry)
+                except Exception:
+                    pass
+            return os.path.join(downloads_dir, target_filename)
+        else:
+            default = os.path.join(app_dir, "assets", "plantilla.pptx")
+            if not os.path.exists(default) and hasattr(self, "default_pptx_dir"):
+                alt = os.path.join(self.default_pptx_dir, "plantilla.pptx")
+                if os.path.exists(alt):
+                    return alt
+            return default
+
     def select_powerpoint_template(self):
         initial_dir = self.default_pptx_dir if hasattr(self, 'default_pptx_dir') else "/"
         file_path = filedialog.askopenfilename(
@@ -2070,15 +2057,17 @@ class ExcelViewerApp(ctk.CTk):
         if file_path:
             self.template_path = file_path
             self.update_template_label()
+            self._save_self_to_tab(self.active_tab)
             messagebox.showinfo("Plantilla Seleccionada", f"Se seleccionó la plantilla:\n{file_path}")
 
     def reset_powerpoint_template(self):
         self.template_path = None
         self.update_template_label()
+        self._save_self_to_tab(self.active_tab)
 
     def update_template_label(self):
         """Muestra la ruta de la plantilla en uso, o 'Por defecto' si no se eligió otra."""
-        if not hasattr(self, 'lbl_template'):
+        if not hasattr(self, 'lbl_template') or self.lbl_template is None:
             return
         if self.template_path and os.path.exists(self.template_path):
             path = self.template_path
@@ -2088,7 +2077,7 @@ class ExcelViewerApp(ctk.CTk):
             self.btn_reset_template.configure(state="normal")
         else:
             self.template_path = None
-            default = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "plantilla.pptx")
+            default = self.get_default_template_path()
             self.lbl_template.configure(text=f"Por defecto  ({default})", text_color="#4ade80")
             self.btn_reset_template.configure(state="disabled")
 
@@ -2100,31 +2089,29 @@ class ExcelViewerApp(ctk.CTk):
         if hasattr(self, 'template_path') and self.template_path and os.path.exists(self.template_path):
             file_path = self.template_path
         else:
-            app_dir = os.path.dirname(os.path.abspath(__file__))
-            file_path = os.path.join(app_dir, "assets", "plantilla.pptx")
-
+            file_path = self.get_default_template_path()
             if not os.path.exists(file_path):
-                alternative_path = os.path.join(self.default_pptx_dir, "plantilla.pptx")
-                if os.path.exists(alternative_path):
-                    file_path = alternative_path
-                else:
-                    # Si de plano no existe, permitimos seleccionarlo manualmente como fallback
-                    messagebox.showwarning(
-                        "Plantilla Predeterminada No Encontrada", 
-                        f"No se encontró 'plantilla.pptx' en:\n{file_path}\n\nPor favor, selecciónala manualmente."
-                    )
-                    file_path = filedialog.askopenfilename(
-                        title="Seleccionar plantilla PowerPoint",
-                        initialdir=self.default_pptx_dir,
-                        filetypes=[("Archivos PowerPoint", "*.pptx")]
-                    )
-                    if not file_path:
-                        return
+                messagebox.showwarning(
+                    "Plantilla Predeterminada No Encontrada", 
+                    f"No se encontró la plantilla predeterminada en:\n{file_path}\n\nPor favor, selecciónala manualmente."
+                )
+                file_path = filedialog.askopenfilename(
+                    title="Seleccionar plantilla PowerPoint",
+                    initialdir=self.default_pptx_dir,
+                    filetypes=[("Archivos PowerPoint", "*.pptx")]
+                )
+                if not file_path:
+                    return
+
+        if getattr(self, "active_tab", self.TAB_PROCESO) == self.TAB_MARGEN:
+            default_out = "Presentación Seguimiento Margen Variable_Actualizado.pptx"
+        else:
+            default_out = "Proceso y Producciones_Actualizado.pptx"
 
         save_path = filedialog.asksaveasfilename(
             title="Guardar presentación actualizada",
             initialdir=self.default_pptx_dir,
-            initialfile="Proceso y Producciones_Actualizado.pptx",
+            initialfile=default_out,
             defaultextension=".pptx",
             filetypes=[("Archivos PowerPoint", "*.pptx")]
         )
@@ -2152,6 +2139,165 @@ class ExcelViewerApp(ctk.CTk):
             print(f"\n[!] ERROR EN HILO DE POWERPOINT:\n{err_msg}\n\nTRACEBACK:\n{error_details}")
             
         messagebox.showerror("Error", f"Ocurrió un error al procesar la presentación:\n{err_msg}")
+
+    def resetear_diapositiva_mv(self):
+        """Pestaña Margen Variable: actualiza y resetea la gráfica de Proceso de Crudo."""
+        # 1. Asegurar que haya datos cargados (o sincronizar desde la pestaña de Proceso)
+        if self.df_prod is None or self.df_data is None or self.df_snr is None:
+            other_state = self.tab_states.get(self.TAB_PROCESO, {})
+            if other_state.get("df_prod") is not None:
+                for attr in self._df_attr_names:
+                    setattr(self, attr, other_state.get(attr))
+                self.current_file_path = other_state.get("current_file_path")
+                self.sheet_year = other_state.get("sheet_year")
+                if self.current_file_path and hasattr(self, 'lbl_file') and self.lbl_file:
+                    self.lbl_file.configure(text=f"Archivo: {os.path.basename(self.current_file_path)}")
+
+        if self.df_prod is None or self.df_data is None or self.df_snr is None:
+            messagebox.showerror("Archivo Requerido", "Primero debes cargar un archivo Excel para extraer los datos de producción.")
+            return
+
+        # 2. Obtener plantilla de Margen Variable
+        if hasattr(self, 'template_path') and self.template_path and os.path.exists(self.template_path):
+            file_path = self.template_path
+        else:
+            file_path = self.get_default_template_path(self.TAB_MARGEN)
+            if not os.path.exists(file_path):
+                messagebox.showwarning(
+                    "Plantilla No Encontrada", 
+                    f"No se encontró la plantilla predeterminada en:\n{file_path}\n\nPor favor, selecciónala manualmente."
+                )
+                file_path = filedialog.askopenfilename(
+                    title="Seleccionar plantilla Margen Variable (.pptx)",
+                    initialdir=self.default_pptx_dir,
+                    filetypes=[("Archivos PowerPoint", "*.pptx")]
+                )
+                if not file_path:
+                    return
+
+        # 3. Preguntar al usuario dónde guardar
+        default_out = "Presentación Seguimiento Margen Variable_Reseteada.pptx"
+        save_path = filedialog.asksaveasfilename(
+            title="Guardar presentación con diapositiva reseteada",
+            initialdir=self.default_pptx_dir,
+            initialfile=default_out,
+            defaultextension=".pptx",
+            filetypes=[("Archivos PowerPoint", "*.pptx")]
+        )
+
+        if not save_path:
+            return
+
+        self.set_loading_state(True, "Reseteando diapositiva de Margen Variable...")
+        threading.Thread(target=self.async_reset_slide_mv, args=(file_path, save_path), daemon=True).start()
+
+    def async_reset_slide_mv(self, file_path, save_path):
+        import pptx_exporter
+        pptx_exporter.reset_slide_mv_chart(self, file_path, save_path)
+
+    def on_reset_slide_success(self, save_path):
+        self.set_loading_state(False)
+        if hasattr(self, 'lbl_file') and self.lbl_file:
+            self.lbl_file.configure(text="Presentación reseteada con éxito")
+        messagebox.showinfo(
+            "Éxito",
+            f"¡Presentación de Margen Variable reseteada con éxito!\n\n"
+            f"• Gráfica superior SNR reseteada (año anterior y meses activos).\n"
+            f"• Barrido de tablas completado en las 7 refinerías (CMP: Margen Variable y Utilidad).\n"
+            f"• Gráficas de refinerías reseteadas manteniendo CMP constante.\n\n"
+            f"Guardado en:\n{save_path}"
+        )
+
+    def on_reset_slide_error(self, err_msg, error_details):
+        self.set_loading_state(False)
+        if hasattr(self, 'lbl_file') and self.lbl_file:
+            self.lbl_file.configure(text="Error al resetear diapositiva")
+        try:
+            print(colored(f"\n[!] ERROR RESETEANDO DIAPOSITIVA:\n{err_msg}\n\nTRACEBACK:\n{error_details}", "red"))
+        except Exception:
+            print(f"\n[!] ERROR RESETEANDO DIAPOSITIVA:\n{err_msg}\n\nTRACEBACK:\n{error_details}")
+        messagebox.showerror("Error", f"Ocurrió un error al resetear la diapositiva:\n{err_msg}")
+
+    def enviar_tablas_mv(self):
+        """Pestaña Margen Variable: solicita PowerPoint y Excel de Cargas, y actualiza todas las tablas de las refinerías."""
+        # 1. Asegurar que haya un archivo Excel cargado o disponible para CMP
+        if not getattr(self, "current_file_path", None) or not os.path.exists(self.current_file_path):
+            other_state = self.tab_states.get(self.TAB_PROCESO, {})
+            if other_state.get("current_file_path") and os.path.exists(other_state.get("current_file_path")):
+                self.current_file_path = other_state.get("current_file_path")
+                if hasattr(self, 'lbl_file') and self.lbl_file:
+                    self.lbl_file.configure(text=f"Archivo: {os.path.basename(self.current_file_path)}")
+
+        # (El Excel de Margen Variable es opcional: solo alimenta la fila CMP de Margen Variable/Utilidad.)
+
+        # 2. Selector de archivo PowerPoint a modificar
+        pptx_path = filedialog.askopenfilename(
+            title="1. Seleccionar presentación PowerPoint (.pptx)",
+            initialdir=self.default_pptx_dir,
+            filetypes=[("Archivos PowerPoint", "*.pptx")]
+        )
+        if not pptx_path:
+            return
+
+        # 3. Selector de archivo Excel de Cargas (ej. Cargas Nov 26 Auto.xlsm)
+        downloads_dir = os.path.expanduser("~/Downloads")
+        initial_cargas_dir = downloads_dir if os.path.exists(downloads_dir) else self.default_pptx_dir
+
+        cargas_excel_path = filedialog.askopenfilename(
+            title="2. Seleccionar archivo Excel de Cargas (ej. Cargas Nov 26 Auto.xlsm)",
+            initialdir=initial_cargas_dir,
+            filetypes=[("Archivos Excel", "*.xlsm;*.xlsx;*.xls")]
+        )
+        if not cargas_excel_path:
+            return
+
+        self.cargas_excel_path = cargas_excel_path
+
+        # 4. Preguntar dónde guardar
+        base_dir = os.path.dirname(pptx_path)
+        base_name = os.path.splitext(os.path.basename(pptx_path))[0]
+        default_out = f"{base_name}_TablasActualizadas.pptx"
+
+        save_path = filedialog.asksaveasfilename(
+            title="3. Guardar presentación con tablas actualizadas",
+            initialdir=base_dir,
+            initialfile=default_out,
+            defaultextension=".pptx",
+            filetypes=[("Archivos PowerPoint", "*.pptx")]
+        )
+        if not save_path:
+            return
+
+        self.set_loading_state(True, "Actualizando tablas de refinerías en PowerPoint...")
+        threading.Thread(target=self.async_enviar_tablas_mv, args=(pptx_path, save_path, cargas_excel_path), daemon=True).start()
+
+    def async_enviar_tablas_mv(self, pptx_path, save_path, cargas_excel_path):
+        import pptx_exporter
+        pptx_exporter.update_refinery_tables_mv(self, pptx_path, save_path, cargas_excel_path)
+
+    def on_enviar_tablas_success(self, save_path, cmp_count, cargas_count=0, warning=""):
+        self.set_loading_state(False)
+        if hasattr(self, 'lbl_file') and self.lbl_file:
+            self.lbl_file.configure(text="Tablas actualizadas con éxito")
+        messagebox.showinfo(
+            "Éxito",
+            f"¡Tablas actualizadas con éxito en las refinerías!\n\n"
+            f"• Tablas de Cargas y Productos actualizadas en {cargas_count} refinerías.\n"
+            f"• Tablas de Margen Variable y Utilidad actualizadas en {cmp_count} refinerías.\n"
+            f"• Sección 'Variación de Inventarios Intermedios / Transferencias' conservada intacta.\n\n"
+            f"Guardado en:\n{save_path}"
+            + (f"\n\nAviso: {warning}" if warning else "")
+        )
+
+    def on_enviar_tablas_error(self, err_msg, error_details):
+        self.set_loading_state(False)
+        if hasattr(self, 'lbl_file') and self.lbl_file:
+            self.lbl_file.configure(text="Error al enviar tablas")
+        try:
+            print(colored(f"\n[!] ERROR ENVIANDO TABLAS:\n{err_msg}\n\nTRACEBACK:\n{error_details}", "red"))
+        except Exception:
+            print(f"\n[!] ERROR ENVIANDO TABLAS:\n{err_msg}\n\nTRACEBACK:\n{error_details}")
+        messagebox.showerror("Error", f"Ocurrió un error al actualizar las tablas:\n{err_msg}")
 
     def on_table_clicked(self, table_name, cell_data):
         row = cell_data.get('row')
