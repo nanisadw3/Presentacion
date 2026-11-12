@@ -2878,7 +2878,10 @@ def export_to_pptx(app, file_path, save_path):
                     "CY": 0, "MA": 1, "MI": 2, "OL": 3, "SA": 4, "SC": 5, "TU": 6
                 }
 
-                def get_envio_val(row, col=32):
+                from excel_parser import envio_prom_col
+                prom_col = envio_prom_col(df_envio)
+
+                def get_envio_val(row, col=prom_col):
                     try:
                         return float(df_envio.iloc[row, col])
                     except:

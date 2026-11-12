@@ -1178,7 +1178,10 @@ class ExcelViewerApp(ctk.CTk):
             "Cadereyta": 0, "Madero": 1, "Minatitlán": 2, "Olmeca": 3, "Salamanca": 4, "Salina Cruz": 5, "Tula": 6
         }
         
-        def get_envio_val(row, col=32):
+        from excel_parser import envio_prom_col
+        prom_col = envio_prom_col(df_envio)
+
+        def get_envio_val(row, col=prom_col):
             try:
                 return float(df_envio.iloc[row, col])
             except:

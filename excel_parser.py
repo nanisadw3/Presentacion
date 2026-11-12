@@ -20,6 +20,23 @@ def detect_sheet_year(file_path):
     return int(m.group(1)) if m else datetime.now().year
 
 
+def envio_prom_col(df_envio):
+    """Índice de la columna 'Prom.' en la hoja EnvioProDiairo.
+
+    Esa columna va justo después del último día del mes (col. 31 en meses de 30 días,
+    32 en meses de 31, etc.), así que no puede ser un índice fijo: se busca por su encabezado.
+    """
+    try:
+        for r in range(min(25, len(df_envio))):
+            for c in range(df_envio.shape[1]):
+                v = df_envio.iloc[r, c]
+                if isinstance(v, str) and v.strip().lower().startswith("prom"):
+                    return c
+    except Exception:
+        pass
+    return df_envio.shape[1] - 1
+
+
 def load_data(app, file_path):
     try:
         app.sheet_year = detect_sheet_year(file_path)
@@ -131,10 +148,12 @@ def load_data(app, file_path):
             try:
                 df_envio = pd.read_excel(file_path, sheet_name="EnvioProDiairo", header=None)
                 app.df_envio = df_envio
+                prom_col = envio_prom_col(df_envio)
+                app.envio_prom_col = prom_col
                 try:
-                    app.cmp_value = str(round(float(df_envio.iloc[18, 32]), 1))
+                    app.cmp_value = str(round(float(df_envio.iloc[18, prom_col]), 1))
                 except:
-                    app.cmp_value = str(df_envio.iloc[18, 32])
+                    app.cmp_value = str(df_envio.iloc[18, prom_col])
                 
                 def get_float(row, col):
                     try:
@@ -142,11 +161,11 @@ def load_data(app, file_path):
                     except:
                         return 0.0
 
-                app.cmp_gasolinas = str(round(get_float(28, 32) + get_float(38, 32) + get_float(48, 32), 1))
-                app.cmp_turbosina = str(round(get_float(78, 32), 1))
-                app.cmp_diesel = str(round(get_float(88, 32), 1))
-                app.cmp_asfalto = str(round(get_float(138, 32), 1))
-                app.cmp_combustoleo = str(round(get_float(128, 32), 1))
+                app.cmp_gasolinas = str(round(get_float(28, prom_col) + get_float(38, prom_col) + get_float(48, prom_col), 1))
+                app.cmp_turbosina = str(round(get_float(78, prom_col), 1))
+                app.cmp_diesel = str(round(get_float(88, prom_col), 1))
+                app.cmp_asfalto = str(round(get_float(138, prom_col), 1))
+                app.cmp_combustoleo = str(round(get_float(128, prom_col), 1))
 
             except Exception as e:
                 print("Error leyendo EnvioProDiairo:", e)
